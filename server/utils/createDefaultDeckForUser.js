@@ -1,6 +1,7 @@
 const path = require('path')
 const fs = require('fs')
 const Deck = require('../models/Deck')
+const { cdnUrl } = require('./cdn')
 
 async function createDefaultRiderWaiteDeckForUser(userId) {
   try {
@@ -20,7 +21,8 @@ async function createDefaultRiderWaiteDeckForUser(userId) {
         .replace(/_/g, ' ')
         .replace(/\b(\w)/g, (m) => m.toUpperCase())
 
-      return { name, image: `/images/rider-waite-tarot/${fname}` }
+  const rel = `/images/rider-waite-tarot/${fname}`
+  return { name, image: cdnUrl(rel) }
     })
 
     const deckData = {

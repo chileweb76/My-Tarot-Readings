@@ -11,6 +11,7 @@ require('dotenv').config({ path: envPath })
 console.log('Using env file:', envPath)
 
 const Deck = require('../models/Deck')
+const { cdnUrl } = require('../utils/cdn')
 
 async function run() {
   const mongo = process.env.MONGODB_URI
@@ -37,9 +38,10 @@ async function run() {
       .replace(/_/g, ' ')
       .replace(/\b(\w)/g, (m) => m.toUpperCase())
 
+    const rel = `/images/rider-waite-tarot/${fname}`
     return {
       name: name,
-      image: `/images/rider-waite-tarot/${fname}`
+      image: cdnUrl(rel)
     }
   })
 
