@@ -7,6 +7,8 @@ const router = express.Router()
 const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
 const Reading = require('../models/Reading')
+const Deck = require('../models/Deck')
+const Querent = require('../models/Querent')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
@@ -702,14 +704,18 @@ router.delete('/delete', passport.authenticate('jwt', { session: false }), async
       // but allow deletion if provider is google (no password) — optional: block here
     }
 
-    // delete readings associated with the user
-    await Reading.deleteMany({ userId: userId.toString() })
+  // delete readings associated with the user
+  await Reading.deleteMany({ userId: userId.toString() })
+  // delete decks owned by the user
+  await Deck.deleteMany({ owner: userId.toString() })
+  // delete querents for the user
+  await Querent.deleteMany({ userId: userId.toString() })
 
-    // delete the user
-    await User.findByIdAndDelete(userId)
+  // delete the user
+  await User.findByIdAndDelete(userId)
 
-    console.log(`User ${userId} and their readings deleted`)
-    return res.json({ message: 'Account and associated readings deleted' })
+  console.log(`User ${userId} and their readings, decks, and querents deleted`)
+  return res.json({ message: 'Account and all associated data deleted' })
   } catch (err) {
     console.error('Delete account error:', err)
     return res.status(500).json({ error: 'Internal server error' })
