@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+
 import { usePathname } from 'next/navigation'
+
 
 export default function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -100,6 +102,7 @@ export default function Header() {
           <div className={`collapse navbar-collapse ${isMenuOpen ? 'show' : ''}`} id="navbarNav">
             {isAuthenticated && (
               <>
+
                 <ul className="navbar-nav ms-auto">
                   {navLinks.map((link) => (
                     <li key={link.href} className="nav-item">

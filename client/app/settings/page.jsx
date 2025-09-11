@@ -53,6 +53,11 @@ export default function SettingsPage() {
   const [showDeleteDeckModal, setShowDeleteDeckModal] = useState(false)
   const [deleteDeckVerifyName, setDeleteDeckVerifyName] = useState('')
   const [loadingDeleteDeck, setLoadingDeleteDeck] = useState(false)
+  const [spreads, setSpreads] = useState([])
+  const [selectedSpreadId, setSelectedSpreadId] = useState('')
+  const [showDeleteSpreadModal, setShowDeleteSpreadModal] = useState(false)
+  const [deleteSpreadVerifyName, setDeleteSpreadVerifyName] = useState('')
+  const [loadingDeleteSpread, setLoadingDeleteSpread] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmUsername, setDeleteConfirmUsername] = useState('')
   const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('')
@@ -91,8 +96,8 @@ export default function SettingsPage() {
         // eslint-disable-next-line no-console
         console.warn('setPicturePreview is not a function at init', setPicturePreview)
       }
-      // load querents for this user
-      (async () => {
+  // load querents for this user
+  ;(async () => {
         try {
           const res = await apiFetch('/querents')
           if (!res.ok) return
@@ -105,8 +110,8 @@ export default function SettingsPage() {
           console.warn('Failed to load querents', err)
         }
   })();
-        // load decks for this user (read-only list)
-        (async () => {
+  // load decks for this user (read-only list)
+  ;(async () => {
           try {
             const res = await apiFetch('/api/decks')
             if (!res.ok) return
@@ -116,6 +121,21 @@ export default function SettingsPage() {
             if (list.length) setSelectedDeckId(list[0]._id)
           } catch (err) {
             console.warn('Failed to load decks', err)
+          }
+  })()
+  // load spreads and pick user's custom spreads
+  ;(async () => {
+          try {
+            const res = await apiFetch('/spreads')
+            if (!res.ok) return
+            const data = await res.json()
+            // filter custom spreads owned by this user
+            const meId = user && (user._id || user.id) ? String(user._id || user.id) : null
+            const mySpreads = Array.isArray(data) ? data.filter(s => s.isCustom && s.owner && String(s.owner) === meId) : []
+            setSpreads(mySpreads)
+            if (mySpreads.length) setSelectedSpreadId(mySpreads[0]._id)
+          } catch (err) {
+            console.warn('Failed to load spreads', err)
           }
         })()
     }
@@ -607,6 +627,18 @@ export default function SettingsPage() {
                   <button className="btn btn-outline-danger" disabled={!selectedDeckId} onClick={() => { setShowDeleteDeckModal(true); setDeleteDeckVerifyName('') }}>Delete Deck</button>
                 </div>
               </div>
+              <div className="mb-3">
+                <h5>Delete Custom Spread</h5>
+                <div className="d-flex gap-2 align-items-center">
+                  <select className="form-select" style={{ maxWidth: 300 }} value={selectedSpreadId} onChange={(e) => setSelectedSpreadId(e.target.value)}>
+                    <option value="">Select spread...</option>
+                    {spreads.map(s => (
+                      <option key={s._id} value={s._id}>{s.spread}</option>
+                    ))}
+                  </select>
+                  <button className="btn btn-outline-danger" disabled={!selectedSpreadId} onClick={() => { setShowDeleteSpreadModal(true); setDeleteSpreadVerifyName('') }}>Delete Spread</button>
+                </div>
+              </div>
             </div>
 
             {/* Data & Security */}
@@ -761,6 +793,51 @@ export default function SettingsPage() {
               confirmDisabled={(() => {
                 const selected = decks.find(d => d._id === selectedDeckId)
                 return !(selected && deleteDeckVerifyName === selected.deckName)
+              })()}
+            />
+
+            <ConfirmModal
+              show={showDeleteSpreadModal}
+              title="Delete spread"
+              body={(
+                <div>
+                  <p>This will permanently delete the selected custom spread. This action cannot be undone.</p>
+                  <p>Please type the spread name to confirm.</p>
+                  <div className="mb-2">
+                    <input className="form-control" placeholder="Type spread name to confirm" value={deleteSpreadVerifyName} onChange={(e) => setDeleteSpreadVerifyName(e.target.value)} />
+                  </div>
+                </div>
+              )}
+              confirmText={loadingDeleteSpread ? 'Deleting...' : 'Delete spread'}
+              onConfirm={async () => {
+                setLoadingDeleteSpread(true)
+                setMessage(null)
+                try {
+                  const token = localStorage.getItem('token')
+                  if (!token) throw new Error('Not authenticated')
+                  if (!selectedSpreadId) throw new Error('No spread selected')
+                  const res = await apiFetch(`/spreads/${selectedSpreadId}`, { method: 'DELETE' })
+                  const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : Promise.resolve({ error: 'Unexpected response' }))
+                  if (!res.ok) throw new Error(data.error || data.message || 'Failed to delete spread')
+
+                  // remove from local state
+                  const updated = spreads.filter(s => s._id !== selectedSpreadId)
+                  setSpreads(updated)
+                  setSelectedSpreadId(updated.length ? updated[0]._id : '')
+                  setMessage({ type: 'success', text: data.message || 'Spread deleted' })
+                } catch (err) {
+                  setMessage({ type: 'error', text: err.message })
+                } finally {
+                  setLoadingDeleteSpread(false)
+                  setShowDeleteSpreadModal(false)
+                  setDeleteSpreadVerifyName('')
+                }
+              }}
+              onCancel={() => { setShowDeleteSpreadModal(false); setDeleteSpreadVerifyName('') }}
+              loading={loadingDeleteSpread}
+              confirmDisabled={(() => {
+                const selected = spreads.find(s => s._id === selectedSpreadId)
+                return !(selected && deleteSpreadVerifyName === selected.spread)
               })()}
             />
 

@@ -4,7 +4,31 @@ import { useEffect, useState } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
 import { apiFetch } from '../../lib/api'
-import { stripCdnToLocal } from '../../lib/cdn'
+
+// Local helper: convert absolute/CDN-ish image URLs back to local `/images/...` paths.
+// We keep this inline so the page doesn't depend on an external client helper file.
+function stripCdnToLocal(url) {
+  if (!url || typeof url !== 'string') return url
+  try {
+    const idx = url.indexOf('/images/')
+    if (idx !== -1) return url.slice(idx)
+
+    const idx2 = url.indexOf('/client/public')
+    if (idx2 !== -1) return url.slice(idx2 + '/client/public'.length)
+
+    if (url.includes('rider-waite-tarot')) {
+      const parts = url.split('/')
+      const file = parts[parts.length - 1] || ''
+      if (file) return '/images/rider-waite-tarot/' + file
+    }
+
+    if (url.startsWith('images/')) return '/' + url
+
+    return url
+  } catch (err) {
+    return url
+  }
+}
 
 // Simple Toast component
 function Toast({ message, type = 'info', onClose }) {

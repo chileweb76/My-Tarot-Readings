@@ -25,6 +25,41 @@ app.use('/uploads', express.static(uploadsDir))
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB Atlas')
+    // Seed spreads collection from client/public/spreads.json if empty
+    try {
+      const Spread = require('./models/Spread')
+      const spreadsPath = path.join(__dirname, '..', 'client', 'public', 'spreads.json')
+      if (fs.existsSync(spreadsPath)) {
+        const raw = fs.readFileSync(spreadsPath, 'utf8')
+        let items = []
+        try {
+          items = JSON.parse(raw)
+        } catch (e) {
+          console.error('Failed to parse spreads.json', e)
+          items = []
+        }
+
+        ;(async () => {
+          try {
+            const count = await Spread.countDocuments({})
+            if (count === 0 && items.length) {
+              // normalize items to model shape
+              const toInsert = items.map(it => ({
+                spread: it.spread || '',
+                cards: Array.isArray(it.cards) ? it.cards : [],
+                image: it.image || ''
+              }))
+              await Spread.insertMany(toInsert)
+              console.log(`🌱 Seeded ${toInsert.length} spreads into DB`)
+            }
+          } catch (e) {
+            console.error('Error seeding spreads', e)
+          }
+        })()
+      }
+    } catch (e) {
+      console.error('Spreads seeding skipped:', e)
+    }
   })
   .catch((error) => {
     console.error('❌ MongoDB connection error:', error)
@@ -59,6 +94,7 @@ app.use('/api/readings', require('./routes/readings'))
 app.use('/api/querents', require('./routes/querents'))
 app.use('/api/health', require('./routes/health'))
 app.use('/api/decks', require('./routes/decks'))
+app.use('/api/spreads', require('./routes/spreads'))
 
 // Backwards-compatible redirect: some emails may contain /auth/verify (no /api/)
 // Redirect those to the API verify endpoint so legacy links don't 404.
@@ -215,6 +251,13 @@ const purgeSoftDeletedAccounts = async () => {
     const usersToPurge = await User.find({ isDeleted: true, deletedAt: { $lt: cutoff } })
     for (const user of usersToPurge) {
       await Reading.deleteMany({ userId: user._id.toString() })
+      // remove custom spreads created by this user
+      try {
+        const Spread = require('./models/Spread')
+        await Spread.deleteMany({ owner: user._id })
+      } catch (e) {
+        console.warn('Failed to delete spreads for user', user._id, e)
+      }
       await User.findByIdAndDelete(user._id)
       console.log(`Purged soft-deleted user ${user._id}`)
     }
