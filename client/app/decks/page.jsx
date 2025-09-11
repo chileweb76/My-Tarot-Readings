@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
 import { apiFetch } from '../../lib/api'
+import { stripCdnToLocal } from '../../lib/cdn'
 
 // Simple Toast component
 function Toast({ message, type = 'info', onClose }) {
@@ -308,8 +309,9 @@ export default function DecksPage() {
                 {deckDetails.cards.map((card, i) => {
                   const hasImage = card && card.image
                   const inputId = `card-upload-${i}`
-                    const isUploading = uploadingCardIndex === i
-                    const isRenaming = renamingCardIndex === i
+                  const isUploading = uploadingCardIndex === i
+                  const isRenaming = renamingCardIndex === i
+                  const imgSrc = hasImage ? stripCdnToLocal(card.image) : null
                   return (
                     <div className="col-6 col-sm-4 col-md-3" key={(card && card.name) || i}>
                       <div className="card p-2 h-100">
@@ -317,7 +319,7 @@ export default function DecksPage() {
                           {hasImage ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={card.image}
+                              src={imgSrc}
                               alt={card.name || 'card'}
                               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover' }}
                               onError={(e) => {
@@ -325,7 +327,7 @@ export default function DecksPage() {
                                   const el = e.currentTarget
                                   // avoid infinite loop
                                   el.onerror = null
-                                  const url = (card && card.image) || ''
+                                  const url = imgSrc || ((card && card.image) || '')
                                   // If the URL contains an /images/ path, use the local path as fallback
                                   const idx = url.indexOf('/images/')
                                   let fallback = ''
@@ -355,7 +357,7 @@ export default function DecksPage() {
                                 }
                               }}
                             />
-                           ) : (
+                          ) : (
                             <div style={{ textAlign: 'center', width: '100%' }}>
                                 <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => document.getElementById(inputId)?.click()}>
                                   {isUploading ? (<span className="spinner-border spinner-border-sm"></span>) : 'Upload'}
