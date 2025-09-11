@@ -2,7 +2,21 @@
 export async function apiFetch(url, options = {}) {
   const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
   const apiBase = raw.replace(/\/$|\/api$/i, '')
-  const full = url.startsWith('http') ? url : `${apiBase}${url.startsWith('/') ? '' : '/'}${url}`
+
+  // Normalize relative paths: if the caller passes "/auth/..." or "/querents"
+  // or any path that doesn't already begin with "/api", prefix it with "/api".
+  // Absolute URLs (http/https) are left untouched.
+  let path = url
+  if (!url.startsWith('http')) {
+    if (url.startsWith('/')) {
+      if (!url.startsWith('/api')) path = '/api' + url
+    } else {
+      // no leading slash, assume a relative API path
+      path = '/api/' + url
+    }
+  }
+
+  const full = url.startsWith('http') ? url : `${apiBase}${path}`
 
   const token = localStorage.getItem('token')
   const headers = new Headers(options.headers || {})
