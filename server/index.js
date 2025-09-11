@@ -1,0 +1,228 @@
+const express = require('express')
+const cors = require('cors')
+const dotenv = require('dotenv')
+
+// Load environment variables early so other modules (passport) can use them
+dotenv.config()
+
+const mongoose = require('mongoose')
+const session = require('express-session')
+const passport = require('./config/passport')
+
+const app = express()
+
+const path = require('path')
+const fs = require('fs')
+
+// Ensure uploads directory exists and serve it statically
+const uploadsDir = path.join(__dirname, 'uploads')
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir)
+}
+app.use('/uploads', express.static(uploadsDir))
+
+// MongoDB Connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('✅ Connected to MongoDB Atlas')
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB connection error:', error)
+    process.exit(1)
+  })
+
+// Middleware
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true
+}))
+app.use(express.json())
+
+// Session configuration (for Passport)
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}))
+
+// Initialize Passport
+app.use(passport.initialize())
+app.use(passport.session())
+
+// Routes
+app.use('/api/auth', require('./routes/auth'))
+app.use('/api/readings', require('./routes/readings'))
+app.use('/api/querents', require('./routes/querents'))
+app.use('/api/health', require('./routes/health'))
+app.use('/api/decks', require('./routes/decks'))
+
+// Backwards-compatible redirect: some emails may contain /auth/verify (no /api/)
+// Redirect those to the API verify endpoint so legacy links don't 404.
+app.get('/auth/verify', (req, res) => {
+  const token = req.query.token || ''
+  if (!token) return res.status(400).json({ error: 'Token is required' })
+  return res.redirect(`/api/auth/verify?token=${encodeURIComponent(token)}`)
+})
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack)
+  res.status(500).json({ error: 'Something went wrong!' })
+})
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' })
+})
+
+const PORT = Number(process.env.PORT) || 5000
+
+// Smart port selection - try multiple ports if needed
+function startServer(port) {
+  const server = app.listen(port, () => {
+    console.log(`🚀 Server running on http://localhost:${port}`)
+  })
+  
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is busy, trying ${port + 1}...`)
+      startServer(port + 1)
+    } else {
+      console.error('Server error:', err)
+      process.exit(1)
+    }
+  })
+}
+
+startServer(PORT)
+
+// Scheduled purge for soft-deleted accounts
+const SOFT_DELETE_RETENTION_DAYS = Number(process.env.SOFT_DELETE_RETENTION_DAYS || 30)
+const purgeIntervalMs = 24 * 60 * 60 * 1000 // daily
+
+const purgeSoftDeletedAccounts = async () => {
+  try {
+    const cutoff = new Date(Date.now() - SOFT_DELETE_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+    const User = require('./models/User')
+    const Reading = require('./models/Reading')
+
+    // 1) Notify users whose deletion is coming up within NOTIFY_DAYS_BEFORE_PURGE and not yet notified
+    const NOTIFY_DAYS_BEFORE_PURGE = Number(process.env.NOTIFY_DAYS_BEFORE_PURGE || 7)
+    const now = new Date()
+    const notifyCutoffStart = new Date(now.getTime() - 1000) // now
+    const notifyCutoffEnd = new Date(now.getTime() + NOTIFY_DAYS_BEFORE_PURGE * 24 * 60 * 60 * 1000)
+
+    const notificationTemplate = process.env.COURIER_NOTIFICATION_TEMPLATE_ID || process.env.COURIER_TEMPLATE_ID
+
+    // Initial notifications (e.g., 7 days before purge)
+    const usersToNotify = await User.find({
+      isDeleted: true,
+      deletedAt: { $exists: true, $ne: null },
+      deletionNotified: false,
+      deletedAt: { $lt: notifyCutoffEnd }
+    })
+
+    for (const user of usersToNotify) {
+      try {
+        if (!process.env.COURIER_AUTH_TOKEN || !notificationTemplate) continue
+        const serverBase = process.env.CLIENT_URL || `http://localhost:${PORT}`
+        const retentionDays = SOFT_DELETE_RETENTION_DAYS
+        const purgeDate = new Date(user.deletedAt.getTime() + retentionDays * 24 * 60 * 60 * 1000)
+        const payload = {
+          message: {
+            to: { email: user.email },
+            template: notificationTemplate,
+            data: {
+              username: user.username,
+              purge_date: purgeDate.toISOString(),
+              days_left: Math.ceil((purgeDate - now) / (24 * 60 * 60 * 1000)),
+              cancel_url: `${serverBase}/settings`,
+              reminder_type: 'initial'
+            }
+          }
+        }
+
+        console.debug('Sending soft-delete initial notification to Courier:', { to: user.email, template: notificationTemplate })
+        await fetch('https://api.courier.com/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.COURIER_AUTH_TOKEN}`
+          },
+          body: JSON.stringify(payload)
+        })
+
+        user.deletionNotified = true
+        user.deletionNotificationSentAt = new Date()
+        await user.save()
+      } catch (err) {
+        console.error('Failed to send deletion notification for user', user._id, err)
+      }
+    }
+
+    // Final notifications (e.g., 1 day before purge)
+    const FINAL_NOTIFY_DAYS = 1
+    const finalCutoffEnd = new Date(now.getTime() + FINAL_NOTIFY_DAYS * 24 * 60 * 60 * 1000)
+    const usersToFinalNotify = await User.find({
+      isDeleted: true,
+      deletedAt: { $exists: true, $ne: null },
+      deletionFinalNotified: false,
+      deletedAt: { $lt: finalCutoffEnd }
+    })
+
+    for (const user of usersToFinalNotify) {
+      try {
+        if (!process.env.COURIER_AUTH_TOKEN || !notificationTemplate) continue
+        const serverBase = process.env.CLIENT_URL || `http://localhost:${PORT}`
+        const retentionDays = SOFT_DELETE_RETENTION_DAYS
+        const purgeDate = new Date(user.deletedAt.getTime() + retentionDays * 24 * 60 * 60 * 1000)
+        const payload = {
+          message: {
+            to: { email: user.email },
+            template: notificationTemplate,
+            data: {
+              username: user.username,
+              purge_date: purgeDate.toISOString(),
+              days_left: Math.ceil((purgeDate - now) / (24 * 60 * 60 * 1000)),
+              cancel_url: `${serverBase}/settings`,
+              reminder_type: 'final'
+            }
+          }
+        }
+
+        console.debug('Sending soft-delete final notification to Courier:', { to: user.email, template: notificationTemplate })
+        await fetch('https://api.courier.com/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.COURIER_AUTH_TOKEN}`
+          },
+          body: JSON.stringify(payload)
+        })
+
+        user.deletionFinalNotified = true
+        await user.save()
+      } catch (err) {
+        console.error('Failed to send final deletion notification for user', user._id, err)
+      }
+    }
+
+    // 2) Permanently purge users past the cutoff
+    const usersToPurge = await User.find({ isDeleted: true, deletedAt: { $lt: cutoff } })
+    for (const user of usersToPurge) {
+      await Reading.deleteMany({ userId: user._id.toString() })
+      await User.findByIdAndDelete(user._id)
+      console.log(`Purged soft-deleted user ${user._id}`)
+    }
+  } catch (err) {
+    console.error('Error during soft-delete purge:', err)
+  }
+}
+
+// Run on start and every 24h
+purgeSoftDeletedAccounts()
+setInterval(purgeSoftDeletedAccounts, purgeIntervalMs)

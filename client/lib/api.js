@@ -1,0 +1,33 @@
+// Lightweight fetch wrapper that retries once using refresh token when receiving 401
+export async function apiFetch(url, options = {}) {
+  const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
+  const apiBase = raw.replace(/\/$|\/api$/i, '')
+  const full = url.startsWith('http') ? url : `${apiBase}${url.startsWith('/') ? '' : '/'}${url}`
+
+  const token = localStorage.getItem('token')
+  const headers = new Headers(options.headers || {})
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  let res = await fetch(full, { ...options, headers })
+  if (res.status !== 401) return res
+
+  // Try refresh once
+  const refreshToken = localStorage.getItem('refreshToken')
+  if (!refreshToken) return res
+  try {
+    const rawRefresh = await fetch(`${apiBase}/api/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken }) })
+    if (!rawRefresh.ok) return res
+    const data = await rawRefresh.json()
+    if (data.token) {
+      localStorage.setItem('token', data.token)
+      if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken)
+      // retry original request with new token
+      headers.set('Authorization', `Bearer ${data.token}`)
+      res = await fetch(full, { ...options, headers })
+      return res
+    }
+  } catch (e) {
+    console.warn('Token refresh failed', e)
+  }
+  return res
+}
