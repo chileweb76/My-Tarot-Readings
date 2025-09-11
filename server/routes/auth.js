@@ -158,6 +158,13 @@ router.post('/register', async (req, res) => {
       }
     }
 
+    // Create default deck for the new user (best-effort, non-blocking)
+    try {
+      createDefaultDeckForUser(user._id).catch(e => console.warn('createDefaultDeckForUser failed (non-blocking):', e))
+    } catch (e) {
+      console.warn('createDefaultDeckForUser call error:', e)
+    }
+
     // Do NOT issue JWT until email is verified
     res.status(201).json({
       message: 'User registered successfully. Please verify your email to activate your account.',
