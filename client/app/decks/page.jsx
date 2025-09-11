@@ -316,8 +316,46 @@ export default function DecksPage() {
                         <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#f8f9fa' }}>
                           {hasImage ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={card.image} alt={card.name || 'card'} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover' }} />
-                          ) : (
+                            <img
+                              src={card.image}
+                              alt={card.name || 'card'}
+                              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover' }}
+                              onError={(e) => {
+                                try {
+                                  const el = e.currentTarget
+                                  // avoid infinite loop
+                                  el.onerror = null
+                                  const url = (card && card.image) || ''
+                                  // If the URL contains an /images/ path, use the local path as fallback
+                                  const idx = url.indexOf('/images/')
+                                  let fallback = ''
+                                  if (idx !== -1) {
+                                    fallback = url.slice(idx)
+                                  } else {
+                                    const idx2 = url.indexOf('/client/public')
+                                    if (idx2 !== -1) {
+                                      // convert /.../client/public/images/... to /images/...
+                                      fallback = url.slice(idx2 + '/client/public'.length)
+                                    } else if (url.includes('rider-waite-tarot')) {
+                                      // last resort: take the filename and map to /images/rider-waite-tarot/<file>
+                                      const parts = url.split('/')
+                                      const file = parts[parts.length - 1] || ''
+                                      if (file) fallback = '/images/rider-waite-tarot/' + file
+                                    }
+                                  }
+                                  if (!fallback) {
+                                    // inline SVG placeholder
+                                    fallback = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+                                      `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450"><rect width="100%" height="100%" fill="#f8f9fa"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="16">Image unavailable</text></svg>`
+                                    )
+                                  }
+                                  el.src = fallback
+                                } catch (err) {
+                                  // ignore
+                                }
+                              }}
+                            />
+                           ) : (
                             <div style={{ textAlign: 'center', width: '100%' }}>
                                 <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => document.getElementById(inputId)?.click()}>
                                   {isUploading ? (<span className="spinner-border spinner-border-sm"></span>) : 'Upload'}
