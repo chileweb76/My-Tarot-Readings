@@ -68,6 +68,7 @@ export default function Header() {
     { href: '/', label: 'Home', icon: 'fas fa-home' },
     { href: '/insights', label: 'Insights', icon: 'fas fa-lightbulb' },
     { href: '/reading', label: 'Readings', icon: 'fas fa-cards-blank' },
+    { href: '/history', label: 'History', icon: 'fas fa-history' },
     { href: '/decks', label: 'Decks', icon: 'fas fa-layer-group' },
   { href: '/settings', label: 'Settings', icon: 'fas fa-cog' }
   ]

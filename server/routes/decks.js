@@ -31,6 +31,11 @@ router.post('/:deckId/card/:cardName/upload', upload.single('card'), async (req,
     const deck = await Deck.findById(deckId)
     if (!deck) return res.status(404).json({ error: 'Deck not found' })
 
+    // Check if this is the Rider-Waite deck - prevent editing
+    if (deck.deckName === 'Rider-Waite Tarot Deck') {
+      return res.status(403).json({ error: 'Rider-Waite Tarot cards cannot be edited' })
+    }
+
     const webPath = `${req.protocol}://${req.get('host')}/uploads/decks/${deckId}/${req.file.filename}`
 
     // find matching card by name (case-insensitive) and update image
@@ -47,6 +52,46 @@ router.post('/:deckId/card/:cardName/upload', upload.single('card'), async (req,
     res.json({ success: true, card: card || deck.cards[deck.cards.length - 1] })
   } catch (err) {
     console.error('Card upload error', err)
+    res.status(500).json({ error: 'Upload failed' })
+  }
+})
+
+// Upload a deck cover image
+router.post('/:deckId/upload', upload.single('image'), async (req, res) => {
+  try {
+    const { deckId } = req.params
+    const { cardName } = req.body // Check if this is a card upload
+    
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
+    const deck = await Deck.findById(deckId)
+    if (!deck) return res.status(404).json({ error: 'Deck not found' })
+
+    // Check if this is the Rider-Waite deck - prevent editing
+    if (deck.deckName === 'Rider-Waite Tarot Deck') {
+      return res.status(403).json({ error: 'Rider-Waite Tarot cards cannot be edited' })
+    }
+
+    const webPath = `${req.protocol}://${req.get('host')}/uploads/decks/${deckId}/${req.file.filename}`
+    
+    if (cardName) {
+      // This is a card upload
+      const card = deck.cards.find(c => (c.name || '').toLowerCase() === (cardName || '').toLowerCase())
+      if (card) {
+        card.image = webPath
+      } else {
+        // if not found, push new card
+        deck.cards.push({ name: cardName, image: webPath })
+      }
+      await deck.save()
+      res.json({ success: true, card: card || deck.cards[deck.cards.length - 1] })
+    } else {
+      // This is a deck image upload
+      deck.image = webPath
+      await deck.save()
+      res.json({ success: true, deck: { _id: deck._id, deckName: deck.deckName, image: deck.image } })
+    }
+  } catch (err) {
+    console.error('Upload error', err)
     res.status(500).json({ error: 'Upload failed' })
   }
 })

@@ -193,13 +193,6 @@ userSchema.statics.createFromGoogleProfile = async function(profile) {
   }
   
   const user = await this.create(userData)
-  // lazily create a default deck for the new user
-  try {
-    const createDefault = require('../utils/createDefaultDeckForUser')
-    await createDefault(user._id)
-  } catch (err) {
-    console.warn('Failed to create default deck for Google user', user._id, err)
-  }
   return user
 }
 

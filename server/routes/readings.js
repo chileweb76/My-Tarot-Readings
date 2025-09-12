@@ -90,4 +90,151 @@ router.get('/history', async (req, res) => {
   }
 })
 
+// GET /api/readings/user - Get user's reading history
+router.get('/user', async (req, res) => {
+  try {
+    const userId = req.user?.id || req.headers['x-user-id'] // Support for auth header
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' })
+    }
+
+    const readings = await Reading.find({ userId })
+      .populate('querent', 'name')
+      .populate('spread', 'spread')
+      .populate('deck', 'deckName')
+      .sort({ dateTime: -1 })
+    
+    res.json({
+      count: readings.length,
+      readings: readings
+    })
+  } catch (error) {
+    console.error('Error fetching user reading history:', error)
+    res.status(500).json({ error: 'Failed to fetch reading history' })
+  }
+})
+
+// PUT /api/readings/:id - Update a reading
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { question, interpretation, dateTime } = req.body
+    const userId = req.user?.id || req.headers['x-user-id']
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' })
+    }
+
+    // Find reading and verify ownership
+    const reading = await Reading.findById(id)
+    if (!reading) {
+      return res.status(404).json({ error: 'Reading not found' })
+    }
+
+    if (reading.userId?.toString() !== userId) {
+      return res.status(403).json({ error: 'Not authorized to edit this reading' })
+    }
+
+    // Update reading
+    const updatedReading = await Reading.findByIdAndUpdate(
+      id,
+      {
+        question: question || reading.question,
+        interpretation: interpretation || reading.interpretation,
+        dateTime: dateTime ? new Date(dateTime) : reading.dateTime
+      },
+      { new: true }
+    ).populate('querent', 'name')
+     .populate('spread', 'spread')
+     .populate('deck', 'deckName')
+
+    res.json({
+      success: true,
+      reading: updatedReading
+    })
+  } catch (error) {
+    console.error('Error updating reading:', error)
+    res.status(500).json({ error: 'Failed to update reading' })
+  }
+})
+
+// DELETE /api/readings/:id - Delete a reading
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const userId = req.user?.id || req.headers['x-user-id']
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' })
+    }
+
+    // Find reading and verify ownership
+    const reading = await Reading.findById(id)
+    if (!reading) {
+      return res.status(404).json({ error: 'Reading not found' })
+    }
+
+    if (reading.userId?.toString() !== userId) {
+      return res.status(403).json({ error: 'Not authorized to delete this reading' })
+    }
+
+    await Reading.findByIdAndDelete(id)
+
+    res.json({
+      success: true,
+      message: 'Reading deleted successfully'
+    })
+  } catch (error) {
+    console.error('Error deleting reading:', error)
+    res.status(500).json({ error: 'Failed to delete reading' })
+  }
+})
+
+// POST /api/readings - Save a new reading
+router.post('/', async (req, res) => {
+  try {
+    const {
+      querent,
+      spread,
+      image,
+      question,
+      deck,
+      dateTime,
+      drawnCards,
+      interpretation,
+      userId
+    } = req.body
+
+    // Validate required fields
+    if (!dateTime) {
+      return res.status(400).json({ error: 'dateTime is required' })
+    }
+
+    // Create new reading
+    const reading = new Reading({
+      querent: querent === 'self' ? null : querent,
+      spread: spread || null,
+      image: image || null,
+      question: question || '',
+      deck: deck || null,
+      dateTime: new Date(dateTime),
+      drawnCards: drawnCards || [],
+      interpretation: interpretation || '',
+      userId: userId || null
+    })
+
+    const savedReading = await reading.save()
+    console.log('📝 Reading saved to MongoDB:', savedReading._id)
+
+    res.status(201).json({
+      success: true,
+      reading: savedReading
+    })
+  } catch (error) {
+    console.error('Error saving reading:', error)
+    res.status(500).json({ error: 'Failed to save reading', details: error.message })
+  }
+})
+
 module.exports = router

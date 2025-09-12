@@ -1,33 +1,40 @@
 const mongoose = require('mongoose')
 
+const drawnCardSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  suit: { type: String, required: false },
+  card: { type: String, required: true }, 
+  reversed: { type: Boolean, default: false },
+  interpretation: { type: String, default: '' }
+})
+
 const readingSchema = new mongoose.Schema({
-  cards: [{
-    position: {
-      type: String,
-      required: true
-    },
-    name: {
-      type: String,
-      required: true
-    },
-    meaning: {
-      type: String,
-      required: true
-    }
-  }],
-  spread: {
-    type: String,
-    required: true,
-    default: 'Three-Card Spread'
+  querent: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Querent',
+    required: false 
   },
-  timestamp: {
-    type: Date,
-    default: Date.now
+  spread: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Spread',
+    required: false 
   },
-  userId: {
-    type: String,
-    default: 'anonymous'
-  }
+  image: { type: String, required: false }, // reading image path/URL
+  question: { type: String, required: false },
+  deck: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Deck',
+    required: false 
+  },
+  dateTime: { type: Date, required: true },
+  drawnCards: [drawnCardSchema],
+  interpretation: { type: String, default: '' }, // overall reading interpretation
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User',
+    required: false 
+  },
+  createdAt: { type: Date, default: Date.now }
 })
 
 module.exports = mongoose.model('Reading', readingSchema)

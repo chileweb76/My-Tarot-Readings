@@ -60,6 +60,48 @@ mongoose.connect(process.env.MONGODB_URI)
     } catch (e) {
       console.error('Spreads seeding skipped:', e)
     }
+
+    // Seed decks collection from rider_waite.json if Rider-Waite deck doesn't exist
+    try {
+      const Deck = require('./models/Deck')
+      const riderWaitePath = path.join(__dirname, '..', 'rider_waite.json')
+      if (fs.existsSync(riderWaitePath)) {
+        const raw = fs.readFileSync(riderWaitePath, 'utf8')
+        let deckData = null
+        try {
+          deckData = JSON.parse(raw)
+        } catch (e) {
+          console.error('Failed to parse rider_waite.json', e)
+        }
+
+        if (deckData) {
+          ;(async () => {
+            try {
+              // Check if Rider-Waite deck already exists
+              const existingDeck = await Deck.findOne({ deckName: 'Rider-Waite Tarot Deck' })
+              if (!existingDeck) {
+                // Create the deck (owner: null means it's available to all users)
+                const riderWaiteDeck = new Deck({
+                  deckName: deckData.deckName,
+                  description: deckData.description,
+                  image: deckData.image, // Include deck cover image
+                  owner: null, // Available to all users
+                  cards: deckData.cards
+                })
+                await riderWaiteDeck.save()
+                console.log(`🌱 Seeded Rider-Waite Tarot Deck with ${deckData.cards.length} cards into DB`)
+              } else {
+                console.log('📚 Rider-Waite Tarot Deck already exists in DB')
+              }
+            } catch (e) {
+              console.error('Error seeding Rider-Waite deck', e)
+            }
+          })()
+        }
+      }
+    } catch (e) {
+      console.error('Deck seeding skipped:', e)
+    }
   })
   .catch((error) => {
     console.error('❌ MongoDB connection error:', error)
@@ -95,6 +137,7 @@ app.use('/api/querents', require('./routes/querents'))
 app.use('/api/health', require('./routes/health'))
 app.use('/api/decks', require('./routes/decks'))
 app.use('/api/spreads', require('./routes/spreads'))
+app.use('/api/card-image', require('./routes/card-image'))
 
 // Backwards-compatible redirect: some emails may contain /auth/verify (no /api/)
 // Redirect those to the API verify endpoint so legacy links don't 404.

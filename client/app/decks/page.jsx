@@ -3,34 +3,19 @@
 import { useEffect, useState } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
+import CameraModal from '../../components/CameraModal'
 import { apiFetch } from '../../lib/api'
 
-// Local helper: convert absolute/CDN-ish image URLs back to local `/images/...` paths.
-// We keep this inline so the page doesn't depend on an external client helper file.
-function stripCdnToLocal(url) {
-  if (!url || typeof url !== 'string') return url
-  try {
-    const idx = url.indexOf('/images/')
-    if (idx !== -1) return url.slice(idx)
-
-    const idx2 = url.indexOf('/client/public')
-    if (idx2 !== -1) return url.slice(idx2 + '/client/public'.length)
-
-    if (url.includes('rider-waite-tarot')) {
-      const parts = url.split('/')
-      const file = parts[parts.length - 1] || ''
-      if (file) return '/images/rider-waite-tarot/' + file
-    }
-
-    if (url.startsWith('images/')) return '/' + url
-
-    return url
-  } catch (err) {
-    return url
-  }
+// Simple helper: since all images are now local, just return the URL as-is
+function normalizeImageUrl(url) {
+  return url
 }
 
-// Simple Toast component
+// Helper function to check if a deck is the Rider-Waite deck (not editable)
+function isRiderWaiteDeck(deckDetails) {
+  return deckDetails && deckDetails.deckName === 'Rider-Waite Tarot Deck'
+}
+
 function Toast({ message, type = 'info', onClose }) {
   if (!message) return null
   const bg = type === 'success' ? 'bg-success text-white' : type === 'error' ? 'bg-danger text-white' : 'bg-secondary text-white'
@@ -57,7 +42,12 @@ export default function DecksPage() {
   const [creatingDeck, setCreatingDeck] = useState(false)
   const [toast, setToast] = useState({ message: '', type: 'info' })
   const [uploadingCardIndex, setUploadingCardIndex] = useState(null)
-  const [renamingCardIndex, setRenamingCardIndex] = useState(null)
+  const [showCameraModal, setShowCameraModal] = useState(false)
+  const [currentCardForCamera, setCurrentCardForCamera] = useState(null)
+  const [showDeckEditModal, setShowDeckEditModal] = useState(false)
+  const [uploadingDeckImage, setUploadingDeckImage] = useState(false)
+  const [editingCard, setEditingCard] = useState(null) // stores card name being edited
+  const [showCardEditModal, setShowCardEditModal] = useState(false)
 
   useEffect(() => {
     const rawBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
@@ -116,6 +106,10 @@ export default function DecksPage() {
       return
     }
 
+    // Clear any uploading states when switching decks
+    setUploadingCardIndex(null)
+    setUploadingDeckImage(false)
+
     let cancelled = false
     async function loadDeck() {
       setLoadingDeck(true)
@@ -152,6 +146,23 @@ export default function DecksPage() {
   // show uploading indicator by finding index
   const idx = deckDetails && Array.isArray(deckDetails.cards) ? deckDetails.cards.findIndex(c => (c.name||'').toLowerCase() === (cardName||'').toLowerCase()) : -1
   if (idx !== -1) setUploadingCardIndex(idx)
+
+      // Create preview URL immediately for instant display
+      const previewUrl = URL.createObjectURL(file)
+
+      // Update local state immediately with preview
+      setDeckDetails(prev => {
+        if (!prev) return prev
+        const cards = Array.isArray(prev.cards) ? [...prev.cards] : []
+        const cardIdx = cards.findIndex(c => (c.name || '').toLowerCase() === (cardName || '').toLowerCase())
+        if (cardIdx !== -1) {
+          cards[cardIdx] = { ...cards[cardIdx], image: previewUrl, uploading: true }
+        } else {
+          cards.push({ name: cardName, image: previewUrl, uploading: true })
+        }
+        return { ...prev, cards }
+      })
+
       const res = await apiFetch(`/api/decks/${selectedDeck}/card/${encodeURIComponent(cardName)}/upload`, {
         method: 'POST',
         body: fd
@@ -164,76 +175,353 @@ export default function DecksPage() {
   setToast({ message: 'Image uploaded', type: 'success' })
   setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
   setUploadingCardIndex(null)
-      // Update local deckDetails state
+      
+      // Update local deckDetails state with server response
       setDeckDetails(prev => {
         if (!prev) return prev
         const cards = Array.isArray(prev.cards) ? [...prev.cards] : []
         // match by name (case-insensitive)
         const idx = cards.findIndex(c => (c.name || '').toLowerCase() === (cardName || '').toLowerCase())
         if (idx !== -1) {
-          cards[idx] = { ...cards[idx], ...updated }
+          // Clean up the preview URL and use server URL
+          if (cards[idx].image && cards[idx].image.startsWith('blob:')) {
+            URL.revokeObjectURL(cards[idx].image)
+          }
+          cards[idx] = { ...cards[idx], ...updated, uploading: false }
         } else {
-          cards.push(updated)
+          cards.push({...updated, uploading: false})
         }
         return { ...prev, cards }
       })
       return updated
     } catch (err) {
       console.error('Upload error', err)
-      alert('Failed to upload image')
+      setUploadingCardIndex(null)
+      
+      // Remove preview on error
+      setDeckDetails(prev => {
+        if (!prev) return prev
+        const cards = Array.isArray(prev.cards) ? [...prev.cards] : []
+        const idx = cards.findIndex(c => (c.name || '').toLowerCase() === (cardName || '').toLowerCase())
+        if (idx !== -1 && cards[idx].uploading) {
+          if (cards[idx].image && cards[idx].image.startsWith('blob:')) {
+            URL.revokeObjectURL(cards[idx].image)
+          }
+          cards[idx] = { ...cards[idx], image: '', uploading: false }
+        }
+        return { ...prev, cards }
+      })
+      
+      setToast({ message: 'Failed to upload image', type: 'error' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
       return null
     }
   }
 
-  // Rename a card
-  const renameCard = async (oldName, newName) => {
-    if (!selectedDeck || !oldName || !newName || oldName === newName) return null
+  const handleCameraCapture = async (dataUrl) => {
+    if (!currentCardForCamera) return
+    
     try {
-      // client-side duplicate check
-      if (deckDetails && Array.isArray(deckDetails.cards)) {
-        const dup = deckDetails.cards.find(c => (c.name||'').toLowerCase() === (newName||'').toLowerCase())
-        if (dup && (dup.name||'').toLowerCase() !== (oldName||'').toLowerCase()) {
-          setToast({ message: 'Another card with that name already exists', type: 'error' })
-          setTimeout(() => setToast({ message: '', type: 'info' }), 3000)
-          return null
-        }
-      }
-      const apiBase = getApiBase()
-      const idx = deckDetails && Array.isArray(deckDetails.cards) ? deckDetails.cards.findIndex(c => (c.name||'').toLowerCase() === (oldName||'').toLowerCase()) : -1
-      if (idx !== -1) setRenamingCardIndex(idx)
-      const res = await apiFetch(`/api/decks/${selectedDeck}/card/${encodeURIComponent(oldName)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newName })
-      })
-      if (!res.ok) {
-        const txt = await res.text().catch(() => '')
-        if (res.status === 409) {
-          setToast({ message: 'Duplicate card name', type: 'error' })
-        } else {
-          setToast({ message: 'Rename failed', type: 'error' })
-        }
-        setTimeout(() => setToast({ message: '', type: 'info' }), 3000)
-        setRenamingCardIndex(null)
-        throw new Error(`Rename failed: ${res.status} ${txt}`)
-      }
-      const body = await res.json()
-      const updatedCard = body.card
+      // Show the captured image immediately
       setDeckDetails(prev => {
         if (!prev) return prev
-        const cards = Array.isArray(prev.cards) ? prev.cards.map(c => ((c.name || '').toLowerCase() === (oldName || '').toLowerCase() ? { ...c, name: updatedCard.name } : c)) : []
+        const cards = Array.isArray(prev.cards) ? [...prev.cards] : []
+        const cardIdx = cards.findIndex(c => (c.name || '').toLowerCase() === (currentCardForCamera || '').toLowerCase())
+        if (cardIdx !== -1) {
+          cards[cardIdx] = { ...cards[cardIdx], image: dataUrl, uploading: true }
+        } else {
+          cards.push({ name: currentCardForCamera, image: dataUrl, uploading: true })
+        }
         return { ...prev, cards }
       })
-      setToast({ message: 'Card renamed', type: 'success' })
+
+      // Convert data URL to blob
+      const response = await fetch(dataUrl)
+      const blob = await response.blob()
+      
+      // Create a file from the blob
+      const file = new File([blob], 'camera-capture.png', { type: 'image/png' })
+      
+      // Upload the captured image
+      await uploadCardImage(currentCardForCamera, file)
+      
+      // Clear the current card state
+      setCurrentCardForCamera(null)
+      setToast({ message: 'Image captured and uploaded!', type: 'success' })
       setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
-      setRenamingCardIndex(null)
-      return updatedCard
     } catch (err) {
-      console.error('Rename error', err)
-      setToast({ message: 'Failed to rename card', type: 'error' })
-      setTimeout(() => setToast({ message: '', type: 'info' }), 3000)
-      return null
+      console.error('Camera capture upload error', err)
+      setCurrentCardForCamera(null)
+      
+      // Remove the preview on error
+      setDeckDetails(prev => {
+        if (!prev) return prev
+        const cards = Array.isArray(prev.cards) ? [...prev.cards] : []
+        const cardIdx = cards.findIndex(c => (c.name || '').toLowerCase() === (currentCardForCamera || '').toLowerCase())
+        if (cardIdx !== -1 && cards[cardIdx].uploading) {
+          cards[cardIdx] = { ...cards[cardIdx], image: '', uploading: false }
+        }
+        return { ...prev, cards }
+      })
+      
+      setToast({ message: 'Failed to upload captured image', type: 'error' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
     }
+  }
+
+  const uploadDeckImage = async (file) => {
+    if (!selectedDeck || !file) return null
+    
+    try {
+      setUploadingDeckImage(true)
+      const apiBase = getApiBase()
+      const fd = new FormData()
+      fd.append('deckImage', file)
+
+      // Create preview URL immediately for instant display
+      const previewUrl = URL.createObjectURL(file)
+
+      // Update deck image in decks list immediately
+      setDecks(prev => prev.map(deck => 
+        deck._id === selectedDeck 
+          ? { ...deck, image: previewUrl, uploading: true }
+          : deck
+      ))
+
+      // Also update deckDetails if it's the current deck
+      if (deckDetails && deckDetails._id === selectedDeck) {
+        setDeckDetails(prev => ({ ...prev, image: previewUrl, uploading: true }))
+      }
+
+      const res = await apiFetch(`/api/decks/${selectedDeck}/upload`, {
+        method: 'POST',
+        body: fd
+      })
+      
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '')
+        throw new Error(`Upload failed: ${res.status} ${txt}`)
+      }
+      
+      const updated = await res.json()
+      setToast({ message: 'Deck image uploaded', type: 'success' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+
+      // Update with server response
+      setDecks(prev => prev.map(deck => {
+        if (deck._id === selectedDeck) {
+          // Clean up preview URL
+          if (deck.image && deck.image.startsWith('blob:')) {
+            URL.revokeObjectURL(deck.image)
+          }
+          return { ...deck, image: updated.deck.image, uploading: false }
+        }
+        return deck
+      }))
+
+      if (deckDetails && deckDetails._id === selectedDeck) {
+        setDeckDetails(prev => ({ ...prev, image: updated.deck.image, uploading: false }))
+      }
+
+      return updated
+    } catch (err) {
+      console.error('Deck image upload error', err)
+      
+      // Remove preview on error
+      setDecks(prev => prev.map(deck => {
+        if (deck._id === selectedDeck && deck.uploading) {
+          if (deck.image && deck.image.startsWith('blob:')) {
+            URL.revokeObjectURL(deck.image)
+          }
+          return { ...deck, image: '', uploading: false }
+        }
+        return deck
+      }))
+
+      if (deckDetails && deckDetails._id === selectedDeck) {
+        setDeckDetails(prev => ({ ...prev, image: '', uploading: false }))
+      }
+
+      setToast({ message: 'Failed to upload deck image', type: 'error' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+      return null
+    } finally {
+      setUploadingDeckImage(false)
+    }
+  }
+
+  const handleDeckCameraCapture = async (dataUrl) => {
+    try {
+      // Show the captured image immediately
+      setDecks(prev => prev.map(deck => 
+        deck._id === selectedDeck 
+          ? { ...deck, image: dataUrl, uploading: true }
+          : deck
+      ))
+
+      if (deckDetails && deckDetails._id === selectedDeck) {
+        setDeckDetails(prev => ({ ...prev, image: dataUrl, uploading: true }))
+      }
+
+      // Convert data URL to blob
+      const response = await fetch(dataUrl)
+      const blob = await response.blob()
+      
+      // Create a file from the blob
+      const file = new File([blob], 'deck-cover.png', { type: 'image/png' })
+      
+      // Upload the captured image
+      await uploadDeckImage(file)
+      
+      setToast({ message: 'Deck image captured and uploaded!', type: 'success' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+    } catch (err) {
+      console.error('Deck camera capture upload error', err)
+      setToast({ message: 'Failed to upload captured deck image', type: 'error' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+    }
+  }
+
+  // Card editing functions
+  const uploadCardImageEdit = async (cardName, file) => {
+    const cardIndex = deckDetails.cards.findIndex(c => c.name === cardName)
+    if (cardIndex === -1) return
+
+    try {
+      setUploadingCardIndex(cardIndex)
+      
+      // Show preview immediately
+      const previewUrl = URL.createObjectURL(file)
+      setDeckDetails(prev => {
+        const cards = [...prev.cards]
+        cards[cardIndex] = { ...cards[cardIndex], image: previewUrl, uploading: true }
+        return { ...prev, cards }
+      })
+
+      const formData = new FormData()
+      formData.append('image', file)
+      formData.append('cardName', cardName)
+
+      const res = await apiFetch(`/api/decks/${selectedDeck}/upload`, {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!res.ok) {
+        throw new Error(`Upload failed: ${res.statusText}`)
+      }
+
+      const updated = await res.json()
+
+      // Update with server response
+      setDeckDetails(prev => {
+        const cards = [...prev.cards]
+        // Clean up preview URL
+        if (cards[cardIndex].image && cards[cardIndex].image.startsWith('blob:')) {
+          URL.revokeObjectURL(cards[cardIndex].image)
+        }
+        cards[cardIndex] = { ...cards[cardIndex], ...updated, uploading: false }
+        return { ...prev, cards }
+      })
+
+      setToast({ message: 'Card image updated successfully!', type: 'success' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+      
+      // Close edit modal
+      setShowCardEditModal(false)
+      setEditingCard(null)
+
+    } catch (err) {
+      console.error('Card image edit upload error', err)
+      
+      // Clear uploading state on error
+      setDeckDetails(prev => {
+        const cards = [...prev.cards]
+        if (cards[cardIndex]) {
+          // Clean up preview URL if it exists
+          if (cards[cardIndex].image && cards[cardIndex].image.startsWith('blob:')) {
+            URL.revokeObjectURL(cards[cardIndex].image)
+          }
+          cards[cardIndex] = { ...cards[cardIndex], uploading: false }
+        }
+        return { ...prev, cards }
+      })
+      
+      setToast({ message: 'Failed to update card image', type: 'error' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+    } finally {
+      setUploadingCardIndex(null)
+    }
+  }
+
+  const handleCardCameraEdit = async (dataUrl) => {
+    if (!editingCard) return
+
+    try {
+      const cardIndex = deckDetails.cards.findIndex(c => c.name === editingCard)
+      if (cardIndex === -1) return
+
+      setUploadingCardIndex(cardIndex)
+
+      // Show preview immediately
+      setDeckDetails(prev => {
+        const cards = [...prev.cards]
+        cards[cardIndex] = { ...cards[cardIndex], image: dataUrl, uploading: true }
+        return { ...prev, cards }
+      })
+
+      // Convert data URL to blob
+      const response = await fetch(dataUrl)
+      const blob = await response.blob()
+      
+      // Create a file from the blob
+      const file = new File([blob], `${editingCard}.png`, { type: 'image/png' })
+      
+      // Upload the captured image
+      await uploadCardImageEdit(editingCard, file)
+      
+    } catch (err) {
+      console.error('Card camera edit error', err)
+      
+      // Clear uploading state on error
+      const cardIndex = deckDetails.cards.findIndex(c => c.name === editingCard)
+      if (cardIndex !== -1) {
+        setDeckDetails(prev => {
+          const cards = [...prev.cards]
+          if (cards[cardIndex]) {
+            cards[cardIndex] = { ...cards[cardIndex], uploading: false }
+          }
+          return { ...prev, cards }
+        })
+        setUploadingCardIndex(null)
+      }
+      
+      setToast({ message: 'Failed to update card image', type: 'error' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+    }
+  }
+
+  const openCardEditModal = (cardName) => {
+    // Prevent editing Rider-Waite deck cards
+    if (isRiderWaiteDeck(deckDetails)) {
+      setToast({ message: 'Rider-Waite Tarot cards cannot be edited', type: 'error' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+      return
+    }
+    
+    setEditingCard(cardName)
+    setShowCardEditModal(true)
+  }
+
+  // Helper function to clear all uploading states (for debugging stuck states)
+  const clearAllUploadingStates = () => {
+    setUploadingCardIndex(null)
+    setUploadingDeckImage(false)
+    setDeckDetails(prev => {
+      if (!prev || !prev.cards) return prev
+      const cards = prev.cards.map(card => ({ ...card, uploading: false }))
+      return { ...prev, cards, uploading: false }
+    })
   }
 
   const handleNewDeck = async () => {
@@ -323,9 +611,339 @@ export default function DecksPage() {
         onNameChange={setNewDeckName}
         onDescriptionChange={setNewDeckDescription}
       />
+      
+      {/* Deck Edit Modal */}
+      {showDeckEditModal && (
+        <div className="modal show d-block" tabIndex={-1} role="dialog">
+          <div className="modal-dialog modal-md" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit Deck Image</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  aria-label="Close" 
+                  onClick={() => setShowDeckEditModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="text-center mb-3">
+                  <div className="deck-image-preview mb-3" style={{ 
+                    width: '200px', 
+                    height: '280px', 
+                    margin: '0 auto', 
+                    border: '2px dashed #ccc', 
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#f8f9fa',
+                    position: 'relative'
+                  }}>
+                    {deckDetails && deckDetails.image ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={normalizeImageUrl(deckDetails.image)} 
+                          alt="Deck cover" 
+                          style={{ 
+                            maxWidth: '100%', 
+                            maxHeight: '100%', 
+                            objectFit: 'cover',
+                            opacity: uploadingDeckImage ? 0.7 : 1
+                          }} 
+                        />
+                        {uploadingDeckImage && (
+                          <div style={{ 
+                            position: 'absolute', 
+                            top: 0, 
+                            left: 0, 
+                            right: 0, 
+                            bottom: 0, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)' 
+                          }}>
+                            <span className="spinner-border text-primary"></span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-muted">
+                        <div>📚</div>
+                        <small>No deck image</small>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="d-flex justify-content-center gap-2">
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-primary"
+                      onClick={() => document.getElementById('deck-file-input')?.click()}
+                      disabled={uploadingDeckImage}
+                    >
+                      📁 Upload File
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-primary"
+                      onClick={() => {
+                        setShowDeckEditModal(false)
+                        setShowCameraModal(true)
+                      }}
+                      disabled={uploadingDeckImage}
+                    >
+                      📷 Camera
+                    </button>
+                  </div>
+                  
+                  <input 
+                    id="deck-file-input"
+                    type="file" 
+                    accept="image/*" 
+                    style={{ display: 'none' }} 
+                    onChange={async (e) => {
+                      const file = e.target.files && e.target.files[0]
+                      if (!file) return
+                      await uploadDeckImage(file)
+                      e.target.value = ''
+                      setShowDeckEditModal(false)
+                    }} 
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowDeckEditModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Card Edit Modal */}
+      {showCardEditModal && editingCard && (
+        <div className="modal show d-block" tabIndex={-1} role="dialog">
+          <div className="modal-dialog modal-md" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit Card Image: {editingCard}</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  aria-label="Close" 
+                  onClick={() => {
+                    setShowCardEditModal(false)
+                    setEditingCard(null)
+                    // Clear any stuck uploading states
+                    clearAllUploadingStates()
+                  }}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="text-center mb-3">
+                  <div className="card-image-preview mb-3" style={{ 
+                    width: '150px', 
+                    height: '210px', 
+                    margin: '0 auto', 
+                    border: '2px dashed #dee2e6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}>
+                    {(() => {
+                      const card = deckDetails?.cards?.find(c => c.name === editingCard)
+                      const hasImage = card && card.image
+                      const isUploading = card && card.uploading
+                      const imgSrc = hasImage ? normalizeImageUrl(card.image) : null
+                      return hasImage ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={imgSrc}
+                            alt={editingCard}
+                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', opacity: isUploading ? 0.7 : 1 }}
+                          />
+                          {isUploading && (
+                            <div style={{ 
+                              position: 'absolute', 
+                              top: 0, 
+                              left: 0, 
+                              right: 0, 
+                              bottom: 0, 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center', 
+                              backgroundColor: 'rgba(255, 255, 255, 0.8)' 
+                            }}>
+                              <span className="spinner-border text-primary"></span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-muted">
+                          <div style={{ fontSize: '2rem' }}>🃏</div>
+                          <small>No image</small>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                  
+                  <div className="d-flex gap-2 justify-content-center">
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-secondary"
+                      onClick={() => document.getElementById('card-edit-upload')?.click()}
+                      disabled={uploadingDeckImage}
+                    >
+                      📁 Upload File
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-secondary"
+                      onClick={() => {
+                        setCurrentCardForCamera(editingCard)
+                        setShowCameraModal(true)
+                      }}
+                      disabled={uploadingDeckImage}
+                    >
+                      📷 Camera
+                    </button>
+                  </div>
+                  
+                  <input 
+                    id="card-edit-upload"
+                    type="file" 
+                    accept="image/*" 
+                    style={{ display: 'none' }} 
+                    onChange={async (e) => {
+                      const file = e.target.files && e.target.files[0]
+                      if (!file || !editingCard) return
+                      await uploadCardImageEdit(editingCard, file)
+                      e.target.value = ''
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => {
+                    setShowCardEditModal(false)
+                    setEditingCard(null)
+                    // Clear any stuck uploading states
+                    clearAllUploadingStates()
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
         {/* Deck card grid */}
         <div className="row justify-content-center">
           <div className="col-12 col-md-10">
+            {/* Deck Image Section */}
+            {selectedDeck && deckDetails && (
+              <div className="row mb-4">
+                <div className="col-12">
+                  <div className="card">
+                    <div className="card-body">
+                      <div className="row align-items-center">
+                        <div className="col-auto">
+                          <div style={{ 
+                            width: '120px', 
+                            height: '168px', 
+                            border: '2px dashed #ccc', 
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#f8f9fa',
+                            position: 'relative'
+                          }}>
+                            {deckDetails.image ? (
+                              <>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img 
+                                  src={normalizeImageUrl(deckDetails.image)} 
+                                  alt="Deck cover" 
+                                  style={{ 
+                                    maxWidth: '100%', 
+                                    maxHeight: '100%', 
+                                    objectFit: 'cover',
+                                    borderRadius: '6px',
+                                    opacity: (deckDetails.uploading || uploadingDeckImage) ? 0.7 : 1
+                                  }} 
+                                />
+                                {(deckDetails.uploading || uploadingDeckImage) && (
+                                  <div style={{ 
+                                    position: 'absolute', 
+                                    top: 0, 
+                                    left: 0, 
+                                    right: 0, 
+                                    bottom: 0, 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    borderRadius: '6px'
+                                  }}>
+                                    <span className="spinner-border text-primary"></span>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-muted text-center">
+                                <div style={{ fontSize: '2rem' }}>📚</div>
+                                <small>No image</small>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col">
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <h4 className="card-title mb-0">{deckDetails.deckName}</h4>
+                            {!isRiderWaiteDeck(deckDetails) && (
+                              <button 
+                                className="btn btn-outline-primary btn-sm" 
+                                onClick={() => setShowDeckEditModal(true)}
+                                title="Edit deck image"
+                              >
+                                ✏️ Edit Image
+                              </button>
+                            )}
+                          </div>
+                          {deckDetails.description && (
+                            <p className="card-text text-muted">{deckDetails.description}</p>
+                          )}
+                          <p className="card-text">
+                            <small className="text-muted">
+                              {deckDetails.cards?.length || 0} cards
+                            </small>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Cards Grid */}
             {loadingDeck ? (
               <div className="text-center">Loading deck...</div>
             ) : deckDetails && Array.isArray(deckDetails.cards) ? (
@@ -333,20 +951,20 @@ export default function DecksPage() {
                 {deckDetails.cards.map((card, i) => {
                   const hasImage = card && card.image
                   const inputId = `card-upload-${i}`
-                  const isUploading = uploadingCardIndex === i
-                  const isRenaming = renamingCardIndex === i
-                  const imgSrc = hasImage ? stripCdnToLocal(card.image) : null
+                  const isUploading = uploadingCardIndex === i || (card && card.uploading)
+                  const imgSrc = hasImage ? normalizeImageUrl(card.image) : null
                   return (
                     <div className="col-6 col-sm-4 col-md-3" key={(card && card.name) || i}>
                       <div className="card p-2 h-100">
-                        <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#f8f9fa' }}>
+                        <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#f8f9fa', position: 'relative' }}>
                           {hasImage ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={imgSrc}
-                              alt={card.name || 'card'}
-                              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover' }}
-                              onError={(e) => {
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={imgSrc}
+                                alt={card.name || 'card'}
+                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', opacity: isUploading ? 0.7 : 1 }}
+                                onError={(e) => {
                                 try {
                                   const el = e.currentTarget
                                   // avoid infinite loop
@@ -381,11 +999,54 @@ export default function DecksPage() {
                                 }
                               }}
                             />
+                            {/* Edit button overlay - only for non-Rider-Waite decks */}
+                            {!isRiderWaiteDeck(deckDetails) && (
+                              <button 
+                                type="button" 
+                                className="btn btn-outline-primary btn-sm" 
+                                style={{ 
+                                  position: 'absolute', 
+                                  top: '8px', 
+                                  right: '8px',
+                                  padding: '4px 8px',
+                                  fontSize: '12px',
+                                  backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                                }}
+                                onClick={() => openCardEditModal(card.name)}
+                                title="Edit card image"
+                              >
+                                ✏️
+                              </button>
+                            )}
+                            {isUploading && (
+                              <div style={{ 
+                                position: 'absolute', 
+                                top: 0, 
+                                left: 0, 
+                                right: 0, 
+                                bottom: 0, 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                backgroundColor: 'rgba(255, 255, 255, 0.8)' 
+                              }}>
+                                <span className="spinner-border text-primary"></span>
+                              </div>
+                            )}
+                            </>
                           ) : (
                             <div style={{ textAlign: 'center', width: '100%' }}>
+                              <div className="d-flex flex-column gap-2">
                                 <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => document.getElementById(inputId)?.click()}>
-                                  {isUploading ? (<span className="spinner-border spinner-border-sm"></span>) : 'Upload'}
+                                  {isUploading ? (<span className="spinner-border spinner-border-sm"></span>) : 'Upload File'}
                                 </button>
+                                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => {
+                                  setCurrentCardForCamera(card.name || `card-${i}`)
+                                  setShowCameraModal(true)
+                                }} title="Take photo with camera">
+                                  📷 Camera
+                                </button>
+                              </div>
                               <input id={inputId} type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
                                 const file = e.target.files && e.target.files[0]
                                 if (!file) return
@@ -397,15 +1058,7 @@ export default function DecksPage() {
                           )}
                         </div>
                         <div className="mt-2 text-center small text-truncate" title={card && card.name}>
-                            <CardNameEditor
-                              card={card}
-                              onSave={async (newName) => {
-                                // if name didn't change do nothing
-                                if (!newName || newName.trim() === (card && card.name)) return
-                                await renameCard(card.name, newName.trim())
-                              }}
-                              saving={isRenaming}
-                            />
+                          <div className="text-truncate">{card && card.name}</div>
                         </div>
                       </div>
                     </div>
@@ -418,37 +1071,34 @@ export default function DecksPage() {
           </div>
         </div>
   {/* debug removed */}
+      
+      <CameraModal 
+        show={showCameraModal} 
+        onClose={() => {
+          setShowCameraModal(false)
+          setCurrentCardForCamera(null)
+        }} 
+        onCaptured={(dataUrl) => {
+          if (currentCardForCamera) {
+            // Check if we're in edit mode
+            if (showCardEditModal && editingCard === currentCardForCamera) {
+              handleCardCameraEdit(dataUrl)
+            } else {
+              // Regular card upload
+              handleCameraCapture(dataUrl)
+            }
+          } else {
+            // This is for deck image
+            handleDeckCameraCapture(dataUrl)
+          }
+        }}
+        setMessage={(msg) => {
+          if (msg.type === 'error') {
+            setToast({ message: msg.text, type: 'error' })
+            setTimeout(() => setToast({ message: '', type: 'info' }), 3000)
+          }
+        }}
+      />
     </AuthWrapper>
-  )
-}
-
-function CardNameEditor({ card, onSave, saving = false }) {
-  const [editing, setEditing] = useState(false)
-  const [value, setValue] = useState(card && card.name)
-
-  useEffect(() => { setValue(card && card.name) }, [card])
-
-  if (!editing) {
-    return (
-      <div>
-        <div className="text-truncate">{card && card.name}</div>
-        <div className="mt-1">
-          <button className="btn btn-link btn-sm p-0 me-2" onClick={() => setEditing(true)}>Edit</button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div>
-      <input className="form-control form-control-sm mb-1" value={value || ''} onChange={(e) => setValue(e.target.value)} />
-      <div className="d-flex justify-content-center gap-2">
-        <button className="btn btn-sm btn-primary" onClick={async () => { await onSave(value); setEditing(false) }} disabled={saving}>
-          {saving ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
-          Save
-        </button>
-        <button className="btn btn-sm btn-secondary" onClick={() => { setValue(card && card.name); setEditing(false) }} disabled={saving}>Cancel</button>
-      </div>
-    </div>
   )
 }

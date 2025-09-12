@@ -110,15 +110,33 @@ export default function SettingsPage() {
           console.warn('Failed to load querents', err)
         }
   })();
-  // load decks for this user (read-only list)
+  // load decks for this user (only user-owned decks)
   ;(async () => {
           try {
             const res = await apiFetch('/api/decks')
             if (!res.ok) return
             const data = await res.json()
             const list = Array.isArray(data) ? data : (data.decks || [])
-            setDecks(list)
-            if (list.length) setSelectedDeckId(list[0]._id)
+            
+            // Filter to only show decks owned by the current user
+            const userId = user && (user._id || user.id) ? String(user._id || user.id) : null
+            const userOwnedDecks = list.filter(deck => {
+              // Explicitly exclude Rider-Waite Tarot deck
+              if (deck.deckName === 'Rider-Waite Tarot Deck') {
+                return false
+              }
+              
+              // If deck has an owner field, check if it matches current user
+              if (deck.owner) {
+                return String(deck.owner) === userId
+              }
+              
+              // Exclude system decks (owner: null) and other decks without owner
+              return false
+            })
+            
+            setDecks(userOwnedDecks)
+            if (userOwnedDecks.length) setSelectedDeckId(userOwnedDecks[0]._id)
           } catch (err) {
             console.warn('Failed to load decks', err)
           }
@@ -616,16 +634,22 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="mb-3">
-                <h5>Delete Deck</h5>
+                <h5>Delete My Decks</h5>
+                <p className="text-muted small">Only custom decks you created can be deleted. System decks like Rider-Waite cannot be deleted.</p>
                 <div className="d-flex gap-2 align-items-center">
                   <select className="form-select" style={{ maxWidth: 300 }} value={selectedDeckId} onChange={(e) => setSelectedDeckId(e.target.value)}>
-                    <option value="">Select deck...</option>
+                    <option value="">Select your deck...</option>
                     {decks.map(d => (
                       <option key={d._id} value={d._id}>{d.deckName}</option>
                     ))}
                   </select>
                   <button className="btn btn-outline-danger" disabled={!selectedDeckId} onClick={() => { setShowDeleteDeckModal(true); setDeleteDeckVerifyName('') }}>Delete Deck</button>
                 </div>
+                {decks.length === 0 && (
+                  <div className="text-muted mt-2">
+                    <em>You don't have any custom decks to delete.</em>
+                  </div>
+                )}
               </div>
               <div className="mb-3">
                 <h5>Delete Custom Spread</h5>

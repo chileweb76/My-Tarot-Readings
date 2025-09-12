@@ -2,7 +2,6 @@ const express = require('express')
 const jwt = require('jsonwebtoken')
 const passport = require('passport')
 const User = require('../models/User')
-const createDefaultDeckForUser = require('../utils/createDefaultDeckForUser')
 const router = express.Router()
 const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
@@ -158,13 +157,6 @@ router.post('/register', async (req, res) => {
       }
     }
 
-    // Create default deck for the new user (best-effort, non-blocking)
-    try {
-      createDefaultDeckForUser(user._id).catch(e => console.warn('createDefaultDeckForUser failed (non-blocking):', e))
-    } catch (e) {
-      console.warn('createDefaultDeckForUser call error:', e)
-    }
-
     // Do NOT issue JWT until email is verified
     res.status(201).json({
       message: 'User registered successfully. Please verify your email to activate your account.',
@@ -193,13 +185,6 @@ router.get('/verify', async (req, res) => {
     user.verificationToken = null
     user.verificationExpires = null
     await user.save()
-
-    // Create default Rider-Waite deck for the new user (best-effort)
-    try {
-      await createDefaultDeckForUser(user._id)
-    } catch (e) {
-      console.warn('Failed to create default deck for new user', user._id, e)
-    }
 
     // redirect to client success page
     return res.redirect(`${process.env.CLIENT_URL}/auth/success?verified=true`)
