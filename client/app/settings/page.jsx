@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import ConfirmModal from '../../components/ConfirmModal'
+import { notify } from '../../lib/toast'
 import { apiFetch } from '../../lib/api'
 
 export default function SettingsPage() {
@@ -40,7 +41,7 @@ export default function SettingsPage() {
   const [picturePreview, setPicturePreview] = useState(null)
   const [previewLoaded, setPreviewLoaded] = useState(true)
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', verifyPassword: '' })
-  const [message, setMessage] = useState(null)
+  // legacy per-page message state removed; use notify() for toasts
   const [loading, setLoading] = useState(false)
   const [linking, setLinking] = useState(false)
   const [querents, setQuerents] = useState([])
@@ -160,7 +161,7 @@ export default function SettingsPage() {
   }, [user])
 
   const handleLinkGoogle = () => {
-    setMessage(null)
+  // legacy message cleared
     setLinking(true)
     const oauthUrl = `${API_URL}/auth/google`
     const width = 600
@@ -169,7 +170,7 @@ export default function SettingsPage() {
     const top = window.screenY + (window.innerHeight - height) / 2
     const popup = window.open(oauthUrl, 'google_oauth', `width=${width},height=${height},left=${left},top=${top}`)
     if (!popup) {
-      setMessage({ type: 'error', text: 'Failed to open popup. Please allow popups and try again.' })
+      notify({ type: 'error', text: 'Failed to open popup. Please allow popups and try again.' })
       setLinking(false)
       return
     }
@@ -182,7 +183,7 @@ export default function SettingsPage() {
         if (!popup || popup.closed) {
           clearInterval(pollInterval)
           setLinking(false)
-          setMessage({ type: 'error', text: 'Popup closed before linking completed.' })
+          notify({ type: 'error', text: 'Popup closed before linking completed.' })
           return
         }
 
@@ -198,17 +199,17 @@ export default function SettingsPage() {
             localStorage.setItem('token', token)
             try {
               const res = await apiFetch('/auth/me')
-              if (res.ok) {
+                if (res.ok) {
                 const data = await res.json()
                 localStorage.setItem('user', JSON.stringify(data.user))
                 setUser(data.user)
                 try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: data.user })) } catch (e) {}
-                setMessage({ type: 'success', text: 'Google account linked.' })
+                notify({ type: 'success', text: 'Google account linked.' })
               } else {
-                setMessage({ type: 'error', text: 'Linked but failed to fetch user data.' })
+                notify({ type: 'error', text: 'Linked but failed to fetch user data.' })
               }
             } catch (err) {
-              setMessage({ type: 'error', text: 'Error fetching user after link.' })
+              notify({ type: 'error', text: 'Error fetching user after link.' })
             }
 
             popup.close()
@@ -224,9 +225,9 @@ export default function SettingsPage() {
       // timeout after 2 minutes
       if (Date.now() - start > 2 * 60 * 1000) {
         try { if (popup && !popup.closed) popup.close() } catch (e) {}
-        clearInterval(pollInterval)
-        setLinking(false)
-        setMessage({ type: 'error', text: 'Linking timed out. Please try again.' })
+  clearInterval(pollInterval)
+  setLinking(false)
+  notify({ type: 'error', text: 'Linking timed out. Please try again.' })
       }
     }, 500)
   }
@@ -250,7 +251,7 @@ export default function SettingsPage() {
       }).catch((err) => {
         console.error('Failed to fetch /api/auth/me:', err)
         // show a simple message but don't block the UI
-        setMessage({ type: 'error', text: 'Failed to refresh session. Please log in again.' })
+        notify({ type: 'error', text: 'Failed to refresh session. Please log in again.' })
       })
     return () => { mounted = false }
   }, [])
@@ -287,7 +288,7 @@ export default function SettingsPage() {
   }
 
   const handleMarkForDeletion = async () => {
-    setMessage(null)
+  // legacy message cleared
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
@@ -327,9 +328,9 @@ export default function SettingsPage() {
         console.error('Error refreshing user after delete-request:', err)
       }
 
-      setMessage({ type: 'success', text: data.message || 'Account marked for deletion' })
+  notify({ type: 'success', text: data.message || 'Account marked for deletion' })
     } catch (err) {
-      setMessage({ type: 'error', text: err.message })
+      notify({ type: 'error', text: err.message })
     } finally {
       setLoading(false)
     }
@@ -349,7 +350,7 @@ export default function SettingsPage() {
   }
 
   const handleUploadPicture = async () => {
-    setMessage(null)
+  // legacy message cleared
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
@@ -379,16 +380,16 @@ export default function SettingsPage() {
       setUser(updatedUser)
   // notify other components (Header) in the same tab
   try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser })) } catch (e) {}
-      setMessage({ type: 'success', text: 'Profile picture updated' })
+  notify({ type: 'success', text: 'Profile picture updated' })
     } catch (err) {
-      setMessage({ type: 'error', text: err.message })
+      notify({ type: 'error', text: err.message })
     } finally {
       setLoading(false)
     }
   }
 
   const handleRemovePicture = async () => {
-    setMessage(null)
+  // legacy message cleared
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
@@ -410,9 +411,9 @@ export default function SettingsPage() {
         // eslint-disable-next-line no-console
         console.warn('setPicturePreview is not a function in handleRemovePicture', setPicturePreview)
       }
-      setMessage({ type: 'success', text: data.message || 'Profile picture removed' })
+  notify({ type: 'success', text: data.message || 'Profile picture removed' })
     } catch (err) {
-      setMessage({ type: 'error', text: err.message })
+      notify({ type: 'error', text: err.message })
     } finally {
       setLoading(false)
     }
@@ -421,9 +422,9 @@ export default function SettingsPage() {
 
   const handleChangeUsername = async (e) => {
     e.preventDefault()
-    setMessage(null)
+  // legacy message cleared
     if (!usernameForm.username || usernameForm.username.length < 2) {
-      setMessage({ type: 'error', text: 'Username must be at least 2 characters' })
+  notify({ type: 'error', text: 'Username must be at least 2 characters' })
       return
     }
     const token = localStorage.getItem('token')
@@ -441,9 +442,9 @@ export default function SettingsPage() {
       setUser(updatedUser)
   // notify other components (Header) in the same tab
   try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser })) } catch (e) {}
-      setMessage({ type: 'success', text: 'Username updated' })
+  notify({ type: 'success', text: 'Username updated' })
     } catch (err) {
-      setMessage({ type: 'error', text: err.message })
+      notify({ type: 'error', text: err.message })
     } finally {
       setLoading(false)
     }
@@ -451,17 +452,17 @@ export default function SettingsPage() {
 
   const handleChangePassword = async (e) => {
     e.preventDefault()
-    setMessage(null)
+  // legacy message cleared
     if (!passwordForm.currentPassword) {
-      setMessage({ type: 'error', text: 'Current password is required' })
+  notify({ type: 'error', text: 'Current password is required' })
       return
     }
     if (!passwordForm.newPassword || passwordForm.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'New password must be at least 6 characters' })
+  notify({ type: 'error', text: 'New password must be at least 6 characters' })
       return
     }
     if (passwordForm.newPassword !== passwordForm.verifyPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match' })
+  notify({ type: 'error', text: 'New passwords do not match' })
       return
     }
     const token = localStorage.getItem('token')
@@ -475,9 +476,9 @@ export default function SettingsPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed')
       setPasswordForm({ currentPassword: '', newPassword: '', verifyPassword: '' })
-      setMessage({ type: 'success', text: 'Password updated' })
+  notify({ type: 'success', text: 'Password updated' })
     } catch (err) {
-      setMessage({ type: 'error', text: err.message })
+      notify({ type: 'error', text: err.message })
     } finally {
       setLoading(false)
     }
@@ -485,7 +486,7 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     setLoading(true)
-    setMessage(null)
+  // legacy message cleared
     const token = localStorage.getItem('token')
     try {
   const res = await apiFetch('/auth/delete', {
@@ -501,7 +502,7 @@ export default function SettingsPage() {
       localStorage.removeItem('user')
       window.location.href = '/auth'
     } catch (err) {
-      setMessage({ type: 'error', text: err.message })
+      notify({ type: 'error', text: err.message })
     } finally {
       setLoading(false)
       setShowDeleteModal(false)
@@ -739,7 +740,7 @@ export default function SettingsPage() {
                   confirmText={loadingDeleteQuerent ? 'Deleting...' : 'Delete querent'}
               onConfirm={async () => {
                 setLoadingDeleteQuerent(true)
-                setMessage(null)
+                // legacy message cleared
                 try {
                   const token = localStorage.getItem('token')
                   if (!token) throw new Error('Not authenticated')
@@ -756,9 +757,9 @@ export default function SettingsPage() {
                   const updated = querents.filter(q => q._id !== selectedQuerentId)
                   setQuerents(updated)
                   setSelectedQuerentId(updated.length ? updated[0]._id : '')
-                  setMessage({ type: 'success', text: data.message || 'Querent deleted' })
+                  notify({ type: 'success', text: data.message || 'Querent deleted' })
                 } catch (err) {
-                  setMessage({ type: 'error', text: err.message })
+                  notify({ type: 'error', text: err.message })
                 } finally {
                   setLoadingDeleteQuerent(false)
                   setShowDeleteQuerentModal(false)
@@ -788,7 +789,7 @@ export default function SettingsPage() {
               confirmText={loadingDeleteDeck ? 'Deleting...' : 'Delete deck'}
               onConfirm={async () => {
                 setLoadingDeleteDeck(true)
-                setMessage(null)
+                // legacy message cleared
                 try {
                   const token = localStorage.getItem('token')
                   if (!token) throw new Error('Not authenticated')
@@ -803,9 +804,9 @@ export default function SettingsPage() {
                   const updated = decks.filter(d => d._id !== selectedDeckId)
                   setDecks(updated)
                   setSelectedDeckId(updated.length ? updated[0]._id : '')
-                  setMessage({ type: 'success', text: data.message || 'Deck deleted' })
+                  notify({ type: 'success', text: data.message || 'Deck deleted' })
                 } catch (err) {
-                  setMessage({ type: 'error', text: err.message })
+                  notify({ type: 'error', text: err.message })
                 } finally {
                   setLoadingDeleteDeck(false)
                   setShowDeleteDeckModal(false)
@@ -835,7 +836,7 @@ export default function SettingsPage() {
               confirmText={loadingDeleteSpread ? 'Deleting...' : 'Delete spread'}
               onConfirm={async () => {
                 setLoadingDeleteSpread(true)
-                setMessage(null)
+                // legacy message cleared
                 try {
                   const token = localStorage.getItem('token')
                   if (!token) throw new Error('Not authenticated')
@@ -848,9 +849,9 @@ export default function SettingsPage() {
                   const updated = spreads.filter(s => s._id !== selectedSpreadId)
                   setSpreads(updated)
                   setSelectedSpreadId(updated.length ? updated[0]._id : '')
-                  setMessage({ type: 'success', text: data.message || 'Spread deleted' })
+                  notify({ type: 'success', text: data.message || 'Spread deleted' })
                 } catch (err) {
-                  setMessage({ type: 'error', text: err.message })
+                  notify({ type: 'error', text: err.message })
                 } finally {
                   setLoadingDeleteSpread(false)
                   setShowDeleteSpreadModal(false)

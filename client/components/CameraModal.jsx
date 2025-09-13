@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useRef } from 'react'
+import { notify } from '../lib/toast'
 
-export default function CameraModal({ show, onClose, onCaptured, setMessage }) {
+export default function CameraModal({ show, onClose, onCaptured }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
 
@@ -19,13 +20,13 @@ export default function CameraModal({ show, onClose, onCaptured, setMessage }) {
         if (videoRef.current) videoRef.current.srcObject = s
       } catch (err) {
         console.warn('Camera start failed', err)
-        if (setMessage) setMessage({ type: 'error', text: 'Unable to access camera.' })
+  notify({ type: 'error', text: 'Unable to access camera.' })
         if (onClose) onClose()
       }
     }
     if (show) start()
     return () => { mounted = false; try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch (e) {} }
-  }, [show, onClose, setMessage])
+  }, [show, onClose])
 
   if (!show) return null
 
@@ -59,10 +60,10 @@ export default function CameraModal({ show, onClose, onCaptured, setMessage }) {
                 try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {}
                 if (onCaptured) onCaptured(dataUrl)
                 if (onClose) onClose()
-                if (setMessage) setMessage({ type: 'success', text: 'Image captured (preview only).' })
+                notify({ type: 'success', text: 'Image captured (preview only).' })
               } catch (err) {
                 console.error('Capture failed', err)
-                if (setMessage) setMessage({ type: 'error', text: 'Failed to capture image.' })
+                notify({ type: 'error', text: 'Failed to capture image.' })
               }
             }}>Capture</button>
           </div>

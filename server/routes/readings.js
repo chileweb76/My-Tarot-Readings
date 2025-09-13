@@ -1,6 +1,26 @@
 const express = require('express')
 const router = express.Router()
 const Reading = require('../models/Reading')
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
+const passport = require('passport')
+
+// Multer setup for reading image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dest = path.join(__dirname, '..', 'uploads', 'readings')
+    fs.mkdirSync(dest, { recursive: true })
+    cb(null, dest)
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg'
+    const safe = Date.now() + '-' + Math.random().toString(36).slice(2,8)
+    cb(null, `${safe}${ext}`)
+  }
+})
+
+const upload = multer({ storage, limits: { fileSize: 6 * 1024 * 1024 } })
 
 // Sample tarot cards data
 const tarotCards = [
@@ -119,7 +139,7 @@ router.get('/user', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { question, interpretation, dateTime } = req.body
+    const { question, interpretation, dateTime, drawnCards, image } = req.body
     const userId = req.user?.id || req.headers['x-user-id']
 
     if (!userId) {
@@ -136,14 +156,45 @@ router.put('/:id', async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to edit this reading' })
     }
 
-    // Update reading
+    // Update reading - merge drawnCards where possible instead of blind replace
+    const update = {
+      question: typeof question !== 'undefined' ? question : reading.question,
+      interpretation: typeof interpretation !== 'undefined' ? interpretation : reading.interpretation,
+      dateTime: dateTime ? new Date(dateTime) : reading.dateTime
+    }
+
+    // Merge drawnCards: prefer matching by title, fallback to index position
+    if (typeof drawnCards !== 'undefined' && Array.isArray(drawnCards)) {
+      const existing = Array.isArray(reading.drawnCards) ? reading.drawnCards.map(dc => ({
+        title: dc.title,
+        suit: dc.suit,
+        card: dc.card,
+        reversed: dc.reversed,
+        interpretation: dc.interpretation,
+        image: dc.image
+      })) : []
+
+      const merged = drawnCards.map((incoming, idx) => {
+        // find by title (case-insensitive)
+        const foundIdx = existing.findIndex(e => (e.title || '').toLowerCase() === (incoming.title || '').toLowerCase())
+        const base = foundIdx !== -1 ? existing[foundIdx] : (existing[idx] || {})
+        return {
+          title: incoming.title || base.title || '',
+          suit: typeof incoming.suit !== 'undefined' ? incoming.suit : base.suit || '',
+          card: typeof incoming.card !== 'undefined' ? incoming.card : base.card || '',
+          reversed: typeof incoming.reversed !== 'undefined' ? !!incoming.reversed : !!base.reversed,
+          interpretation: typeof incoming.interpretation !== 'undefined' ? incoming.interpretation : (base.interpretation || ''),
+          image: typeof incoming.image !== 'undefined' ? incoming.image : (base.image || null)
+        }
+      })
+      update.drawnCards = merged
+    }
+
+    if (typeof image !== 'undefined' && image) update.image = image
+
     const updatedReading = await Reading.findByIdAndUpdate(
       id,
-      {
-        question: question || reading.question,
-        interpretation: interpretation || reading.interpretation,
-        dateTime: dateTime ? new Date(dateTime) : reading.dateTime
-      },
+      update,
       { new: true }
     ).populate('querent', 'name')
      .populate('spread', 'spread')
@@ -219,7 +270,7 @@ router.post('/', async (req, res) => {
       question: question || '',
       deck: deck || null,
       dateTime: new Date(dateTime),
-      drawnCards: drawnCards || [],
+      drawnCards: Array.isArray(drawnCards) ? drawnCards : (drawnCards ? [drawnCards] : []),
       interpretation: interpretation || '',
       userId: userId || null
     })
@@ -234,6 +285,30 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error saving reading:', error)
     res.status(500).json({ error: 'Failed to save reading', details: error.message })
+  }
+})
+
+// Upload a reading image (auth optional but recommended) -> returns web-accessible URL
+router.post('/:id/image', passport.authenticate('jwt', { session: false }), upload.single('image'), async (req, res) => {
+  try {
+    const { id } = req.params
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
+    const reading = await Reading.findById(id)
+    if (!reading) return res.status(404).json({ error: 'Reading not found' })
+
+    // Ensure ownership if reading has userId
+    const userId = req.user && (req.user.id || req.user._id)
+    if (reading.userId && reading.userId.toString() !== String(userId)) {
+      return res.status(403).json({ error: 'Not authorized to upload image for this reading' })
+    }
+
+    const webPath = `${req.protocol}://${req.get('host')}/uploads/readings/${req.file.filename}`
+    reading.image = webPath
+    await reading.save()
+    res.json({ success: true, image: webPath })
+  } catch (err) {
+    console.error('Reading image upload error', err)
+    res.status(500).json({ error: 'Upload failed' })
   }
 })
 

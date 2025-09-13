@@ -1,6 +1,7 @@
 // Lightweight fetch wrapper that retries once using refresh token when receiving 401
 export async function apiFetch(url, options = {}) {
-  const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
+  // Default to the server's default port (5000). Override with NEXT_PUBLIC_API_URL in env.
+  const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
   const apiBase = raw.replace(/\/$|\/api$/i, '')
 
   // Normalize relative paths: if the caller passes "/auth/..." or "/querents"
@@ -17,6 +18,16 @@ export async function apiFetch(url, options = {}) {
   }
 
   const full = url.startsWith('http') ? url : `${apiBase}${path}`
+
+  // Helpful debug output when developing: show how the final URL is built.
+  try {
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.debug('[apiFetch] apiBase=', apiBase, 'path=', path, 'full=', full)
+    }
+  } catch (e) {
+    // ignore
+  }
 
   const token = localStorage.getItem('token')
   const headers = new Headers(options.headers || {})

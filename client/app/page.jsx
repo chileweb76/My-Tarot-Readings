@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react'
 import AuthWrapper from '../components/AuthWrapper'
 import { apiFetch } from '../lib/api'
+import { addListener } from '../lib/toast'
 import QuerentModal from '../components/QuerentModal'
 import SpreadSelect from '../components/SpreadSelect'
 import SpreadModal from '../components/SpreadModal'
 import CameraModal from '../components/CameraModal'
 import Card from '../components/Card'
+import Toasts from '../components/Toasts'
 
 export default function HomePage() {
   const [user, setUser] = useState(null)
@@ -20,9 +22,102 @@ export default function HomePage() {
   const [savingQuerent, setSavingQuerent] = useState(false)
   const [spreadImage, setSpreadImage] = useState(null)
   const [spreadCards, setSpreadCards] = useState([])
+  const [spreadName, setSpreadName] = useState('')
+  const [cardStates, setCardStates] = useState([])
   const [uploadedImage, setUploadedImage] = useState(null)
+  const [uploadedFile, setUploadedFile] = useState(null)
+  const [savingReading, setSavingReading] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
-  const [message, setMessage] = useState(null)
+  const [exporting, setExporting] = useState(false)
+  const [autosaveEnabled, setAutosaveEnabled] = useState(false)
+  const [readingId, setReadingId] = useState(null)
+  const [manualOverride, setManualOverride] = useState(false)
+  // legacy message state removed; use notify() global helper instead
+  const [toasts, setToasts] = useState([])
+
+  // push a toast into the stack
+  const pushToast = (t) => {
+    const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`
+    setToasts(prev => [...prev, { id, ...t }])
+    return id
+  }
+
+  // Register global toast listener so other modules can call `notify()`
+  useEffect(() => {
+    const off = addListener((msg) => {
+      pushToast(msg)
+    })
+    return () => off()
+  }, [])
+
+  // Print reading: open a print window (same content as export fallback)
+  const handlePrintReading = () => {
+    const exportHtml = `
+      <html>
+        <head>
+          <title>Tarot Reading - ${new Date(readingDateTime).toLocaleDateString()}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <style>
+            body { font-family: Arial, Helvetica, sans-serif; color: #111; padding: 20px; }
+            h1 { text-align: center; color: #4a154b; }
+            .meta { margin-bottom: 12px; }
+            .section { margin-bottom: 18px; }
+            .card-item { margin-bottom: 8px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+            .card-title { font-weight: 600; }
+            .footer-note { margin-top: 28px; color: #555; font-size: 0.9rem; }
+            @media print { body { margin: 0; } }
+          </style>
+        </head>
+        <body>
+          <h1>Tarot Reading</h1>
+          <div class="meta">
+            <div><strong>Reading by:</strong> ${user?.username || 'Guest'}</div>
+            <div><strong>Date:</strong> ${new Date(readingDateTime).toLocaleString()}</div>
+            <div><strong>Querent:</strong> ${selectedQuerent === 'self' ? 'Self' : (querents.find(q => q._id === selectedQuerent)?.name || 'Unknown')}</div>
+            <div><strong>Spread:</strong> ${spreadName || selectedSpread || 'No spread selected'}</div>
+            <div><strong>Deck:</strong> ${decks.find(d => d._id === selectedDeck)?.deckName || 'Unknown deck'}</div>
+          </div>
+
+          <div class="section">
+            <h3>Question</h3>
+            <div>${question || 'No question specified'}</div>
+          </div>
+
+          <div class="section">
+            <h3>Cards Drawn</h3>
+            ${ (cardStates && cardStates.length ? cardStates : spreadCards.map(cardName => ({ title: typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || '') }))).map(cs => `
+              <div class="card-item">
+                <div class="card-title">${cs.title || ''}${cs.selectedCard ? (cs.selectedSuit && cs.selectedSuit.toLowerCase() !== 'major arcana' ? ` - ${cs.selectedCard} of ${cs.selectedSuit}` : ` - ${cs.selectedCard}`) : ''}${cs.reversed ? ' (reversed)' : ''}</div>
+                ${cs.interpretation ? `<div class="card-interpretation">${cs.interpretation}</div>` : ''}
+                ${cs.image ? `<div style="margin-top:8px"><img src="${cs.image}" style="max-width:120px;max-height:160px"/></div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="section">
+            <h3>Interpretation</h3>
+            <div>${interpretation || 'No overall interpretation provided'}</div>
+          </div>
+
+          <div class="footer-note">Exported: ${new Date().toLocaleString()}</div>
+        </body>
+      </html>
+    `
+
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      pushToast({ type: 'error', text: 'Unable to open print window. Please allow popups for this site.' })
+      return
+    }
+    printWindow.document.write(exportHtml)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => { try { printWindow.print(); printWindow.onafterprint = () => { try { printWindow.close() } catch (e) {} } } catch (err) { console.error('Print failed', err); pushToast({ type: 'error', text: 'Print failed.' }) } }, 300)
+  }
+
+  const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id))
+
+  // legacy forwarding removed; other modules should call `notify()` directly
   const [showCameraModal, setShowCameraModal] = useState(false)
   const [question, setQuestion] = useState('')
   const [decks, setDecks] = useState([])
@@ -30,65 +125,105 @@ export default function HomePage() {
   const [interpretation, setInterpretation] = useState('')
   // reading date/time (initialized to current local date/time, editable)
   const [readingDateTime, setReadingDateTime] = useState(() => {
-    const d = new Date()
-    const pad = (n) => String(n).padStart(2, '0')
-    const yyyy = d.getFullYear()
-    const mm = pad(d.getMonth() + 1)
-    const dd = pad(d.getDate())
-    const hh = pad(d.getHours())
-    const min = pad(d.getMinutes())
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}`
+    // default value suitable for <input type="datetime-local"> (local timezone)
+    const dt = new Date()
+    const offsetMs = dt.getTimezoneOffset() * 60000
+    const local = new Date(dt.getTime() - offsetMs)
+    return local.toISOString().slice(0,16)
   })
-  const [manualOverride, setManualOverride] = useState(false)
-  const [savingReading, setSavingReading] = useState(false)
 
-  // Auto-update the datetime every second while the user hasn't manually changed it
-  useEffect(() => {
-    if (manualOverride) return
-    const tick = () => {
-      const d = new Date()
-      const pad = (n) => String(n).padStart(2, '0')
-      const yyyy = d.getFullYear()
-      const mm = pad(d.getMonth() + 1)
-      const dd = pad(d.getDate())
-      const hh = pad(d.getHours())
-      const min = pad(d.getMinutes())
-      setReadingDateTime(`${yyyy}-${mm}-${dd}T${hh}:${min}`)
+  // Export reading: try server-side PDF export first, fall back to print window
+  const handleExportReading = async () => {
+    const readingPayload = {
+      by: user?.username || 'Guest',
+      date: new Date(readingDateTime).toLocaleString(),
+      querent: selectedQuerent === 'self' ? 'Self' : (querents.find(q => q._id === selectedQuerent)?.name || 'Unknown'),
+      spread: spreadName || selectedSpread || 'No spread selected',
+      deck: decks.find(d => d._id === selectedDeck)?.deckName || 'Unknown deck',
+      question: question || '',
+      cards: (cardStates && cardStates.length ? cardStates : spreadCards.map(cardName => ({ title: typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || '') }))).map(cs => ({
+        title: cs.title || '',
+        suit: cs.selectedSuit || '',
+        card: cs.selectedCard || (cs.title || ''),
+        reversed: !!cs.reversed,
+        interpretation: cs.interpretation || '',
+        image: cs.image || null
+      })),
+      interpretation: interpretation || '',
+      exportedAt: new Date().toLocaleString()
     }
-    // Keep in sync; using 1s interval ensures minutes update promptly
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [manualOverride])
 
-  // Print function
-  const handlePrintReading = () => {
-    const printContent = `
+  setExporting(true)
+    try {
+      const rawApi = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const apiBase = rawApi.replace(/\/$|\/api$/i, '')
+      const debugUrl = `${apiBase}/api/export/pdf`
+      console.debug('Export will POST to', debugUrl)
+      const res = await apiFetch('/export/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reading: readingPayload, fileName: `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf` })
+      })
+
+      if (!res.ok) {
+        let bodyText = ''
+        try { bodyText = await res.text() } catch (e) { bodyText = '' }
+        const snippet = bodyText ? (bodyText.length > 200 ? bodyText.slice(0,200) + '...' : bodyText) : ''
+        const msg = `Server export failed: ${res.status} ${res.statusText} ${res.url ? '(' + res.url + ')' : ''} ${snippet}`
+        console.error(msg)
+        pushToast({ type: 'error', text: `Export failed: ${res.status} ${res.statusText}` })
+        throw new Error('Server export failed')
+      }
+
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+  pushToast({ type: 'success', text: 'Exported PDF downloaded.' })
+      setExporting(false)
+      return
+    } catch (err) {
+      // fallback to client-side print if server export fails
+      console.warn('Server export failed, falling back to print:', err)
+  pushToast({ type: 'error', text: 'Server export failed, opening print dialog as fallback.' })
+      setExporting(false)
+    }
+
+    // Fallback: open a print window (same content as before)
+    const exportHtml = `
       <html>
         <head>
           <title>Tarot Reading - ${new Date(readingDateTime).toLocaleDateString()}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .section { margin-bottom: 20px; }
-            .section h3 { color: #6f42c1; margin-bottom: 10px; }
-            .card-item { margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; }
-            .card-title { font-weight: bold; color: #333; }
-            .reversed { color: #dc3545; }
+            body { font-family: Arial, Helvetica, sans-serif; color: #111; padding: 20px; }
+            h1 { text-align: center; color: #4a154b; }
+            .meta { margin-bottom: 12px; }
+            .section { margin-bottom: 18px; }
+            .card-item { margin-bottom: 8px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+            .card-title { font-weight: 600; }
+            .footer-note { margin-top: 28px; color: #555; font-size: 0.9rem; }
             @media print { body { margin: 0; } }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>Tarot Reading</h1>
-            <p>Reading by: ${user?.username || 'Guest'}</p>
-            <p>Date: ${new Date(readingDateTime).toLocaleString()}</p>
+          <h1>Tarot Reading</h1>
+          <div class="meta">
+            <div><strong>Reading by:</strong> ${user?.username || 'Guest'}</div>
+            <div><strong>Date:</strong> ${new Date(readingDateTime).toLocaleString()}</div>
+            <div><strong>Querent:</strong> ${selectedQuerent === 'self' ? 'Self' : (querents.find(q => q._id === selectedQuerent)?.name || 'Unknown')}</div>
+            <div><strong>Spread:</strong> ${selectedSpread || 'No spread selected'}</div>
+            <div><strong>Deck:</strong> ${decks.find(d => d._id === selectedDeck)?.deckName || 'Unknown deck'}</div>
           </div>
-          
+
           <div class="section">
-            <h3>Reading Details</h3>
-            <p><strong>Querent:</strong> ${selectedQuerent === 'self' ? 'Self' : (querents.find(q => q._id === selectedQuerent)?.name || 'Unknown')}</p>
-            <p><strong>Question:</strong> ${question || 'No question specified'}</p>
-            <p><strong>Spread:</strong> ${selectedSpread || 'No spread selected'}</p>
+            <h3>Question</h3>
+            <div>${question || 'No question specified'}</div>
           </div>
 
           <div class="section">
@@ -101,58 +236,42 @@ export default function HomePage() {
           </div>
 
           <div class="section">
-            <h3>Overall Interpretation</h3>
-            <p>${interpretation || 'No overall interpretation provided'}</p>
+            <h3>Interpretation</h3>
+            <div>${interpretation || 'No overall interpretation provided'}</div>
           </div>
+
+          <div class="footer-note">Exported: ${new Date().toLocaleString()}</div>
         </body>
       </html>
     `
-    
+
     const printWindow = window.open('', '_blank')
-    printWindow.document.write(printContent)
-    printWindow.document.close()
-    printWindow.print()
-  }
-
-  // Export as JSON
-  const handleExportReading = () => {
-    const exportData = {
-      readingBy: user?.username || 'Guest',
-      dateTime: readingDateTime,
-      querent: selectedQuerent === 'self' ? 'Self' : (querents.find(q => q._id === selectedQuerent)?.name || 'Unknown'),
-      question: question,
-      spread: selectedSpread,
-      deck: decks.find(d => d._id === selectedDeck)?.deckName || 'Unknown deck',
-      drawnCards: spreadCards.map(cardName => ({
-        title: typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || ''),
-        suit: '',
-        card: '',
-        reversed: false,
-        interpretation: ''
-      })),
-      interpretation: interpretation,
-      exportedAt: new Date().toISOString()
+    if (!printWindow) {
+      pushToast({ type: 'error', text: 'Unable to open print window. Please allow popups for this site.' })
+      return
     }
-
-    const dataStr = JSON.stringify(exportData, null, 2)
-    const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    const url = URL.createObjectURL(dataBlob)
-    
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.json`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    printWindow.document.write(exportHtml)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => { try { printWindow.print(); printWindow.onafterprint = () => { try { printWindow.close() } catch (e) {} } } catch (err) { console.error('Print failed', err) } }, 300)
+    setExporting(false)
   }
 
   // Share reading (Web Share API with fallback)
   const handleShareReading = async () => {
+    const cardsText = (cardStates && cardStates.length ? cardStates : spreadCards.map(cardName => ({ title: typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || '') }))).map(cs => {
+      const name = cs.title || ''
+      const details = cs.selectedCard ? (cs.selectedSuit && cs.selectedSuit.toLowerCase() !== 'major arcana' ? `${cs.selectedCard} of ${cs.selectedSuit}` : cs.selectedCard) : ''
+      const rev = cs.reversed ? ' (reversed)' : ''
+      const interp = cs.interpretation ? ` — ${cs.interpretation}` : ''
+      return `${name}${details ? ` — ${details}` : ''}${rev}${interp}`
+    }).join('\n')
+
     const shareText = `🔮 Tarot Reading - ${new Date(readingDateTime).toLocaleDateString()}\n\n` +
       `Querent: ${selectedQuerent === 'self' ? 'Self' : (querents.find(q => q._id === selectedQuerent)?.name || 'Unknown')}\n` +
+      `Spread: ${spreadName || selectedSpread || 'No spread selected'}\n` +
       `Question: ${question || 'No question specified'}\n\n` +
-      `Cards: ${spreadCards.map(cardName => typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || '')).join(', ')}\n\n` +
+      `Cards:\n${cardsText}\n\n` +
       `Interpretation: ${interpretation || 'No interpretation provided'}`
 
     if (navigator.share) {
@@ -168,32 +287,40 @@ export default function HomePage() {
       // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(shareText)
-        setMessage({ type: 'success', text: 'Reading copied to clipboard!' })
+          pushToast({ type: 'success', text: 'Reading copied to clipboard!' })
       } catch (err) {
         console.error('Failed to copy to clipboard:', err)
-        setMessage({ type: 'error', text: 'Failed to copy reading to clipboard' })
+  pushToast({ type: 'error', text: 'Failed to copy reading to clipboard' })
       }
     }
   }
 
   // Save reading function
-  const handleSaveReading = async (e) => {
-    e.preventDefault()
-    setSavingReading(true)
-    
+  // Reusable save helper: create (POST) if no readingId, otherwise update (PUT)
+  const saveReading = async ({ explicit = false } = {}) => {
+    if (explicit) setSavingReading(true)
     try {
       const token = localStorage.getItem('token')
       if (!token) {
-        throw new Error('Please sign in to save readings')
+        if (explicit) throw new Error('Please sign in to save readings')
+        return
       }
 
-      // Simplify drawn cards data
-      const drawnCards = spreadCards.map((cardName, index) => ({
+      // Build drawn cards from cardStates (prefer explicit edits) or fallback to spreadCards
+      const drawnCards = (cardStates && cardStates.length ? cardStates : spreadCards.map((cardName) => ({
         title: typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || ''),
-        suit: '',
-        card: typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || ''),
+        selectedSuit: '',
+        selectedCard: typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || ''),
         reversed: false,
-        interpretation: ''
+        interpretation: '',
+        image: null
+      }))).map((cs) => ({
+        title: cs.title || '',
+        suit: cs.selectedSuit || cs.suit || '',
+        card: cs.selectedCard || cs.card || cs.title || '',
+        reversed: !!cs.reversed,
+        interpretation: cs.interpretation || '',
+        image: cs.image || null
       }))
 
       const readingData = {
@@ -203,34 +330,59 @@ export default function HomePage() {
         question: question,
         deck: selectedDeck,
         dateTime: readingDateTime,
-        drawnCards: drawnCards,
+        drawnCards,
         interpretation: interpretation,
         userId: user?._id
       }
 
-      const res = await apiFetch('/api/readings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(readingData)
+      // If we don't have an id yet, create a new reading
+      if (!readingId) {
+        const res = await apiFetch('/api/readings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(readingData)
+        })
+
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({}))
+          throw new Error(error.error || 'Failed to save reading')
+        }
+
+        const result = await res.json()
+        if (result && result.reading && result.reading._id) {
+          setReadingId(result.reading._id)
+        }
+        if (explicit) pushToast({ type: 'success', text: 'Reading saved successfully!' })
+        return result
+      }
+
+      // Otherwise update existing reading. Note: server PUT currently updates question, interpretation, dateTime.
+      const res = await apiFetch(`/api/readings/${readingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: question, interpretation: interpretation, dateTime: readingDateTime })
       })
 
       if (!res.ok) {
         const error = await res.json().catch(() => ({}))
-        throw new Error(error.error || 'Failed to save reading')
+        throw new Error(error.error || 'Failed to update reading')
       }
 
-      const result = await res.json()
-      setMessage({ type: 'success', text: 'Reading saved successfully!' })
-      console.log('Reading saved:', result.reading)
-      
-    } catch (error) {
-      console.error('Error saving reading:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to save reading' })
+      if (explicit) pushToast({ type: 'success', text: 'Reading updated.' })
+      return await res.json()
+    } catch (err) {
+      console.error('Error saving/updating reading:', err)
+      if (explicit) pushToast({ type: 'error', text: err.message || 'Failed to save reading' })
+      return null
     } finally {
-      setSavingReading(false)
+      if (explicit) setSavingReading(false)
     }
+  }
+
+  // Preserve previous API: form submit calls explicit save
+  const handleSaveReading = async (e) => {
+    e.preventDefault()
+    await saveReading({ explicit: true })
   }
 
   useEffect(() => {
@@ -243,6 +395,25 @@ export default function HomePage() {
     const ss = localStorage.getItem('selectedSpread')
     if (ss) setSelectedSpread(ss)
   }, [])
+
+  // Autosave effect: when enabled, debounce saves on relevant changes
+  useEffect(() => {
+    if (!autosaveEnabled) return
+    // don't autosave until user is signed in
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    // Build a small dependency fingerprint to detect changes that should trigger a save
+    const trigger = JSON.stringify({ cardStates, question, interpretation, uploadedImage, selectedSpread, readingDateTime })
+
+    const id = setTimeout(() => {
+      // perform a non-explicit save (no spinner/toast unless error)
+      saveReading({ explicit: false })
+    }, 1000)
+
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autosaveEnabled, cardStates, question, interpretation, uploadedImage, selectedSpread, readingDateTime])
 
   // fetch querents when user is available
   useEffect(() => {
@@ -305,7 +476,12 @@ export default function HomePage() {
         if (!mounted) return
         setSpreadImage(data.image || null)
         // spreads store card position names in `cards` (array)
-        setSpreadCards(Array.isArray(data.cards) ? data.cards : [])
+        const cards = Array.isArray(data.cards) ? data.cards : []
+        setSpreadCards(cards)
+        // set spread display name (ensure we show the name, not an id)
+        setSpreadName(data.spread || (isId ? '' : selectedSpread))
+        // initialize cardStates to match the cards array length
+        setCardStates(cards.map((c) => ({ title: typeof c === 'string' ? c : (c.name || c.title || ''), selectedSuit: '', selectedCard: '', reversed: false, interpretation: '', image: null })))
       } catch (err) {
         console.warn('Failed to load spread image', err)
         if (mounted) setSpreadImage(null)
@@ -316,15 +492,60 @@ export default function HomePage() {
   }, [selectedSpread])
 
   // camera handled by CameraModal component
+  // When camera returns a data URL, auto-upload it to the server and attach to reading
+  const handleCapturedImageUpload = async (dataUrl) => {
+    if (!dataUrl) return
+    setUploadedImage(dataUrl)
+    setUploadedFile(null)
+    try {
+      setUploadingImage(true)
+      const token = localStorage.getItem('token')
+      if (!token) {
+        pushToast({ type: 'error', text: 'Please sign in to attach images to readings.' })
+        return
+      }
+
+      if (!readingId) {
+        await saveReading({ explicit: false })
+      }
+
+      // Convert dataURL to Blob
+      const res = await fetch(dataUrl)
+      const blob = await res.blob()
+      const name = `camera-${Date.now()}.jpg`
+      const fileToUpload = new File([blob], name, { type: blob.type || 'image/jpeg' })
+
+      const form = new FormData()
+      form.append('image', fileToUpload)
+
+      const uploadRes = await apiFetch(`/readings/${readingId}/image`, {
+        method: 'POST',
+        body: form
+      })
+
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}))
+        throw new Error(err.error || 'Image upload failed')
+      }
+
+      const uploadResult = await uploadRes.json()
+      if (uploadResult && uploadResult.image) {
+        setUploadedImage(uploadResult.image)
+        setUploadedFile(null)
+        pushToast({ type: 'success', text: 'Camera image uploaded and attached to reading.' })
+      }
+    } catch (err) {
+      console.error('Camera upload failed', err)
+      pushToast({ type: 'error', text: err.message || 'Failed to upload camera image' })
+    } finally {
+      setUploadingImage(false)
+    }
+  }
 
   return (
     <AuthWrapper>
       <form id="reading" className="reading" onSubmit={handleSaveReading}>
-        {message && (
-          <div className={`alert ${message.type === 'error' ? 'alert-danger' : 'alert-success'}`} role="alert">
-            {message.text}
-          </div>
-        )}
+  <Toasts toasts={toasts} onRemove={removeToast} />
         <p>Reading by: {user?.username || 'Guest'}</p>
         <h2>Reading</h2>
 
@@ -418,20 +639,72 @@ export default function HomePage() {
                         if (!f) return
                         const url = URL.createObjectURL(f)
                         setUploadedImage(url)
-                        // optional: upload to server
-                        // await uploadImageToServer(f)
+                        setUploadedFile(f)
                       }} />
                     </label>
 
                     <button type="button" className="btn btn-outline-secondary mb-0" onClick={() => setShowCameraModal(true)}>Camera</button>
 
                     <button className="btn btn-tarot-primary" disabled={!uploadedImage || uploadingImage} onClick={async () => {
-                      // preview-only attach: mark image for later reading save; no server upload yet
+                      // Attach: upload image to server and persist permanent URL on reading
                       if (!uploadedImage) return
-                      setMessage({ type: 'success', text: 'Image attached to reading (preview only).' })
+                      try {
+                        setUploadingImage(true)
+                        // Ensure reading exists (create if needed)
+                        const token = localStorage.getItem('token')
+                        if (!token) {
+                          pushToast({ type: 'error', text: 'Please sign in to attach images to readings.' })
+                          return
+                        }
+
+                        if (!readingId) {
+                          // create reading quietly so we have an id to attach image to
+                          await saveReading({ explicit: false })
+                        }
+
+                        // Prepare file to upload
+                        let fileToUpload = uploadedFile
+                        // If no File object (camera dataURL), convert dataURL to Blob
+                        if (!fileToUpload && uploadedImage && uploadedImage.startsWith('data:')) {
+                          const res = await fetch(uploadedImage)
+                          const blob = await res.blob()
+                          const name = `camera-${Date.now()}.jpg`
+                          fileToUpload = new File([blob], name, { type: blob.type || 'image/jpeg' })
+                        }
+
+                        if (!fileToUpload) {
+                          pushToast({ type: 'error', text: 'No uploadable image found.' })
+                          return
+                        }
+
+                        const form = new FormData()
+                        form.append('image', fileToUpload)
+
+                        const uploadRes = await apiFetch(`/readings/${readingId}/image`, {
+                          method: 'POST',
+                          body: form
+                        })
+
+                        if (!uploadRes.ok) {
+                          const err = await uploadRes.json().catch(() => ({}))
+                          throw new Error(err.error || 'Image upload failed')
+                        }
+
+                        const uploadResult = await uploadRes.json()
+                        if (uploadResult && uploadResult.image) {
+                          setUploadedImage(uploadResult.image)
+                          setUploadedFile(null)
+                          pushToast({ type: 'success', text: 'Image uploaded and attached to reading.' })
+                        }
+                      } catch (err) {
+                        console.error('Attach/upload failed', err)
+                        pushToast({ type: 'error', text: err.message || 'Failed to upload image' })
+                      } finally {
+                        setUploadingImage(false)
+                      }
                     }}>Attach</button>
 
-                    <button className="btn btn-outline-danger" disabled={!uploadedImage} onClick={() => { setUploadedImage(null); setMessage(null) }}>Remove</button>
+                    <button className="btn btn-outline-danger" disabled={!uploadedImage} onClick={() => { setUploadedImage(null); /* legacy message cleared */ }}>Remove</button>
                   </div>
                 </div>
                 <div className="card-footer small text-muted">Reading image (upload or camera)</div>
@@ -473,6 +746,18 @@ export default function HomePage() {
                   title={typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || '')} 
                   deck={decks.find(d => d._id === selectedDeck)?.deckName || 'rider-waite'}
                   deckData={decks.find(d => d._id === selectedDeck)}
+                  initialSelectedSuit={cardStates[idx]?.selectedSuit}
+                  initialSelectedCard={cardStates[idx]?.selectedCard}
+                  initialReversed={cardStates[idx]?.reversed}
+                  initialInterpretation={cardStates[idx]?.interpretation}
+                  initialImage={cardStates[idx]?.image}
+                  onChange={(state) => {
+                    setCardStates(prev => {
+                      const copy = [...prev]
+                      copy[idx] = { ...copy[idx], ...state }
+                      return copy
+                    })
+                  }}
                 />
               </div>
             ))
@@ -510,47 +795,64 @@ export default function HomePage() {
 
       {/* Save Reading Button */}
       <div className="mt-4 d-flex justify-content-center">
-        <button 
-          type="submit" 
-          className="btn btn-tarot-primary btn-lg"
-          disabled={savingReading}
-        >
-          {savingReading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Saving Reading...
-            </>
-          ) : (
-            'Save Reading'
-          )}
-        </button>
+        <div className="d-flex align-items-center" style={{ gap: 12 }}>
+          <button 
+            type="submit" 
+            className="btn btn-tarot-primary btn-lg"
+            disabled={savingReading}
+          >
+            {savingReading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Saving Reading...
+              </>
+            ) : (
+              'Save Reading'
+            )}
+          </button>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8 }}>
+            <input type="checkbox" checked={autosaveEnabled} onChange={(e) => setAutosaveEnabled(e.target.checked)} />
+            <span style={{ fontSize: 12 }}>Autosave</span>
+          </label>
+        </div>
       </div>
 
       {/* Export/Share Actions */}
       <div className="mt-3 d-flex justify-content-center gap-2">
         <button 
           type="button" 
-          className="btn btn-outline-primary"
+          className="btn btn-solid btn-solid-primary"
           onClick={handlePrintReading}
+          disabled={exporting}
           title="Print reading"
         >
-          <i className="fas fa-print me-2"></i>Print
+          Print
         </button>
         <button 
           type="button" 
-          className="btn btn-outline-secondary"
+          className="btn btn-solid btn-solid-secondary"
           onClick={handleExportReading}
-          title="Export as JSON"
+          title="Export reading"
+          disabled={exporting}
         >
-          <i className="fas fa-download me-2"></i>Export
+          {exporting ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Exporting...
+            </>
+          ) : (
+            'Export'
+          )}
         </button>
         <button 
           type="button" 
-          className="btn btn-outline-success"
+          className="btn btn-solid btn-solid-success"
           onClick={handleShareReading}
+          disabled={exporting}
           title="Share reading"
         >
-          <i className="fas fa-share me-2"></i>Share
+          Share
         </button>
       </div>
       </form>
@@ -589,7 +891,7 @@ export default function HomePage() {
         }}
       />
 
-      <CameraModal show={showCameraModal} onClose={() => setShowCameraModal(false)} onCaptured={(dataUrl) => setUploadedImage(dataUrl)} setMessage={setMessage} />
+  <CameraModal show={showCameraModal} onClose={() => setShowCameraModal(false)} onCaptured={(dataUrl) => { setShowCameraModal(false); handleCapturedImageUpload(dataUrl) }} />
     </AuthWrapper>
   )
 }

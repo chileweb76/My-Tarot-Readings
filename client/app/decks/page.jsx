@@ -1092,12 +1092,7 @@ export default function DecksPage() {
             handleDeckCameraCapture(dataUrl)
           }
         }}
-        setMessage={(msg) => {
-          if (msg.type === 'error') {
-            setToast({ message: msg.text, type: 'error' })
-            setTimeout(() => setToast({ message: '', type: 'info' }), 3000)
-          }
-        }}
+        
       />
     </AuthWrapper>
   )

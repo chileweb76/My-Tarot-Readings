@@ -138,6 +138,8 @@ app.use('/api/health', require('./routes/health'))
 app.use('/api/decks', require('./routes/decks'))
 app.use('/api/spreads', require('./routes/spreads'))
 app.use('/api/card-image', require('./routes/card-image'))
+// Server-side PDF export endpoint
+app.use('/api/export', require('./routes/export-pdf'))
 
 // Backwards-compatible redirect: some emails may contain /auth/verify (no /api/)
 // Redirect those to the API verify endpoint so legacy links don't 404.

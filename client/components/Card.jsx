@@ -9,14 +9,21 @@ export default function Card({
   deck = 'rider-waite',
   getCardImageUrl = null,
   title = '',
-  deckData = null
+  deckData = null,
+  onChange = null,
+  // initial values for prefilling cards when editing saved readings
+  initialSelectedSuit = '',
+  initialSelectedCard = '',
+  initialReversed = false,
+  initialInterpretation = '',
+  initialImage = null
 }) {
-  const [currentImage, setCurrentImage] = useState(null)
+  const [currentImage, setCurrentImage] = useState(initialImage || null)
   const [loading, setLoading] = useState(false)
-  const [selectedSuit, setSelectedSuit] = useState('')
-  const [selectedCard, setSelectedCard] = useState('')
-  const [reversed, setReversed] = useState(false)
-  const [interpretation, setInterpretation] = useState('')
+  const [selectedSuit, setSelectedSuit] = useState(initialSelectedSuit || '')
+  const [selectedCard, setSelectedCard] = useState(initialSelectedCard || '')
+  const [reversed, setReversed] = useState(!!initialReversed)
+  const [interpretation, setInterpretation] = useState(initialInterpretation || '')
   // Get suits from deckData if available, otherwise use default
   const availableSuits = deckData?.cards ? 
     [...new Set(deckData.cards.map(card => {
@@ -70,6 +77,30 @@ export default function Card({
       setCurrentImage(null)
     }
   }, [selectedSuit, selectedCard, deck, title])
+
+  // Notify parent of current card state when relevant values change
+  const onChangeRef = React.useRef(onChange)
+  useEffect(() => { onChangeRef.current = onChange }, [onChange])
+
+  useEffect(() => {
+    try {
+      const fn = onChangeRef.current
+      if (typeof fn === 'function') {
+        fn({
+          title,
+          selectedSuit,
+          selectedCard,
+          reversed,
+          interpretation,
+          image: currentImage
+        })
+      }
+    } catch (e) {
+      // ignore
+    }
+    // Intentionally exclude onChange from deps to avoid infinite loops when parent
+    // provides a new function reference each render; we sync the ref above.
+  }, [title, selectedSuit, selectedCard, reversed, interpretation, currentImage])
 
   const fetchCardImageByTitle = async () => {
     setLoading(true)
@@ -275,100 +306,95 @@ export default function Card({
   }
 
   return (
-    <div className={`card ${className}`} style={style}>
+  <div className={`card card-with-image ${className}`} style={style}>
       <div className="card-body">
-        {/* Top section with title on left and image on right */}
-        <div className="row mb-3">
-          {/* Title - Top Left */}
-          <div className="col-4">
-            <h5 className="card-title mb-0">{title}</h5>
-          </div>
-          
-          {/* Center Column - Suit, Card, Reversed */}
-          <div className="col-4">
-            {/* Suit Selection */}
-            <div className="mb-2">
-              <label className="form-label small">Suit</label>
-              <select
-                className="form-select form-select-sm"
-                value={selectedSuit}
-                onChange={(e) => {
-                  setSelectedSuit(e.target.value)
-                  setSelectedCard('') // Reset card when suit changes
-                }}
-              >
-                <option value="">Select Suit</option>
-                {availableSuits.map(suit => (
-                  <option key={suit} value={suit}>{suit}</option>
-                ))}
-              </select>
+        {/* Top section: left = title + controls + interpretation, right = image */}
+        <div className="row mb-3 align-items-stretch">
+          <div className="col-lg-8 card-left">
+            <h5 className="card-title mb-3">{title}</h5>
+
+            <div className="row">
+              <div className="col-12 col-md-6 mb-2">
+                <label className="form-label small">Suit</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={selectedSuit}
+                  onChange={(e) => {
+                    setSelectedSuit(e.target.value)
+                    setSelectedCard('')
+                  }}
+                >
+                  <option value="">Select Suit</option>
+                  {availableSuits.map(suit => (
+                    <option key={suit} value={suit}>{suit}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-12 col-md-6 mb-2">
+                <label className="form-label small">Card</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={selectedCard}
+                  onChange={(e) => setSelectedCard(e.target.value)}
+                  disabled={!selectedSuit}
+                >
+                  <option value="">Select Card</option>
+                  {cardOptions.map(card => (
+                    <option key={card} value={card}>{card}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-auto align-self-center mb-2">
+                <div className="form-check d-inline-flex align-items-center">
+                  <input
+                    className="form-check-input reversed-checkbox-input"
+                    type="checkbox"
+                    id={`reversed-${title}`}
+                    checked={reversed}
+                    onChange={(e) => setReversed(e.target.checked)}
+                  />
+                  <label className="form-check-label small mb-0" htmlFor={`reversed-${title}`}>
+                    Reversed
+                  </label>
+                </div>
+              </div>
             </div>
 
-            {/* Card Selection */}
-            <div className="mb-2">
-              <label className="form-label small">Card</label>
-              <select
-                className="form-select form-select-sm"
-                value={selectedCard}
-                onChange={(e) => setSelectedCard(e.target.value)}
-                disabled={!selectedSuit}
-              >
-                <option value="">Select Card</option>
-                {cardOptions.map(card => (
-                  <option key={card} value={card}>{card}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Reversed Checkbox */}
-            <div className="form-check">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id={`reversed-${title}`}
-                checked={reversed}
-                onChange={(e) => setReversed(e.target.checked)}
+            <div className="mt-3 interpretation-fill">
+              <label className="form-label">Interpretation</label>
+              <textarea
+                className="form-control h-100"
+                placeholder="Your interpretation of this card..."
+                value={interpretation}
+                onChange={(e) => setInterpretation(e.target.value)}
               />
-              <label className="form-check-label small" htmlFor={`reversed-${title}`}>
-                Reversed
-              </label>
             </div>
           </div>
 
-          {/* Card Image - Right Side */}
-          <div className="col-4">
+          <div className="col-lg-4 d-flex h-100">
             {loading ? (
-              <div className="text-center">
+              <div className="card-image-spinner">
                 <div className="spinner-border spinner-border-sm" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
               </div>
             ) : currentImage ? (
-              <img 
-                src={currentImage} 
-                alt={selectedCard ? `${selectedCard} of ${selectedSuit}` : 'Card'}
-                className="img-fluid"
-                style={{ 
-                  maxHeight: '200px', 
-                  objectFit: 'contain',
-                  transform: reversed ? 'rotate(180deg)' : 'none',
-                  transition: 'transform 0.3s ease'
-                }}
-                onError={(e) => {
-                  console.error('Image failed to load:', currentImage)
-                  setCurrentImage(null)
-                }}
-              />
+              <div className="card-image-wrapper">
+                <img
+                  src={currentImage}
+                  alt={selectedCard ? `${selectedCard} of ${selectedSuit}` : 'Card'}
+                  className={`card-image ${reversed ? 'reversed' : ''}`}
+                  onError={(e) => {
+                    console.error('Image failed to load:', currentImage)
+                    setCurrentImage(null)
+                  }}
+                />
+              </div>
             ) : (
               <div 
-                className="text-center p-3 border rounded d-flex flex-column justify-content-center align-items-center"
-                style={{ 
-                  backgroundColor: 'var(--tarot-primary)',
-                  color: 'white',
-                  minHeight: '150px',
-                  fontSize: '0.9rem',
-                  fontWeight: '500'
-                }}
+                className="text-center p-3 border rounded d-flex flex-column justify-content-center align-items-center w-100 card-image-fallback"
               >
                 <i className="fas fa-magic mb-2" style={{ fontSize: '1.5rem', opacity: 0.8 }}></i>
                 <div className="text-center">
@@ -385,19 +411,7 @@ export default function Card({
           </div>
         </div>
 
-        {/* Bottom section - Interpretation */}
-        <div className="row">
-          <div className="col-12">
-            <label className="form-label">Interpretation</label>
-            <textarea
-              className="form-control"
-              rows={4}
-              placeholder="Your interpretation of this card..."
-              value={interpretation}
-              onChange={(e) => setInterpretation(e.target.value)}
-            />
-          </div>
-        </div>
+        {/* Bottom interpretation removed — interpretation is inside the left column */}
       </div>
     </div>
   )

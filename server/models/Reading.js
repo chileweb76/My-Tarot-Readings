@@ -6,6 +6,8 @@ const drawnCardSchema = new mongoose.Schema({
   card: { type: String, required: true }, 
   reversed: { type: Boolean, default: false },
   interpretation: { type: String, default: '' }
+  ,
+  image: { type: String, required: false }
 })
 
 const readingSchema = new mongoose.Schema({
