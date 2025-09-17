@@ -160,31 +160,32 @@ main.container {
 }
 
 /* Variants to match existing outline colors used in the UI */
-.btn-solid-primary {
-  background: var(--tarot-primary) !important;
-  border-color: var(--tarot-primary) !important;
+.btn-solid-primary,
+.btn-solid-secondary,
+.btn-solid-success,
+.btn-solid-info {
+  background: var(--tarot-mystical) !important;
+  border-color: var(--tarot-mystical) !important;
 }
-.btn-solid-primary:hover {
-  background: #5a31a8 !important;
-  border-color: #5a31a8 !important;
-}
-
-.btn-solid-secondary {
-  background: #6c757d !important; /* bootstrap secondary fallback */
-  border-color: #6c757d !important;
-}
-.btn-solid-secondary:hover {
-  background: #5c636a !important;
-  border-color: #5c636a !important;
+.btn-solid-primary:hover,
+.btn-solid-secondary:hover,
+.btn-solid-success:hover,
+.btn-solid-info:hover {
+  background: #3a103a !important; /* slightly darker mystical shade */
+  border-color: #3a103a !important;
 }
 
-.btn-solid-success {
-  background: #28a745 !important; /* bootstrap success */
-  border-color: #28a745 !important;
+/* Utility class for actions that should use the darker tarot color */
+.btn-tarot-dark,
+.btn-solid-tarot-dark {
+  background: var(--tarot-dark) !important;
+  border-color: var(--tarot-dark) !important;
+  color: #fff !important;
 }
-.btn-solid-success:hover {
-  background: #218838 !important;
-  border-color: #218838 !important;
+.btn-tarot-dark:hover,
+.btn-solid-tarot-dark:hover {
+  background: #231132 !important; /* slightly darker tarot-dark */
+  border-color: #231132 !important;
 }
 
 /* New Deck button sizing: responsive, keeps text on one line */

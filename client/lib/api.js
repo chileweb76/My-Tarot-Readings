@@ -32,6 +32,18 @@ export async function apiFetch(url, options = {}) {
   const token = localStorage.getItem('token')
   const headers = new Headers(options.headers || {})
   if (token) headers.set('Authorization', `Bearer ${token}`)
+  // Provide a convenient fallback header for server routes that accept x-user-id
+  // (some routes rely on this when session/JWT aren't being used in dev)
+  try {
+    const rawUser = localStorage.getItem('user')
+    if (rawUser) {
+      const user = JSON.parse(rawUser)
+      const userId = user && (user.id || user._id || user._id?.toString())
+      if (userId) headers.set('x-user-id', userId)
+    }
+  } catch (e) {
+    // ignore malformed user in localStorage
+  }
 
   let res = await fetch(full, { ...options, headers })
   if (res.status !== 401) return res

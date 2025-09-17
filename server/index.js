@@ -102,6 +102,62 @@ mongoose.connect(process.env.MONGODB_URI)
     } catch (e) {
       console.error('Deck seeding skipped:', e)
     }
+
+    // Seed a global "Self" querent that all users can reference
+    try {
+      const Querent = require('./models/Querent')
+      ;(async () => {
+        try {
+          // Check if global "Self" querent already exists
+          const existingSelfQuerent = await Querent.findOne({ name: 'Self', userId: null })
+          if (!existingSelfQuerent) {
+            // Create the global "Self" querent (userId: null means it's available to all users)
+            const selfQuerent = new Querent({
+              name: 'Self',
+              userId: null // Global querent for all users
+            })
+            await selfQuerent.save()
+            console.log(`🌱 Seeded global "Self" querent into DB`)
+          } else {
+            console.log('📚 Global "Self" querent already exists in DB')
+          }
+        } catch (e) {
+          console.error('Error seeding global Self querent', e)
+        }
+      })()
+    } catch (e) {
+      console.error('Self querent seeding skipped:', e)
+    }
+
+    // Seed global tags for all users
+    try {
+      const Tag = require('./models/Tag')
+      const globalTags = [
+        'Career', 'Relationships', 'Finances', 'Romance', 'Health', 
+        'Friends & Family', 'Self-Reflection', 'Energy', 'Decision Making'
+      ]
+      
+      ;(async () => {
+        try {
+          for (const tagName of globalTags) {
+            const existingTag = await Tag.findOne({ name: tagName, userId: null, isGlobal: true })
+            if (!existingTag) {
+              const globalTag = new Tag({
+                name: tagName,
+                userId: null, // Global tag for all users
+                isGlobal: true
+              })
+              await globalTag.save()
+            }
+          }
+          console.log(`🌱 Seeded global tags into DB`)
+        } catch (e) {
+          console.error('Error seeding global tags', e)
+        }
+      })()
+    } catch (e) {
+      console.error('Global tags seeding skipped:', e)
+    }
   })
   .catch((error) => {
     console.error('❌ MongoDB connection error:', error)
@@ -134,6 +190,7 @@ app.use(passport.session())
 app.use('/api/auth', require('./routes/auth'))
 app.use('/api/readings', require('./routes/readings'))
 app.use('/api/querents', require('./routes/querents'))
+app.use('/api/tags', require('./routes/tags'))
 app.use('/api/health', require('./routes/health'))
 app.use('/api/decks', require('./routes/decks'))
 app.use('/api/spreads', require('./routes/spreads'))

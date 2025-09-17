@@ -23,6 +23,22 @@ export default function SettingsPage() {
     }
   }, [])
 
+  // Simple UI for image export limit
+  const ImageLimitSection = () => (
+    <div className="card mb-3">
+      <div className="card-body">
+        <h5 className="card-title">Export image settings</h5>
+        <p className="card-text">Configure when images should prompt for confirmation before embedding in exports.</p>
+        <div className="d-flex align-items-center" style={{ gap: 12 }}>
+          <input type="number" step="0.1" min="0.1" className="form-control" style={{ width: 160 }} value={imageLimitMb} onChange={(e) => setImageLimitMb(parseFloat(e.target.value))} />
+          <div>
+            <button className="btn btn-primary" onClick={saveImageLimit}>Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   const handleSettingChange = (setting, value) => {
     setSettings(prev => ({
       ...prev,
@@ -36,6 +52,22 @@ export default function SettingsPage() {
     alert('Settings saved successfully!')
   }
 
+  // IMAGE size limit control (client-side only)
+  const [imageLimitMb, setImageLimitMb] = useState(() => {
+    try { return parseFloat(localStorage.getItem('IMAGE_SIZE_LIMIT_MB')) || 2.0 } catch (e) { return 2.0 }
+  })
+
+  const saveImageLimit = () => {
+    try {
+      localStorage.setItem('IMAGE_SIZE_LIMIT_MB', String(imageLimitMb))
+      // notify other windows/components
+      try { window.dispatchEvent(new Event('imageSizeLimitChanged')) } catch (e) {}
+      notify({ type: 'success', text: `Image size limit set to ${imageLimitMb} MB` })
+    } catch (e) {
+      notify({ type: 'error', text: 'Failed to save image limit' })
+    }
+  }
+
   const [usernameForm, setUsernameForm] = useState({ username: '' })
   const [pictureFile, setPictureFile] = useState(null)
   const [picturePreview, setPicturePreview] = useState(null)
@@ -43,6 +75,8 @@ export default function SettingsPage() {
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', verifyPassword: '' })
   // legacy per-page message state removed; use notify() for toasts
   const [loading, setLoading] = useState(false)
+  // Add a local `message` state for inline alerts (keeps backwards compatibility)
+  const [message, setMessage] = useState(null)
   const [linking, setLinking] = useState(false)
   const [querents, setQuerents] = useState([])
   const [selectedQuerentId, setSelectedQuerentId] = useState('')
@@ -702,6 +736,9 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+
+            {/* Export image settings (moved below Data & Security) */}
+            <ImageLimitSection />
 
             <ConfirmModal
               show={showDeleteModal}

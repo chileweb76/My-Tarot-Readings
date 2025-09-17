@@ -5,6 +5,15 @@ const path = require('path')
 const fs = require('fs')
 const { renderPdfFromHtml } = require('../utils/pdfWorker')
 
+// Ensure fetch is available in Node (Node 18+ has global fetch). If not, try to require 'node-fetch'.
+if (typeof fetch === 'undefined') {
+  try {
+    global.fetch = require('node-fetch')
+  } catch (e) {
+    console.warn('Global fetch is not available and node-fetch could not be loaded. Remote image inlining may fail.')
+  }
+}
+
 // POST /api/export/pdf
 // Accepts structured reading data and returns a generated PDF
 // Expected body: { reading: { by, date, querent, spread, deck, question, cards: [{title}], interpretation }, fileName }
@@ -31,10 +40,24 @@ router.post('/pdf', async (req, res) => {
       exportedAt: new Date().toLocaleString()
     }, reading)
 
-    // Normalize card image URLs: make relative paths absolute using request host
+    // Normalize image URLs: make relative paths absolute using request host
     try {
       const host = req.get('host')
       const proto = req.protocol || 'http'
+
+      // Normalize top-level reading image (if present)
+      if (data.image && typeof data.image === 'string') {
+        const img = data.image.trim()
+        if (!img.startsWith('data:') && !/^https?:\/\//i.test(img)) {
+          if (img.startsWith('/')) {
+            data.image = `${proto}://${host}${img}`
+          } else {
+            data.image = `${proto}://${host}/${img}`
+          }
+        }
+      }
+
+      // Normalize card image URLs
       if (Array.isArray(data.cards)) {
         data.cards = data.cards.map(c => {
           const copy = Object.assign({}, c)
@@ -57,6 +80,44 @@ router.post('/pdf', async (req, res) => {
     } catch (e) {
       // ignore normalization errors and proceed
       console.warn('Image normalization failed', e)
+    }
+
+    // Attempt to inline remote/absolute images as data URLs so Playwright can render them
+    try {
+      const tryInline = async (imgUrl) => {
+        try {
+          // Only attempt for http(s) URLs
+          if (!/^https?:\/\//i.test(imgUrl)) return null
+          const r = await fetch(imgUrl)
+          if (!r.ok) return null
+          const buf = await r.arrayBuffer()
+          const ct = r.headers.get('content-type') || 'image/jpeg'
+          const b64 = Buffer.from(buf).toString('base64')
+          return `data:${ct};base64,${b64}`
+        } catch (e) {
+          console.warn('Failed to inline image', imgUrl, e)
+          return null
+        }
+      }
+
+      // Inline top-level image if it's an absolute URL
+      if (data.image && typeof data.image === 'string' && /^https?:\/\//i.test(data.image)) {
+        const inlined = await tryInline(data.image)
+        if (inlined) data.image = inlined
+      }
+
+      // Inline card images
+      if (Array.isArray(data.cards)) {
+        for (let i = 0; i < data.cards.length; i++) {
+          const c = data.cards[i]
+          if (c && c.image && typeof c.image === 'string' && /^https?:\/\//i.test(c.image)) {
+            const inlined = await tryInline(c.image)
+            if (inlined) c.image = inlined
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Image inlining step failed', e)
     }
 
     const html = tpl(data)

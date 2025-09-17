@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import { apiFetch } from '../lib/api'
+import ConfirmModal from './ConfirmModal'
+import { notify } from '../lib/toast'
 
 export default function Card({
   className = '',
@@ -24,12 +26,25 @@ export default function Card({
   const [selectedCard, setSelectedCard] = useState(initialSelectedCard || '')
   const [reversed, setReversed] = useState(!!initialReversed)
   const [interpretation, setInterpretation] = useState(initialInterpretation || '')
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false)
   // Get suits from deckData if available, otherwise use default
+  // Known Major Arcana names (normalized to lowercase) — some have the substring ' of ' (e.g. "Wheel of Fortune")
+  const MAJOR_ARCANA = new Set([
+    'the fool', 'the magician', 'the high priestess', 'the empress', 'the emperor',
+    'the hierophant', 'the lovers', 'the chariot', 'strength', 'the hermit',
+    'wheel of fortune', 'justice', 'the hanged man', 'death', 'temperance',
+    'the devil', 'the tower', 'the star', 'the moon', 'the sun', 'judgement', 'the world'
+  ])
+
   const availableSuits = deckData?.cards ? 
     [...new Set(deckData.cards.map(card => {
       // Extract suit from card name for minor arcana, or use "Major Arcana" for major arcana
-      if (card.name?.includes(' of ')) {
-        return card.name.split(' of ')[1]
+      const name = (card.name || '').trim()
+      if (name && name.toLowerCase && MAJOR_ARCANA.has(name.toLowerCase())) {
+        return 'Major Arcana'
+      }
+      if (name.includes(' of ')) {
+        return name.split(' of ')[1]
       } else {
         return 'Major Arcana'
       }
@@ -42,7 +57,11 @@ export default function Card({
       // Use cards from deck data
       if (selectedSuit.toLowerCase() === 'major arcana') {
         return deckData.cards
-          .filter(card => !card.name?.includes(' of '))
+          .filter(card => {
+            const name = (card.name || '').trim()
+            // Include if it doesn't look like a ' of ' minor arcana card OR if it's a known Major Arcana name
+            return !name.includes(' of ') || MAJOR_ARCANA.has(name.toLowerCase())
+          })
           .map(card => card.name)
       } else {
         return deckData.cards
@@ -307,6 +326,22 @@ export default function Card({
 
   return (
   <div className={`card card-with-image ${className}`} style={style}>
+      <ConfirmModal
+        show={showSaveConfirm}
+        title="Image not uploaded"
+        body={"This image appears to be a local preview and isn't available to the server. Please save the reading to upload the image before sharing."}
+        confirmText="Scroll to Save"
+        onConfirm={() => {
+          setShowSaveConfirm(false)
+          try {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+            const saveBtn = document.querySelector('button[type="submit"], button.btn-tarot-primary')
+            if (saveBtn && typeof saveBtn.focus === 'function') saveBtn.focus()
+            notify({ type: 'info', text: 'Please save the reading to upload the image before sharing.' })
+          } catch (e) { console.warn(e) }
+        }}
+        onCancel={() => { setShowSaveConfirm(false) }}
+      />
       <div className="card-body">
         {/* Top section: left = title + controls + interpretation, right = image */}
         <div className="row mb-3 align-items-stretch">
@@ -391,6 +426,74 @@ export default function Card({
                     setCurrentImage(null)
                   }}
                 />
+                <div className="mt-2 d-flex justify-content-center">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={async () => {
+                      try {
+                        // If the image is a blob/object/data URL or otherwise not an absolute URL,
+                        // warn the user to save the reading (so the image is uploaded) before sharing.
+                        const img = currentImage
+                        const looksLocal = typeof img === 'string' && img.length && !/^https?:\/\//i.test(img) && !img.startsWith('/')
+                        if (looksLocal) {
+                          // Show in-app confirm modal prompting user to save so image uploads
+                          setShowSaveConfirm(true)
+                          return
+                        }
+
+                        // Build a minimal reading payload for this single card
+                        const readingPayload = {
+                          by: 'Guest',
+                          date: new Date().toLocaleString(),
+                          querent: title || 'Card',
+                          spread: 'Single card',
+                          deck: deck || 'Unknown',
+                          question: '',
+                          cards: [{ title: title || '', suit: selectedSuit || '', card: selectedCard || '', reversed: reversed, interpretation: interpretation || '', image: currentImage }],
+                          interpretation: interpretation || '',
+                          image: currentImage || null,
+                          exportedAt: new Date().toLocaleString()
+                        }
+                        const res = await apiFetch('/export/pdf', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ reading: readingPayload, fileName: `tarot-card-${(selectedCard||title||'card').replace(/\s+/g,'-').toLowerCase()}.pdf` })
+                        })
+                        if (!res.ok) {
+                          const text = await res.text().catch(() => '')
+                          console.error('Server PDF failed', res.status, res.statusText, text)
+                          notify({ type: 'error', text: 'Failed to generate PDF for sharing.' })
+                          return
+                        }
+                        const blob = await res.blob()
+                        const filename = `tarot-card-${(selectedCard||title||'card').replace(/\s+/g,'-').toLowerCase()}.pdf`
+                        try {
+                          const file = new File([blob], filename, { type: 'application/pdf' })
+                          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({ files: [file], title: 'Tarot Card', text: `Sharing ${title}` })
+                            return
+                          }
+                        } catch (e) {
+                          // fall back to download
+                        }
+                        const url = URL.createObjectURL(blob)
+                        const link = document.createElement('a')
+                        link.href = url
+                        link.download = filename
+                        document.body.appendChild(link)
+                        link.click()
+                        document.body.removeChild(link)
+                        URL.revokeObjectURL(url)
+                      } catch (e) {
+                        console.error('Share card as PDF failed', e)
+                        notify({ type: 'error', text: 'Failed to share or download PDF for this card.' })
+                      }
+                    }}
+                  >
+                    Share as PDF
+                  </button>
+                </div>
               </div>
             ) : (
               <div 

@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import AuthWrapper from '../components/AuthWrapper'
-import { apiFetch } from '../lib/api'
+import AuthWrapper from '../../components/AuthWrapper'
+import { apiFetch } from '../../lib/api'
 
 export default function ReadingHistoryPage() {
   const [readings, setReadings] = useState([])

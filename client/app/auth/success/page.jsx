@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
 
+export const dynamic = 'force-dynamic'
+
 export default function AuthSuccessPage() {
   const [status, setStatus] = useState('processing')
-  const searchParams = useSearchParams()
+    const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('')
 
   useEffect(() => {
-    const token = searchParams.get('token')
-    const verified = searchParams.get('verified')
+      const token = sp.get('token')
+      const verified = sp.get('verified')
 
     // If verification flow (no token) — show verified message and redirect to sign-in
     if (!token && verified === 'true') {
