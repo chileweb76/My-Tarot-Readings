@@ -96,6 +96,14 @@ export default function SettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmUsername, setDeleteConfirmUsername] = useState('')
   const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('')
+  
+  // Tags state
+  const [tags, setTags] = useState([])
+  const [selectedTagId, setSelectedTagId] = useState('')
+  const [showDeleteTagModal, setShowDeleteTagModal] = useState(false)
+  const [deleteTagVerifyName, setDeleteTagVerifyName] = useState('')
+  const [loadingDeleteTag, setLoadingDeleteTag] = useState(false)
+  
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
   // Normalize API base (remove trailing slashes and trailing /api if present)
@@ -143,6 +151,21 @@ export default function SettingsPage() {
           }
         } catch (err) {
           console.warn('Failed to load querents', err)
+        }
+  })();
+  // load tags for this user (only user-created tags)
+  ;(async () => {
+        try {
+          const res = await apiFetch('/api/tags')
+          if (!res.ok) return
+          const data = await res.json()
+          // Check if data has tags property, otherwise use empty array
+          const allTags = data.tags || (Array.isArray(data) ? data : [])
+          const userTags = allTags.filter(tag => !tag.isGlobal)
+          setTags(userTags)
+          if (userTags.length) setSelectedTagId(userTags[0]._id)
+        } catch (err) {
+          console.warn('Failed to load tags', err)
         }
   })();
   // load decks for this user (only user-owned decks)
@@ -688,6 +711,7 @@ export default function SettingsPage() {
               </div>
               <div className="mb-3">
                 <h5>Delete Custom Spread</h5>
+                <p className="text-muted small">Only custom spreads you created can be deleted. System spreads cannot be deleted.</p>
                 <div className="d-flex gap-2 align-items-center">
                   <select className="form-select" style={{ maxWidth: 300 }} value={selectedSpreadId} onChange={(e) => setSelectedSpreadId(e.target.value)}>
                     <option value="">Select spread...</option>
@@ -696,6 +720,24 @@ export default function SettingsPage() {
                     ))}
                   </select>
                   <button className="btn btn-outline-danger" disabled={!selectedSpreadId} onClick={() => { setShowDeleteSpreadModal(true); setDeleteSpreadVerifyName('') }}>Delete Spread</button>
+                </div>
+                {spreads.length === 0 && (
+                  <div className="text-muted mt-2">
+                    <em>You don't have any custom spreads to delete.</em>
+                  </div>
+                )}
+              </div>
+              <div className="mb-3">
+                <h5>Delete Tags</h5>
+                <p className="text-muted small">Delete your personal tags. Global tags cannot be deleted.</p>
+                <div className="d-flex gap-2 align-items-center">
+                  <select className="form-select" style={{ maxWidth: 300 }} value={selectedTagId} onChange={(e) => setSelectedTagId(e.target.value)}>
+                    <option value="">Select tag...</option>
+                    {tags.map(tag => (
+                      <option key={tag._id} value={tag._id}>{tag.name}</option>
+                    ))}
+                  </select>
+                  <button className="btn btn-outline-danger" disabled={!selectedTagId} onClick={() => { setShowDeleteTagModal(true); setDeleteTagVerifyName('') }}>Delete Tag</button>
                 </div>
               </div>
             </div>
@@ -900,6 +942,53 @@ export default function SettingsPage() {
               confirmDisabled={(() => {
                 const selected = spreads.find(s => s._id === selectedSpreadId)
                 return !(selected && deleteSpreadVerifyName === selected.spread)
+              })()}
+            />
+
+            <ConfirmModal
+              show={showDeleteTagModal}
+              title="Delete tag"
+              body={(
+                <div>
+                  <p>This will permanently delete the selected tag from your personal tags. This action cannot be undone.</p>
+                  <p>Please type the tag name to confirm.</p>
+                  <div className="mb-2">
+                    <input className="form-control" placeholder="Type tag name to confirm" value={deleteTagVerifyName} onChange={(e) => setDeleteTagVerifyName(e.target.value)} />
+                  </div>
+                </div>
+              )}
+              confirmText={loadingDeleteTag ? 'Deleting...' : 'Delete tag'}
+              onConfirm={async () => {
+                setLoadingDeleteTag(true)
+                try {
+                  const token = localStorage.getItem('token')
+                  if (!token) throw new Error('Not authenticated')
+                  if (!selectedTagId) throw new Error('No tag selected')
+                  const res = await apiFetch(`/api/tags/${selectedTagId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                  })
+                  const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : Promise.resolve({ error: 'Unexpected response' }))
+                  if (!res.ok) throw new Error(data.error || data.message || 'Failed to delete tag')
+
+                  // remove from local state
+                  const updated = tags.filter(tag => tag._id !== selectedTagId)
+                  setTags(updated)
+                  setSelectedTagId(updated.length ? updated[0]._id : '')
+                  notify({ type: 'success', text: data.message || 'Tag deleted' })
+                } catch (err) {
+                  notify({ type: 'error', text: err.message })
+                } finally {
+                  setLoadingDeleteTag(false)
+                  setShowDeleteTagModal(false)
+                  setDeleteTagVerifyName('')
+                }
+              }}
+              onCancel={() => { setShowDeleteTagModal(false); setDeleteTagVerifyName('') }}
+              loading={loadingDeleteTag}
+              confirmDisabled={(() => {
+                const selected = tags.find(tag => tag._id === selectedTagId)
+                return !(selected && deleteTagVerifyName === selected.name)
               })()}
             />
 

@@ -141,7 +141,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
     // Accept additional writable fields on update so explicit Save persists everything
-    const { question, interpretation, dateTime, drawnCards, image, querent, spread, deck } = req.body
+    const { question, interpretation, dateTime, drawnCards, image, querent, spread, deck, selectedTags } = req.body
     const userId = req.user?.id || req.headers['x-user-id']
     // Debug: log incoming update body
     try { console.debug('[readings PUT] id=', id, 'body=', req.body, 'headers x-user-id=', req.headers['x-user-id']) } catch (e) {}
@@ -240,7 +240,8 @@ router.put('/:id', async (req, res) => {
       // allow changing querent/spread/deck on explicit save
       querent: typeof querent !== 'undefined' ? resolvedQuerentForUpdate : reading.querent,
       spread: typeof spread !== 'undefined' ? (spread || null) : reading.spread,
-      deck: typeof deck !== 'undefined' ? (deck || null) : reading.deck
+      deck: typeof deck !== 'undefined' ? (deck || null) : reading.deck,
+      selectedTags: typeof selectedTags !== 'undefined' ? selectedTags : reading.selectedTags
     }
 
     // Merge drawnCards: prefer matching by title, fallback to index position
@@ -279,6 +280,7 @@ router.put('/:id', async (req, res) => {
     ).populate('querent', 'name')
      .populate('spread', 'spread')
      .populate('deck', 'deckName')
+     .populate('selectedTags', 'name isGlobal')
 
     res.json({
       success: true,
@@ -334,6 +336,7 @@ router.post('/', async (req, res) => {
       dateTime,
       drawnCards,
       interpretation,
+      selectedTags,
       userId
     } = req.body
 
@@ -458,6 +461,7 @@ router.post('/', async (req, res) => {
       dateTime: new Date(dateTime),
       drawnCards: Array.isArray(drawnCards) ? drawnCards : (drawnCards ? [drawnCards] : []),
       interpretation: interpretation || '',
+      selectedTags: Array.isArray(selectedTags) ? selectedTags : [],
       userId: effectiveUserId || null
     })
 
@@ -467,6 +471,7 @@ router.post('/', async (req, res) => {
       .populate('querent', 'name')
       .populate('spread', 'spread')
       .populate('deck', 'deckName')
+      .populate('selectedTags', 'name isGlobal')
 
     try {
       console.debug('[readings POST] saved reading querent:', { querent: populated.querent })

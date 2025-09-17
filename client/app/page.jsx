@@ -44,6 +44,12 @@ export default function HomePage() {
   const [manualOverride, setManualOverride] = useState(false)
   // legacy message state removed; use notify() global helper instead
   const [toasts, setToasts] = useState([])
+  
+  // Tags state
+  const [tags, setTags] = useState([])
+  const [selectedTags, setSelectedTags] = useState([])
+  const [newTagName, setNewTagName] = useState('')
+  const [addingTag, setAddingTag] = useState(false)
 
   // push a toast into the stack
   const pushToast = (t) => {
@@ -741,6 +747,7 @@ export default function HomePage() {
         dateTime: readingDateTime,
         drawnCards,
         interpretation: interpretation,
+        selectedTags: selectedTags,
         userId: user?._id || (typeof window !== 'undefined' ? (() => { try { const u = localStorage.getItem('user'); return u ? JSON.parse(u).id || JSON.parse(u)._id : null } catch (e) { return null } })() : null)
       }
 
@@ -967,6 +974,26 @@ export default function HomePage() {
     return () => { mounted = false }
   }, [user])
 
+  // load tags for tags dropdown
+  useEffect(() => {
+    let mounted = true
+    const loadTags = async () => {
+      try {
+        const res = await apiFetch('/api/tags')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!mounted) return
+        // Check if data has tags property, otherwise use empty array
+        const tagsArray = data.tags || (Array.isArray(data) ? data : [])
+        setTags(tagsArray)
+      } catch (err) {
+        console.warn('Failed to load tags', err)
+      }
+    }
+    loadTags()
+    return () => { mounted = false }
+  }, [user])
+
   // load spread image when selectedSpread changes
   useEffect(() => {
     let mounted = true
@@ -1022,6 +1049,47 @@ export default function HomePage() {
       console.error('Failed to process captured image', err)
       pushToast({ type: 'error', text: 'Failed to process captured image' })
     }
+  }
+
+  // Handle adding new tag
+  const handleAddTag = async () => {
+    if (!newTagName.trim()) {
+      pushToast({ type: 'error', text: 'Please enter a tag name' })
+      return
+    }
+
+    try {
+      setAddingTag(true)
+      const res = await apiFetch('/api/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTagName.trim() })
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to create tag')
+      }
+
+      const data = await res.json()
+      setTags(prev => [...prev, data.tag])
+      setSelectedTags(prev => [...prev, data.tag._id])
+      setNewTagName('')
+      pushToast({ type: 'success', text: 'Tag created and added to reading' })
+    } catch (err) {
+      console.error('Error creating tag:', err)
+      pushToast({ type: 'error', text: 'Failed to create tag' })
+    } finally {
+      setAddingTag(false)
+    }
+  }
+
+  // Handle tag selection change
+  const handleTagSelectionChange = (tagId) => {
+    setSelectedTags(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    )
   }
 
   return (
@@ -1228,6 +1296,92 @@ export default function HomePage() {
           value={interpretation}
           onChange={(e) => setInterpretation(e.target.value)}
         />
+      </div>
+
+      {/* Tags section */}
+      <div className="mt-3">
+        <label className="form-label mb-2">Tags</label>
+        
+        {/* Selected tags display */}
+        {selectedTags.length > 0 && (
+          <div className="mb-2">
+            {selectedTags.map(tagId => {
+              const tag = tags.find(t => t._id === tagId)
+              if (!tag) return null
+              return (
+                <span 
+                  key={tagId}
+                  className="badge bg-secondary me-1 mb-1"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleTagSelectionChange(tagId)}
+                  title="Click to remove"
+                >
+                  {tag.name} ×
+                </span>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Tags dropdown and add button */}
+        <div className="d-flex justify-content-center align-items-center gap-2">
+          <select 
+            className="form-select" 
+            style={{ width: 'auto', minWidth: '200px' }}
+            value=""
+            onChange={(e) => {
+              if (e.target.value) {
+                handleTagSelectionChange(e.target.value)
+                e.target.value = ""
+              }
+            }}
+          >
+            <option value="">Select a tag...</option>
+            {/* Global tags first */}
+            {tags
+              .filter(tag => tag.isGlobal && !selectedTags.includes(tag._id))
+              .map(tag => (
+                <option key={tag._id} value={tag._id}>
+                  {tag.name}
+                </option>
+              ))
+            }
+            {/* Personal tags second */}
+            {tags
+              .filter(tag => !tag.isGlobal && !selectedTags.includes(tag._id))
+              .map(tag => (
+                <option key={tag._id} value={tag._id}>
+                  {tag.name} (Personal)
+                </option>
+              ))
+            }
+          </select>
+
+          {/* Add new tag input and button */}
+          <div className="d-flex align-items-center gap-1">
+            <input
+              type="text"
+              className="form-control"
+              style={{ width: '150px' }}
+              placeholder="New tag name"
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
+            />
+            <button
+              type="button"
+              className="btn btn-tarot-primary btn-sm"
+              onClick={handleAddTag}
+              disabled={addingTag || !newTagName.trim()}
+            >
+              {addingTag ? (
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              ) : (
+                'Add'
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Save Reading Button */}
