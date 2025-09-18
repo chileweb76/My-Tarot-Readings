@@ -11,6 +11,7 @@ import CameraModal from '../components/CameraModal'
 import Card from '../components/Card'
 import Toasts from '../components/Toasts'
 import ExportToolbar from '../components/ExportToolbar'
+import { LargeImageWarningModal, ExportSignInModal } from '../components/modals'
 
 export default function HomePage() {
   // Image size threshold (MB) can be configured via NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB (build-time)
@@ -402,58 +403,7 @@ export default function HomePage() {
   }
 
   // Export sign-in modal markup (rendered when a local image exists but user not signed in)
-  const ExportSignInModal = () => {
-    if (!showExportSignInModal) return null
-    return (
-      <div className="modal show" style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}>
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Sign in required</h5>
-              <button type="button" className="btn-close" onClick={() => setShowExportSignInModal(false)} aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              <p>To export this reading with the attached image, please sign in so the image can be uploaded. You can sign in and then retry the export.</p>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowExportSignInModal(false)}>Cancel</button>
-              <button type="button" className="btn btn-primary" onClick={() => {
-                // Navigate to auth page (assumes client routing); user will be redirected back manually
-                window.location.href = '/auth'
-              }}>Sign in</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Modal to warn the user when converting a large image to a data URL
-  const LargeImageWarningModal = ({ info }) => {
-    if (!info) return null
-    const { size, humanSize } = info
-    return (
-      <div className="modal show" style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }}>
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Large image detected</h5>
-              <button type="button" className="btn-close" onClick={() => { info.resolve(false); setLargeImagePending(null) }} aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              <p>The image you're about to convert is large ({humanSize}). Embedding it as a data URL may produce a very large export and could be slow or fail.</p>
-              <p>Current configured limit: { (getImageSizeLimitBytes() / 1024 / 1024).toFixed(2) } MB</p>
-              <p>Do you want to continue converting this image?</p>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => { info.resolve(false); setLargeImagePending(null) }}>Cancel</button>
-              <button type="button" className="btn btn-primary" onClick={() => { info.resolve(true); setLargeImagePending(null) }}>Continue</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // Shared modals imported from components/ExportModals
 
   // The settings UI has moved to the central Settings page. Listen for changes via window event.
   useEffect(() => {
@@ -1096,8 +1046,8 @@ export default function HomePage() {
   return (
     <AuthWrapper>
       <form id="reading" className="reading" onSubmit={handleSaveReading}>
-  <ExportSignInModal />
-  <LargeImageWarningModal info={largeImagePending} />
+  <ExportSignInModal show={showExportSignInModal} onClose={() => setShowExportSignInModal(false)} />
+  <LargeImageWarningModal info={largeImagePending} getImageSizeLimitBytes={getImageSizeLimitBytes} onClose={() => setLargeImagePending(null)} />
   <Toasts toasts={toasts} onRemove={removeToast} />
         <p>Reading by: {user?.username || 'Guest'}</p>
         <h2>Reading</h2>

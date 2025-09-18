@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AuthWrapper from '../../components/AuthWrapper'
 import { apiFetch } from '../../lib/api'
+import ExportToolbar from '../../components/ExportToolbar'
+import { notify } from '../../lib/toast'
+import { LargeImageWarningModal, ExportSignInModal } from '../../components/modals'
 
 export default function ReadingPage() {
   const router = useRouter()
@@ -121,6 +124,237 @@ export default function ReadingPage() {
     ))
   }
 
+  // simple image fetch + size check helper (uses localStorage configured limit)
+  const getImageSizeLimitBytes = () => {
+    try {
+      const v = localStorage.getItem('IMAGE_SIZE_LIMIT_MB')
+      const mb = v ? parseFloat(v) : 2.0
+      return Math.max(0.1, mb) * 1024 * 1024
+    } catch (e) { return 2.0 * 1024 * 1024 }
+  }
+  const [largeImagePending, setLargeImagePending] = useState(null)
+  const [showExportSignInModal, setShowExportSignInModal] = useState(false)
+
+  const fetchBlobWithSizeCheck = async (url) => {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) return { proceed: false, blob: null }
+      const b = await res.blob()
+      if (b.size > getImageSizeLimitBytes()) {
+        // show LargeImageWarningModal and wait for user's decision
+        const human = `${(b.size / 1024 / 1024).toFixed(2)} MB`
+        const p = new Promise((resolve) => {
+          setLargeImagePending({ size: b.size, humanSize: human, resolve })
+        })
+        const userChoice = await p
+        return { proceed: !!userChoice, blob: userChoice ? b : null }
+      }
+      return { proceed: true, blob: b }
+    } catch (e) {
+      console.warn('Failed to fetch blob for size check', e)
+      return { proceed: false, blob: null }
+    }
+  }
+
+  const [exportingMap, setExportingMap] = useState({})
+  const setExportingFor = (rid, v) => setExportingMap(prev => ({ ...prev, [rid]: !!v }))
+
+  const preparePayloadFromReading = (reading) => {
+    const readingDateTime = reading.dateTime || reading.date || reading.createdAt || new Date().toISOString()
+    const cards = reading.drawnCards || reading.cards || reading.selectedCards || []
+    const cardsMapped = (Array.isArray(cards) ? cards : []).map(c => ({
+      title: c.title || c.name || c.cardName || '',
+      suit: c.suit || '',
+      card: c.card || c.cardName || c.name || '',
+      reversed: !!c.reversed,
+      interpretation: c.interpretation || '' ,
+      image: c.image || null
+    }))
+
+    return {
+      by: (reading.by || reading.author || (reading.user && reading.user.username) || 'Unknown'),
+      date: new Date(readingDateTime).toLocaleString(),
+      querent: reading.querent && (reading.querent.name || reading.querent.title) ? (reading.querent.name || reading.querent.title) : (reading.querent || 'Unknown'),
+      spread: (reading.spread && (reading.spread.spread || reading.spread.title || reading.spread.name)) || reading.spreadName || 'Unknown spread',
+      deck: (reading.deck && (reading.deck.deckName || reading.deck.name)) || reading.deckName || 'Unknown deck',
+      question: reading.question || reading.query || '',
+      cards: cardsMapped,
+      interpretation: reading.interpretation || reading.overallInterpretation || reading.summary || '',
+      outcome: reading.outcome || '',
+      image: reading.image || null,
+      exportedAt: new Date().toLocaleString()
+    }
+  }
+
+  const handlePrintReadingFor = async (reading) => {
+    const rid = reading._id || reading.id || String(Math.random())
+    setExportingFor(rid, true)
+    try {
+      const payload = preparePayloadFromReading(reading)
+      const exportHtml = `
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+            </div>
+          )}
+
+        </div>
+      </div>
+      {/* Shared modals rendered at page root so they overlay correctly */}
+      <ExportSignInModal show={showExportSignInModal} onClose={() => setShowExportSignInModal(false)} />
+      <LargeImageWarningModal info={largeImagePending} getImageSizeLimitBytes={getImageSizeLimitBytes} onClose={() => setLargeImagePending(null)} />
+    </AuthWrapper>
+  )
+          </div>
+          <div class="section"><h3>Question</h3><div>${payload.question || 'No question recorded'}</div></div>
+          <div class="section"><h3>Outcome</h3><div>${payload.outcome || 'No outcome recorded'}</div></div>
+          <div class="section"><h3>Cards Drawn</h3>
+            ${payload.cards.map(cs => `<div class="card-item"><div class="card-title">${cs.title || ''}${cs.card ? ` - ${cs.card}` : ''}${cs.reversed ? ' (reversed)' : ''}</div>${cs.interpretation ? `<div class="card-interpretation">${cs.interpretation}</div>` : ''}${cs.image ? `<div style="margin-top:8px"><img src="${cs.image}" style="max-width:120px;max-height:160px"/></div>` : ''}</div>`).join('')}
+          </div>
+          <div class="section"><h3>Interpretation</h3><div>${payload.interpretation || 'No overall interpretation provided'}</div></div>
+          <div class="footer-note">Exported: ${new Date().toLocaleString()}</div>
+        </body>
+      </html>
+      `
+
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) { notify({ type: 'error', text: 'Unable to open print window. Please allow popups.' }); setExportingFor(rid, false); return }
+      printWindow.document.write(exportHtml)
+      printWindow.document.close()
+      printWindow.focus()
+      setTimeout(() => { try { printWindow.print(); printWindow.onafterprint = () => { try { printWindow.close() } catch (e) {} } } catch (err) { console.error('Print failed', err); notify({ type: 'error', text: 'Print failed' }) } }, 300)
+    } finally { setExportingFor(rid, false) }
+  }
+
+  const handleExportReadingFor = async (reading) => {
+    const rid = reading._id || reading.id || String(Math.random())
+    setExportingFor(rid, true)
+    try {
+      const payload = preparePayloadFromReading(reading)
+      // If reading contains local/blob/data images and user not signed in, prompt sign-in like HomePage
+      const hasLocalImage = (payload.image && typeof payload.image === 'string' && (/^data:|^blob:|^object:/i).test(payload.image)) || (payload.cards && payload.cards.some(c => c.image && typeof c.image === 'string' && (/^data:|^blob:|^object:/i).test(c.image)))
+      if (hasLocalImage) {
+        const token = localStorage.getItem('token')
+        if (!token) { setShowExportSignInModal(true); setExportingFor(rid, false); return }
+      }
+      // prepare images (convert blob/object URLs to data URLs and check sizes)
+      try {
+        for (let i = 0; i < payload.cards.length; i++) {
+          const c = payload.cards[i]
+          if (!c.image || typeof c.image !== 'string') continue
+          if (c.image.startsWith('data:')) {
+            const { proceed } = await fetchBlobWithSizeCheck(c.image)
+            if (!proceed) { notify({ type: 'info', text: 'Export cancelled due to large image.' }); setExportingFor(rid, false); return }
+          } else if (c.image.startsWith('blob:') || c.image.startsWith('object:')) {
+            const { proceed, blob } = await fetchBlobWithSizeCheck(c.image)
+            if (!proceed) { notify({ type: 'info', text: 'Export cancelled due to large image.' }); setExportingFor(rid, false); return }
+            if (blob) {
+              c.image = await new Promise((resolve, reject) => { const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.onerror = reject; fr.readAsDataURL(blob) })
+            }
+          } else if (!/^https?:\/\//i.test(c.image) && c.image.startsWith('/')) {
+            c.image = `${window.location.protocol}//${window.location.host}${c.image}`
+          }
+        }
+      } catch (e) { console.warn('Failed preparing images for export', e); alert('Failed to prepare images for export.'); setExportingFor(rid, false); return }
+
+      const res = await apiFetch('/export/pdf', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reading: payload, fileName: `tarot-reading-${new Date().toISOString().split('T')[0]}.pdf` })
+      })
+  if (!res.ok) { const txt = await res.text().catch(()=>''); console.error('Server export failed', res.status, txt); notify({ type: 'error', text: 'Server export failed' }); setExportingFor(rid, false); return }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `tarot-reading-${new Date().toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (e) { console.error('Export failed', e); notify({ type: 'error', text: 'Export failed' }) }
+    finally { setExportingFor(rid, false) }
+  }
+
+  const handleShareAsPdfFor = async (reading) => {
+    const rid = reading._id || reading.id || String(Math.random())
+    setExportingFor(rid, true)
+    try {
+      const payload = preparePayloadFromReading(reading)
+      const hasLocalImage = (payload.image && typeof payload.image === 'string' && (/^data:|^blob:|^object:/i).test(payload.image)) || (payload.cards && payload.cards.some(c => c.image && typeof c.image === 'string' && (/^data:|^blob:|^object:/i).test(c.image)))
+      if (hasLocalImage) {
+        const token = localStorage.getItem('token')
+        if (!token) { setShowExportSignInModal(true); setExportingFor(rid, false); return }
+      }
+      try {
+        for (let i = 0; i < payload.cards.length; i++) {
+          const c = payload.cards[i]
+          if (!c.image || typeof c.image !== 'string') continue
+          if (c.image.startsWith('data:')) {
+            const { proceed } = await fetchBlobWithSizeCheck(c.image)
+            if (!proceed) { notify({ type: 'info', text: 'Share cancelled due to large image.' }); setExportingFor(rid, false); return }
+          } else if (c.image.startsWith('blob:') || c.image.startsWith('object:')) {
+            const { proceed, blob } = await fetchBlobWithSizeCheck(c.image)
+            if (!proceed) { notify({ type: 'info', text: 'Share cancelled due to large image.' }); setExportingFor(rid, false); return }
+            if (blob) {
+              c.image = await new Promise((resolve, reject) => { const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.onerror = reject; fr.readAsDataURL(blob) })
+            }
+          } else if (!/^https?:\/\//i.test(c.image) && c.image.startsWith('/')) {
+            c.image = `${window.location.protocol}//${window.location.host}${c.image}`
+          }
+        }
+      } catch (e) { console.warn('Failed preparing images for share', e); alert('Failed to prepare images for sharing.'); setExportingFor(rid, false); return }
+
+      const res = await apiFetch('/export/pdf', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reading: payload, fileName: `tarot-reading-${new Date().toISOString().split('T')[0]}.pdf` })
+      })
+  if (!res.ok) { notify({ type: 'error', text: 'Server failed to generate PDF for sharing.' }); setExportingFor(rid, false); return }
+      const blob = await res.blob()
+      const filename = `tarot-reading-${new Date().toISOString().split('T')[0]}.pdf`
+      try {
+        const file = new File([blob], filename, { type: 'application/pdf' })
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Tarot Reading', text: 'Sharing a PDF of the tarot reading.' })
+          setExportingFor(rid, false)
+          return
+        }
+      } catch (e) { console.warn('Web Share with files not available', e) }
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (e) { console.error('Share as PDF failed', e); notify({ type: 'error', text: 'Share as PDF failed' }) }
+    finally { setExportingFor(rid, false) }
+  }
+
+  const handleShareReadingFor = async (reading) => {
+    const rid = reading._id || reading.id || String(Math.random())
+    setExportingFor(rid, true)
+    try {
+      const payload = preparePayloadFromReading(reading)
+      const cardsText = (payload.cards || []).map(cs => {
+        const details = cs.card ? (cs.suit && cs.suit.toLowerCase() !== 'major arcana' ? `${cs.card} of ${cs.suit}` : cs.card) : ''
+        const rev = cs.reversed ? ' (reversed)' : ''
+        const interp = cs.interpretation ? ` — ${cs.interpretation}` : ''
+        return `${cs.title || ''}${details ? ` — ${details}` : ''}${rev}${interp}`
+      }).join('\n')
+
+      const shareText = `🔮 Tarot Reading - ${payload.date}\n\nQuerent: ${payload.querent}\nSpread: ${payload.spread}\nQuestion: ${payload.question}\n\nCards:\n${cardsText}\n\nInterpretation: ${payload.interpretation || 'No interpretation provided'}`
+
+      if (navigator.share) {
+        try { await navigator.share({ title: 'Tarot Reading', text: shareText }); setExportingFor(rid, false); return } catch (e) { console.warn('Share failed', e) }
+      }
+      try { await navigator.clipboard.writeText(shareText); notify({ type: 'success', text: 'Reading copied to clipboard!' }) } catch (e) { console.error('Failed to copy to clipboard', e); notify({ type: 'error', text: 'Failed to copy reading to clipboard' }) }
+    } finally { setExportingFor(rid, false) }
+  }
+
   const toggleExpanded = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }))
 
   const getReadingDate = (reading) => {
@@ -183,6 +417,9 @@ export default function ReadingPage() {
     </AuthWrapper>
   )
 
+  // Modal to warn the user when converting a large image to a data URL
+  // Shared modals (LargeImageWarningModal and ExportSignInModal) are imported from components/ExportModals
+
   return (
     <AuthWrapper>
       <div className="d-flex justify-content-center mt-5">
@@ -231,6 +468,20 @@ export default function ReadingPage() {
                 const hasOutcome = !!(reading.outcome && String(reading.outcome).trim())
                 return (
                   <div key={rid} className={`card mb-4 position-relative reading-card ${hasOutcome ? 'reading-has-outcome' : ''}`} style={{ cursor: 'default', transition: 'transform 0.2s ease-in-out' }}>
+                    {/* Export toolbar positioned in top-left of card */}
+                    <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 10 }}>
+                      <ExportToolbar
+                        onPrint={() => handlePrintReadingFor(reading)}
+                        onSharePdf={() => handleShareAsPdfFor(reading)}
+                        onExport={() => handleExportReadingFor(reading)}
+                        onShareText={() => handleShareReadingFor(reading)}
+                        busy={!!exportingMap[rid]}
+                        printTitle="Print this reading"
+                        sharePdfTitle="Share this reading as PDF"
+                        exportTitle="Export this reading"
+                        shareTitle="Share this reading"
+                      />
+                    </div>
                     <div className="card-body" style={{ paddingTop: '50px' }}>
                       <button
                         className={`btn btn-sm position-absolute ${hasOutcome ? 'btn-tarot-dark' : 'btn-tarot-primary'}`}
