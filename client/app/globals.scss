@@ -236,10 +236,10 @@ main.container {
   display: inline-flex;
   align-items: center; /* vertically center with outcome button */
   gap: 0.35rem; /* consistent with button gap */
-  margin-top: 8px; /* nudge down to align with Edit Outcome button */
+  margin-top: 0; /* remove extra top gap so toolbar aligns with surrounding content */
 }
 .reading-card .export-toolbar .btn {
-  padding: 0.35rem 0.5rem !important; /* increase horizontal padding for similar visual weight */
+  padding: 0.3rem 0.5rem !important; /* tweak vertical padding for baseline alignment */
   font-size: 1rem; /* match base button sizing so icons and text align */
   min-width: 40px;
   line-height: 1.2; /* align with .btn-tarot-dark line-height */

@@ -6,7 +6,7 @@ import { faPrint, faFilePdf, faFileExport, faShareAlt } from '../lib/icons'
 
 export default function ExportToolbar({ onPrint, onSharePdf, onExport, onShareText, busy = false, printTitle = 'Print', sharePdfTitle = 'Share as PDF', exportTitle = 'Export', shareTitle = 'Share' }) {
   return (
-    <div className="mt-3 d-flex justify-content-center gap-1 export-toolbar">
+  <div className="d-flex justify-content-center gap-1 export-toolbar">
       <button type="button" className="btn btn-sm btn-solid btn-tarot-dark" onClick={onPrint} disabled={busy} title={printTitle}>
         <FontAwesomeIcon icon={faPrint} aria-hidden="true" />
         <span className="toolbar-label ms-1">Print</span>
