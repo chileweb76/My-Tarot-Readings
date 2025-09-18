@@ -499,7 +499,7 @@ export default function Card({
               <div 
                 className="text-center p-3 border rounded d-flex flex-column justify-content-center align-items-center w-100 card-image-fallback"
               >
-                <i className="fas fa-magic mb-2" style={{ fontSize: '1.5rem', opacity: 0.8 }}></i>
+                <div className="mb-2" style={{ fontSize: '1.5rem', opacity: 0.8 }}>✨</div>
                 <div className="text-center">
                   {selectedCard && selectedSuit ? (
                     `${selectedCard}${selectedSuit.toLowerCase() !== 'major arcana' ? ` of ${selectedSuit}` : ''}`

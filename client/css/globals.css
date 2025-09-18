@@ -194,6 +194,20 @@ main.container {
   border-color: #231132 !important;
 }
 
+/* Make dark tarot action buttons match the larger sizing of the primary Add button */
+.btn-tarot-dark {
+  /* match primary sizing so Edit Outcome visually matches Add Outcome */
+  font-size: 1.5rem !important;
+  padding: 0.56rem 1.125rem !important;
+  line-height: 1.2 !important;
+}
+
+.btn-tarot-dark.btn-sm {
+  /* scale-down variant to mirror the .btn-tarot-primary.btn-sm rule */
+  font-size: 1.125rem !important;
+  padding: 0.4rem 0.75rem !important;
+}
+
 /* New Deck button sizing: responsive, keeps text on one line */
 .btn-new-deck {
   white-space: nowrap;
@@ -221,6 +235,21 @@ main.container {
   font-weight: 600;
 }
 
+/* Querent label: larger and bolder to match Insights styling */
+.querent-label {
+  color: #ffffff;
+  font-size: var(--fs-lg); /* 1.25rem */
+  font-weight: 600;
+  line-height: 1.1;
+  min-width: 80px;
+}
+
+@media (max-width: 576px) {
+  .querent-label {
+    font-size: var(--fs-md);
+    min-width: 60px;
+  }
+}
 @media (max-width: 576px) {
   .deck-select-input {
     font-size: var(--fs-md);

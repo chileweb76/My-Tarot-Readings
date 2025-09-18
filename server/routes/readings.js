@@ -123,7 +123,8 @@ router.get('/user', async (req, res) => {
     const readings = await Reading.find({ userId })
       .populate('querent', 'name')
       .populate('spread', 'spread')
-      .populate('deck', 'deckName')
+      .populate('deck')
+      .populate('selectedTags', 'name isGlobal')
       .sort({ dateTime: -1 })
     
     res.json({
@@ -136,12 +137,42 @@ router.get('/user', async (req, res) => {
   }
 })
 
+// GET /api/readings/:id - Get a single reading by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const userId = req.user?.id || req.headers['x-user-id']
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' })
+    }
+
+    const reading = await Reading.findOne({ _id: id, userId })
+      .populate('querent', 'name')
+      .populate('spread', 'spread')
+      .populate('deck')
+      .populate('selectedTags', 'name isGlobal')
+    
+    if (!reading) {
+      return res.status(404).json({ error: 'Reading not found' })
+    }
+
+    res.json({
+      success: true,
+      reading: reading
+    })
+  } catch (error) {
+    console.error('Error fetching reading:', error)
+    res.status(500).json({ error: 'Failed to fetch reading' })
+  }
+})
+
 // PUT /api/readings/:id - Update a reading
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
     // Accept additional writable fields on update so explicit Save persists everything
-    const { question, interpretation, dateTime, drawnCards, image, querent, spread, deck, selectedTags } = req.body
+    const { question, interpretation, outcome, dateTime, drawnCards, image, querent, spread, deck, selectedTags } = req.body
     const userId = req.user?.id || req.headers['x-user-id']
     // Debug: log incoming update body
     try { console.debug('[readings PUT] id=', id, 'body=', req.body, 'headers x-user-id=', req.headers['x-user-id']) } catch (e) {}
@@ -236,6 +267,7 @@ router.put('/:id', async (req, res) => {
     const update = {
       question: typeof question !== 'undefined' ? question : reading.question,
       interpretation: typeof interpretation !== 'undefined' ? interpretation : reading.interpretation,
+      outcome: typeof outcome !== 'undefined' ? outcome : reading.outcome,
       dateTime: dateTime ? new Date(dateTime) : reading.dateTime,
       // allow changing querent/spread/deck on explicit save
       querent: typeof querent !== 'undefined' ? resolvedQuerentForUpdate : reading.querent,

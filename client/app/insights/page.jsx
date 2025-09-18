@@ -499,16 +499,7 @@ export default function InsightsPage() {
           <div style={{ textAlign: 'center', maxWidth: 720, width: '100%' }} ref={rootRef}>
             <div style={{ position: 'relative' }}>
               <h1 className="mb-4 text-white fs-xl">Insights</h1>
-              <button
-                type="button"
-                className="btn btn-tarot-primary btn-sm position-absolute"
-                onClick={() => fetchCount()}
-                disabled={!isInputValid || isFetchingCount}
-                style={{ top: 8, right: 8 }}
-                title={!isInputValid ? 'Adjust timeframe inputs first' : 'Refresh count'}
-              >
-                {isFetchingCount ? <span className="spinner-border spinner-border-sm text-white" role="status" aria-hidden="true"></span> : 'Refresh'}
-              </button>
+              {/* Refresh button removed per UX request */}
             </div>
 
             <div className="d-flex justify-content-center querent-row">
@@ -602,18 +593,7 @@ export default function InsightsPage() {
               <button type="button" className="btn btn-solid btn-tarot-dark" onClick={handleShareAsPdf}>Share as PDF</button>
               <button type="button" className="btn btn-solid btn-tarot-dark" onClick={handleExport}>Export</button>
               <button type="button" className="btn btn-solid btn-tarot-dark" onClick={handleShareText}>Share</button>
-              <button type="button" className="btn btn-outline-light" onClick={async () => {
-                try {
-                  const html = await captureInsightsHtml()
-                  const w = window.open('', '_blank')
-                  if (!w) return notify({ type: 'error', text: 'Unable to open preview window. Allow popups.' })
-                  w.document.write(html)
-                  w.document.close()
-                } catch (e) {
-                  console.error('Preview failed', e)
-                  notify({ type: 'error', text: 'Failed to generate preview' })
-                }
-              }}>Preview</button>
+              {/* Preview removed - use Print/Export/Share actions instead */}
             </div>
 
             <div className="mt-4 d-flex justify-content-center">

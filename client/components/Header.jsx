@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
 import { usePathname } from 'next/navigation'
 
 
@@ -65,11 +64,11 @@ export default function Header() {
   }
 
   const navLinks = [
-    { href: '/', label: 'Home', icon: 'fas fa-home' },
-    { href: '/insights', label: 'Insights', icon: 'fas fa-lightbulb' },
-    { href: '/reading', label: 'Readings', icon: 'fas fa-cards-blank' },
-    { href: '/decks', label: 'Decks', icon: 'fas fa-layer-group' },
-    { href: '/settings', label: 'Settings', icon: 'fas fa-cog' }
+    { href: '/', label: 'Home', icon: 'home' },
+    { href: '/insights', label: 'Insights', icon: 'lightbulb' },
+    { href: '/reading', label: 'Readings', icon: 'id-card' },
+    { href: '/decks', label: 'Decks', icon: 'layer-group' },
+    { href: '/settings', label: 'Settings', icon: 'cog' }
   ]
 
   // Hide header on auth pages (sign-in / register / oauth callbacks)

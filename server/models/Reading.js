@@ -31,6 +31,7 @@ const readingSchema = new mongoose.Schema({
   dateTime: { type: Date, required: true },
   drawnCards: [drawnCardSchema],
   interpretation: { type: String, default: '' }, // overall reading interpretation
+  outcome: { type: String, default: '' }, // outcome of the reading
   selectedTags: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Tag' 
