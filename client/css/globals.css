@@ -14,6 +14,7 @@
   --root-font-size: 16px;
 }
 
+/* Import Font Awesome (installed via npm) for icon fonts used in compact UI */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: #0b1020;
@@ -208,6 +209,25 @@ main.container {
   padding: 0.4rem 0.75rem !important;
 }
 
+/* Export toolbar responsive: show icons-only on narrow screens */
+.export-toolbar .toolbar-label {
+  display: inline-block;
+}
+
+@media (max-width: 540px) {
+  .export-toolbar {
+    gap: 0.25rem !important;
+  }
+  .export-toolbar .toolbar-label {
+    display: none !important;
+  }
+  .export-toolbar .btn {
+    padding-left: 0.45rem !important;
+    padding-right: 0.45rem !important;
+    min-width: 36px;
+    justify-content: center;
+  }
+}
 /* New Deck button sizing: responsive, keeps text on one line */
 .btn-new-deck {
   white-space: nowrap;

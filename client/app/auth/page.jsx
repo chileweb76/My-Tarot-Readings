@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faGoogle } from '../../lib/icons'
 import { apiFetch } from '../../lib/api'
 
 export default function AuthPage() {
@@ -204,7 +206,7 @@ export default function AuthPage() {
                     onClick={handleGoogleSignIn}
                     disabled={isLoading}
                   >
-                    <i className="fab fa-google me-2"></i>
+                    <FontAwesomeIcon icon={faGoogle} className="me-2" />
                     {isLoading ? 'Redirecting...' : 'Sign in with Google'}
                   </button>
               </div>

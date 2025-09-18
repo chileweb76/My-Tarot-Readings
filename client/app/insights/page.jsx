@@ -5,6 +5,7 @@ import AuthWrapper from '../../components/AuthWrapper'
 import { apiFetch } from '../../lib/api'
 import { notify } from '../../lib/toast'
 import { buildSuitDataset } from '../../lib/suitUtils'
+import ExportToolbar from '../../components/ExportToolbar'
 
 export default function InsightsPage() {
   const [querents, setQuerents] = useState([])
@@ -588,12 +589,15 @@ export default function InsightsPage() {
               <div className="mt-4 d-flex justify-content-center"><div className="text-white fs-xl"><strong>Total readings:</strong> {totalCount}</div></div>
             )}
 
-            <div className="mt-3 d-flex justify-content-center" style={{ gap: 8 }}>
-              <button type="button" className="btn btn-solid btn-tarot-dark" onClick={handlePrint}>Print</button>
-              <button type="button" className="btn btn-solid btn-tarot-dark" onClick={handleShareAsPdf}>Share as PDF</button>
-              <button type="button" className="btn btn-solid btn-tarot-dark" onClick={handleExport}>Export</button>
-              <button type="button" className="btn btn-solid btn-tarot-dark" onClick={handleShareText}>Share</button>
-              {/* Preview removed - use Print/Export/Share actions instead */}
+            <div className="mt-3 d-flex justify-content-center">
+              {/* Reusable export/share toolbar component */}
+              <ExportToolbar
+                onPrint={handlePrint}
+                onSharePdf={handleShareAsPdf}
+                onExport={handleExport}
+                onShareText={handleShareText}
+                busy={isFetchingCount}
+              />
             </div>
 
             <div className="mt-4 d-flex justify-content-center">

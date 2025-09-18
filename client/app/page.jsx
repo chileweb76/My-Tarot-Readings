@@ -10,6 +10,7 @@ import SpreadModal from '../components/SpreadModal'
 import CameraModal from '../components/CameraModal'
 import Card from '../components/Card'
 import Toasts from '../components/Toasts'
+import ExportToolbar from '../components/ExportToolbar'
 
 export default function HomePage() {
   // Image size threshold (MB) can be configured via NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB (build-time)
@@ -1406,52 +1407,14 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Export/Share Actions */}
-      <div className="mt-3 d-flex justify-content-center gap-2">
-        <button 
-          type="button" 
-          className="btn btn-solid btn-tarot-dark"
-          onClick={handlePrintReading}
-          disabled={exporting}
-          title="Print reading"
-        >
-          Print
-        </button>
-        <button
-          type="button"
-          className="btn btn-solid btn-tarot-dark"
-          onClick={handleShareAsPdf}
-          disabled={exporting}
-          title="Share reading as PDF"
-        >
-          Share as PDF
-        </button>
-        <button 
-          type="button" 
-          className="btn btn-solid btn-tarot-dark"
-          onClick={handleExportReading}
-          title="Export reading"
-          disabled={exporting}
-        >
-          {exporting ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Exporting...
-            </>
-          ) : (
-            'Export'
-          )}
-        </button>
-        <button 
-          type="button" 
-          className="btn btn-solid btn-tarot-dark"
-          onClick={handleShareReading}
-          disabled={exporting}
-          title="Share reading"
-        >
-          Share
-        </button>
-      </div>
+      {/* Export/Share Actions (reusable) */}
+      <ExportToolbar
+        onPrint={handlePrintReading}
+        onSharePdf={handleShareAsPdf}
+        onExport={handleExportReading}
+        onShareText={handleShareReading}
+        busy={exporting}
+      />
       </form>
       <QuerentModal
         show={addingQuerent}

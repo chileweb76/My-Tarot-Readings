@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCheckCircle, faExclamationTriangle } from '../../../lib/icons'
 import { apiFetch } from '../../../lib/api'
 
 export const dynamic = 'force-dynamic'
@@ -96,7 +98,7 @@ export default function AuthSuccessPage() {
               {status === 'success' && (
                 <div>
                   <div className="text-success mb-3">
-                    <i className="fas fa-check-circle fa-3x"></i>
+                    <FontAwesomeIcon icon={faCheckCircle} size="3x" />
                   </div>
                   <h4 className="text-success">Welcome to My Tarot Readings!</h4>
                   <p className="text-muted">You have been successfully signed in with Google.</p>
@@ -107,7 +109,7 @@ export default function AuthSuccessPage() {
               {status === 'verified' && (
                 <div>
                   <div className="text-success mb-3">
-                    <i className="fas fa-check-circle fa-3x"></i>
+                    <FontAwesomeIcon icon={faCheckCircle} size="3x" />
                   </div>
                   <h4 className="text-success">Account Verified</h4>
                   <p className="text-muted">Your email address has been verified.</p>
@@ -118,7 +120,7 @@ export default function AuthSuccessPage() {
               {status === 'error' && (
                 <div>
                   <div className="text-danger mb-3">
-                    <i className="fas fa-exclamation-triangle fa-3x"></i>
+                    <FontAwesomeIcon icon={faExclamationTriangle} size="3x" />
                   </div>
                   <h4 className="text-danger">Authentication Failed</h4>
                   <p className="text-muted">There was an error processing your sign-in.</p>

@@ -1,5 +1,8 @@
 'use client'
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faExclamationTriangle } from '../../../lib/icons'
+
 export default function AuthErrorPage() {
   return (
     <div className="auth-container">
@@ -8,7 +11,7 @@ export default function AuthErrorPage() {
           <div className="card shadow auth-card">
             <div className="card-body p-5 text-center">
               <div className="text-danger mb-3">
-                <i className="fas fa-exclamation-triangle fa-3x"></i>
+                <FontAwesomeIcon icon={faExclamationTriangle} size="3x" />
               </div>
               <h4 className="text-danger">Authentication Error</h4>
               <p className="text-muted mb-4">

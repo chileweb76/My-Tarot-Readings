@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCog, faUserCircle, faSignOutAlt, faFileExport, faDatabase, faSave } from '../../lib/icons'
 import AuthWrapper from '../../components/AuthWrapper'
 import ConfirmModal from '../../components/ConfirmModal'
 import { notify } from '../../lib/toast'
@@ -572,14 +574,14 @@ export default function SettingsPage() {
         <div className="col-lg-8 mx-auto">
           <div className="card card-reading p-4">
             <h1 className="text-center mb-4">
-              <i className="fas fa-cog text-primary me-2"></i>
+              <FontAwesomeIcon icon={faCog} className="text-primary me-2" />
               Settings
             </h1>
 
             {/* Profile Section with editable username and logout */}
             <div className="mb-5">
               <h4 className="mb-3">
-                <i className="fas fa-user-circle me-2"></i>
+                <FontAwesomeIcon icon={faUserCircle} className="me-2" />
                 Profile
               </h4>
               <div className="mb-3">
@@ -650,7 +652,7 @@ export default function SettingsPage() {
                 {!user?.isDeleted ? (
                   <div className="d-flex gap-2">
                     <button className="btn btn-outline-secondary" onClick={handleLogout}>
-                      <i className="fas fa-sign-out-alt me-2"></i>
+                      <FontAwesomeIcon icon={faSignOutAlt} className="me-2" />
                       Logout
                     </button>
                   </div>
@@ -676,7 +678,7 @@ export default function SettingsPage() {
             {/* My Data */}
             <div className="mb-4 my-data">
               <h4 className="mb-3">
-                <i className="fas fa-file-export me-2"></i>
+                <FontAwesomeIcon icon={faFileExport} className="me-2" />
                 My Data
               </h4>
               <div className="mb-3">
@@ -745,7 +747,7 @@ export default function SettingsPage() {
             {/* Data & Security */}
             <div className="mb-5">
               <h4 className="mb-3">
-                <i className="fas fa-database me-2"></i>
+                <FontAwesomeIcon icon={faDatabase} className="me-2" />
                 Data & Security
               </h4>
               
@@ -998,7 +1000,7 @@ export default function SettingsPage() {
                 className="btn btn-primary btn-lg"
                 onClick={handleSaveSettings}
               >
-                <i className="fas fa-save me-2"></i>
+                <FontAwesomeIcon icon={faSave} className="me-2" />
                 Save Settings
               </button>
             </div>
