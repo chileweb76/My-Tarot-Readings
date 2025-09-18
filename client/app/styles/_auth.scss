@@ -1,0 +1,39 @@
+/* Authentication and Form Styles */
+
+// Auth page styles
+.auth-container {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+}
+
+.auth-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 15px;
+}
+
+.btn-outline-danger:hover {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.form-control:focus {
+  border-color: var(--tarot-primary);
+  box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+}
+
+.btn-primary {
+  background-color: var(--tarot-primary);
+  border-color: var(--tarot-primary);
+  
+  &:hover {
+    background-color: var(--tarot-dark);
+    border-color: var(--tarot-dark);
+  }
+}
+
+.text-primary {
+  color: var(--tarot-primary) !important;
+}

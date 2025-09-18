@@ -1,0 +1,94 @@
+/* Toast and Modal Styles */
+
+/* App toast styles (replace bootstrap toast) */
+.app-toast-wrapper {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+}
+
+.app-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  min-width: 220px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.45);
+  color: #fff;
+  font-weight: 500;
+}
+
+.app-toast__body {
+  flex: 1 1 auto;
+  font-size: var(--fs-sm);
+}
+
+.app-toast__close {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.95);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.app-toast--success { background: linear-gradient(90deg, rgba(40,167,69,0.95), rgba(33,136,56,0.95)); }
+.app-toast--error { background: linear-gradient(90deg, rgba(220,53,69,0.95), rgba(200,40,55,0.95)); }
+.app-toast--neutral { background: linear-gradient(90deg, rgba(74,21,75,0.9), rgba(58,16,58,0.9)); }
+
+/* Toast stack + animations */
+.app-toast-stack {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.app-toast {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.995);
+  transition: opacity 220ms ease, transform 220ms cubic-bezier(.2,.9,.2,1);
+}
+.app-toast--enter {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.app-toast--exit {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.995);
+}
+
+/* Tarot-themed modal styles (scoped) */
+.tarot-modal .modal-dialog { max-width: 540px; }
+.tarot-modal .modal-content {
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,245,255,0.96));
+  border-radius: 12px;
+  border: 2px solid rgba(74,21,75,0.08);
+  box-shadow: 0 12px 40px rgba(10,8,20,0.6);
+  color: #222;
+}
+.tarot-modal .modal-header {
+  background: linear-gradient(90deg, var(--tarot-mystical), var(--tarot-primary));
+  color: #fff;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+.tarot-modal .modal-title { font-weight: 700; }
+.tarot-modal .modal-body { color: #222; }
+.tarot-modal .modal-footer { border-top: none; }
+.tarot-modal .btn-primary {
+  background: linear-gradient(90deg, var(--tarot-primary), var(--tarot-dark));
+  border-color: rgba(0,0,0,0.06);
+}
+.tarot-modal .btn-secondary {
+  background: rgba(0,0,0,0.06);
+  color: #222;
+  border-color: rgba(0,0,0,0.06);
+}
+.tarot-modal .btn-close { filter: invert(1) brightness(0.9); }

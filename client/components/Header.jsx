@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 
 
 export default function Header() {
@@ -81,8 +82,14 @@ export default function Header() {
       <nav className="navbar navbar-expand-lg navbar-dark">
         <div className="container">
           {/* Brand */}
-          <a className="navbar-brand fw-bold" href="/" onClick={closeMenu}>
-            My Tarot Readings
+          <a className="navbar-brand d-flex align-items-center" href="/" onClick={closeMenu}>
+            <Image 
+              src="/images/logo.png" 
+              alt="My Tarot Readings" 
+              width={150}
+              height={50}
+              priority
+            />
           </a>
 
           {/* Mobile menu button */}

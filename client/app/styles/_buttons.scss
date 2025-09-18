@@ -1,0 +1,166 @@
+/* Button variants, sizes, and icon handling */
+
+/* Tarot primary solid button */
+.btn-tarot-primary {
+  /* use tarot primary for the Add button */
+  background: var(--tarot-primary) !important;
+  color: #fff !important;
+  border: 1px solid var(--tarot-primary) !important;
+  /* make the Add button 50% larger: increase font-size and padding */
+  font-size: 1.5rem; /* assumed base 1rem -> 1.5rem (50% larger) */
+  padding: 0.56rem 1.125rem; /* ~1.5x default padding */
+  line-height: 1.2;
+}
+.btn-tarot-primary:hover {
+  /* slightly darker primary for hover */
+  background: #5a31a8 !important;
+  border-color: #5a31a8 !important;
+}
+
+/* Solid-styled action buttons (used for Print / Export / Share actions) */
+.btn-solid {
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+  /* Symmetric padding so text appears centered within the button */
+  padding: 0.45rem 0.9rem !important;
+}
+.btn-solid:active,
+.btn-solid:focus {
+  transform: translateY(0.5px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  outline: none !important;
+}
+
+/* Center icon + label horizontally and vertically inside buttons */
+.btn-solid,
+.btn-tarot-primary,
+.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn i.fas,
+.btn i.far,
+.btn i.fab {
+  /* reset icon margins when inside flex buttons; spacing is handled by gap */
+  margin: 0 !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Give icons a small fixed width so text centers relative to icon block
+   without creating an apparent left-gap when font rendering varies. */
+.btn i.fas,
+.btn i.far,
+.btn i.fab {
+  /* allow icon to size naturally; avoid reserving a fixed width that can create a visual gap */
+  width: auto !important;
+  display: inline-block;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Normalize icon size inside buttons for consistent glyph metrics */
+.btn i.fas,
+.btn i.far,
+.btn i.fab {
+  font-size: var(--btn-icon-size);
+  line-height: 1;
+}
+
+/* Prefer gap on flex containers so icon+label are centered as a single block */
+.btn,
+.btn-solid,
+.btn-tarot-primary {
+  gap: 0.35rem;
+}
+
+/* Accessible focus-visible outlines for keyboard users */
+.btn:focus-visible,
+.btn-solid:focus-visible,
+.btn-tarot-primary:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 4px rgba(111,66,193,0.18), 0 2px 10px rgba(0,0,0,0.08);
+}
+
+/* Variant-specific focus rings for stronger contrast when needed */
+.btn-solid-primary:focus-visible {
+  box-shadow: 0 0 0 4px rgba(111,66,193,0.32), 0 2px 10px rgba(0,0,0,0.12);
+}
+.btn-solid-secondary:focus-visible {
+  box-shadow: 0 0 0 4px rgba(108,117,125,0.28), 0 2px 8px rgba(0,0,0,0.08);
+}
+.btn-solid-success:focus-visible {
+  box-shadow: 0 0 0 4px rgba(40,167,69,0.28), 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Variants to match existing outline colors used in the UI */
+.btn-solid-primary,
+.btn-solid-secondary,
+.btn-solid-success,
+.btn-solid-info {
+  background: var(--tarot-mystical) !important;
+  border-color: var(--tarot-mystical) !important;
+}
+.btn-solid-primary:hover,
+.btn-solid-secondary:hover,
+.btn-solid-success:hover,
+.btn-solid-info:hover {
+  background: #3a103a !important; /* slightly darker mystical shade */
+  border-color: #3a103a !important;
+}
+
+/* Utility class for actions that should use the darker tarot color */
+.btn-tarot-dark,
+.btn-solid-tarot-dark {
+  background: var(--tarot-dark) !important;
+  border-color: var(--tarot-dark) !important;
+  color: #fff !important;
+}
+.btn-tarot-dark:hover,
+.btn-solid-tarot-dark:hover {
+  background: #231132 !important; /* slightly darker tarot-dark */
+  border-color: #231132 !important;
+}
+
+/* Make dark tarot action buttons match the larger sizing of the primary Add button */
+.btn-tarot-dark {
+  /* match primary sizing so Edit Outcome visually matches Add Outcome */
+  font-size: 1.5rem !important;
+  padding: 0.56rem 1.125rem !important;
+  line-height: 1.2 !important;
+}
+.btn-tarot-dark.btn-sm {
+  /* scale-down variant to mirror the .btn-tarot-primary.btn-sm rule */
+  font-size: 1.125rem !important;
+  padding: 0.4rem 0.75rem !important;
+}
+
+/* Ensure small variant still scales reasonably */
+.btn-tarot-primary.btn-sm {
+  font-size: 1.125rem; /* scale small by 50% from typical 0.75rem -> ~1.125rem */
+  padding: 0.4rem 0.75rem;
+}
+
+.btn-new-deck {
+  white-space: nowrap;
+  min-width: 120px;
+  padding: 0.5rem 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .btn-new-deck {
+    min-width: 140px;
+    padding: 0.56rem 1.05rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .btn-new-deck {
+    min-width: 160px;
+    padding: 0.6rem 1.25rem;
+  }
+}

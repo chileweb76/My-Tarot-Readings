@@ -1,5 +1,4 @@
-@charset "UTF-8";
-/* Import all SASS modules using modern @use syntax */
+/* Import all SASS modules in order of dependency */
 /* 1. Variables and tokens first */
 :root {
   --tarot-primary: #6f42c1;
@@ -128,13 +127,6 @@ main.container {
   border-top: 1px solid rgba(255, 255, 255, 0.04);
   background: linear-gradient(90deg, rgba(74, 21, 75, 0.9), rgba(58, 16, 58, 0.9));
   color: rgba(255, 255, 255, 0.9);
-}
-.footer img {
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
-}
-.footer img:hover {
-  opacity: 1;
 }
 
 /* Scoped utility: card variant that ensures image area has vertical space */
@@ -565,52 +557,13 @@ main.container {
   font-size: 1.5rem;
 }
 
-/* Header background: transparent with subtle backdrop blur */
+/* Header background: use mystical tarot color with subtle gradient */
 .navbar {
-  background: transparent;
-  border: none;
-  -webkit-backdrop-filter: blur(10px);
-          backdrop-filter: blur(10px);
+  background: linear-gradient(90deg, var(--tarot-mystical), #3a103a);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
   color: #fff;
-  padding: 0.5rem 0;
-}
-
-/* Navbar layout: fixed max-width compact container with logo left and nav right */
-.navbar .container {
-  display: flex;
-  justify-content: space-between; /* logo on left, nav on right */
-  align-items: center;
-  max-width: 920px; /* keep navbar compact — adjust if you want wider/narrower */
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 1rem;
-  gap: 2rem; /* spacing between logo and nav area */
-}
-
-/* Responsive spacing adjustments */
-@media (max-width: 1200px) {
-  .navbar .container {
-    max-width: 760px;
-    gap: 1.5rem;
-  }
-}
-@media (max-width: 768px) {
-  .navbar .container {
-    max-width: 100%;
-    gap: 1rem;
-    justify-content: space-between; /* ensure hamburger stays right on small screens */
-    padding: 0 0.75rem;
-  }
-}
-/* Make navbar collapse inline on desktop. Keep desktop collapsed element transparent so
-   it doesn't create the dark rounded bar between logo and nav. Mobile collapsed/menu
-   background is applied only under the mobile media query further below. */
-.navbar-collapse {
-  flex-grow: 0;
-  background: transparent; /* avoid dark rounded bar on desktop */
-  border-radius: 0; /* remove any rounding on desktop */
-  -webkit-backdrop-filter: none;
-          backdrop-filter: none;
 }
 
 /* Ensure navbar links remain readable on the mystical background */
@@ -620,35 +573,21 @@ main.container {
   color: rgba(255, 255, 255, 0.95) !important;
 }
 
+/* Tweak collapsed mobile menu background to use a semi-opaque mystical shade */
+.navbar-collapse {
+  background: linear-gradient(180deg, rgba(74, 21, 75, 0.95), rgba(58, 16, 58, 0.95));
+  border-radius: 0.5rem;
+}
+
 .navbar-brand {
+  font-size: 1.4rem;
+  font-weight: 700;
   text-decoration: none !important;
 }
 .navbar-brand:hover {
-  opacity: 0.9;
-}
-.navbar-brand img {
-  transition: transform 0.2s ease, opacity 0.2s ease;
-  height: 50px !important;
-  width: auto !important;
-  max-width: 200px;
-}
-.navbar-brand:hover img {
-  transform: scale(1.02);
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* Responsive logo sizing */
-@media (max-width: 576px) {
-  .navbar-brand img {
-    height: 40px !important;
-    max-width: 160px !important;
-  }
-}
-@media (max-width: 400px) {
-  .navbar-brand img {
-    height: 35px !important;
-    max-width: 140px !important;
-  }
-}
 .nav-link {
   font-weight: 500;
   transition: all 0.3s ease;
@@ -687,20 +626,14 @@ main.container {
 
 /* Mobile Navigation */
 @media (max-width: 991.98px) {
-  .navbar .container {
-    max-width: 100%;
-    justify-content: space-between;
-    gap: 0;
-  }
   .navbar-collapse {
-    background-color: rgba(74, 21, 75, 0.85);
-    -webkit-backdrop-filter: blur(15px);
-            backdrop-filter: blur(15px);
+    background-color: rgba(111, 66, 193, 0.95);
+    -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
     border-radius: 0.75rem;
     margin-top: 1rem;
     padding: 1rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    width: 100%;
   }
   .navbar-nav {
     padding: 0.5rem 0;
@@ -1479,4 +1412,4 @@ main.container {
   margin-bottom: 18px;
   /* slightly darker to match Profile separator */
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}/*# sourceMappingURL=globals.css.map */
+}/*# sourceMappingURL=globals-new.css.map */

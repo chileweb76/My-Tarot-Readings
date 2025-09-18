@@ -1,0 +1,52 @@
+/* Export toolbar and per-card compact toolbar rules */
+
+/* Export toolbar responsive: show icons-only on narrow screens */
+.export-toolbar .toolbar-label {
+  display: inline-block;
+}
+@media (max-width: 540px) {
+  .export-toolbar {
+    gap: 0.25rem !important;
+  }
+  .export-toolbar .toolbar-label {
+    display: none !important;
+  }
+  .export-toolbar .btn {
+    padding-left: 0.45rem !important;
+    padding-right: 0.45rem !important;
+    min-width: 36px;
+    justify-content: center;
+  }
+}
+
+/* Per-card toolbar (compact) - used inside reading cards
+   Adjusted to visually align with the Edit/Add Outcome button
+   (.btn-tarot-dark) so both controls appear vertically balanced.
+*/
+.reading-card > div[style] > .export-toolbar,
+.reading-card .export-toolbar {
+  background: rgba(255,255,255,0.02);
+  padding: 6px 6px; /* slightly increased vertical padding to better match .btn-tarot-dark */
+  border-radius: 8px; /* match slightly larger radius */
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+  display: inline-flex;
+  align-items: center; /* vertically center with outcome button */
+  gap: 0.35rem; /* consistent with button gap */
+  margin-top: 0; /* remove extra top gap so toolbar aligns with surrounding content */
+}
+.reading-card .export-toolbar .btn {
+  padding: 0.3rem 0.5rem !important; /* tweak vertical padding for baseline alignment */
+  font-size: 1rem; /* match base button sizing so icons and text align */
+  min-width: 40px;
+  line-height: 1.2; /* align with .btn-tarot-dark line-height */
+  border-radius: 6px;
+}
+.reading-card .export-toolbar .btn .toolbar-label { display: none; }
+
+@media (max-width: 540px) {
+  .reading-card > div[style] > .export-toolbar,
+  .reading-card .export-toolbar {
+    margin-top: 0px; /* remove extra spacing on small screens to avoid crowding */
+    padding: 4px 6px; /* slightly smaller padding on mobile */
+  }
+}

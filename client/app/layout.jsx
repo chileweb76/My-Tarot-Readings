@@ -7,12 +7,17 @@ import BootstrapJsLoader from '../components/BootstrapJsLoader'
 export const metadata = {
   title: 'My Tarot Readings',
   description: 'Discover your spiritual path through tarot',
+  icons: {
+    icon: '/images/favicon.ico',
+  },
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-  <head />
+  <head>
+    <link rel="icon" href="/images/favicon.ico" />
+  </head>
       <body>
         <div className="app-shell d-flex flex-column min-vh-100">
           <Header />

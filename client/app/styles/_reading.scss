@@ -1,0 +1,139 @@
+/* Reading-specific Styles */
+
+/* Deletion controls visual separation */
+.deletion-controls {
+  border: 1px solid rgba(220, 53, 69, 0.12); /* subtle red border */
+  background: rgba(220, 53, 69, 0.03); /* very light red tint */
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+.deletion-controls .btn {
+  min-width: 140px;
+}
+
+/* Reading section text color (ensure high contrast on dark background) */
+.reading {
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+}
+.reading h2 {
+  color: #ffffff;
+  margin-top: 0.25rem;
+  /* use responsive font-size token for large section headings */
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+/* Label for the deck select should be white for contrast on dark bg */
+.deck-select-label {
+  color: #ffffff;
+  /* match querent label sizing and weight */
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+  font-weight: 400;
+}
+
+@media (max-width: 576px) {
+  .deck-select-label {
+    font-size: 1rem;
+  }
+}
+
+/* Make the deck select input text match the large reading heading */
+.deck-select-input {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+}
+
+/* Querent label: larger and bolder to match Insights styling */
+.querent-label {
+  color: #ffffff;
+  font-size: var(--fs-lg); /* 1.25rem */
+  font-weight: 600;
+  line-height: 1.1;
+  min-width: 80px;
+}
+
+@media (max-width: 576px) {
+  .querent-label {
+    font-size: var(--fs-md);
+    min-width: 60px;
+  }
+}
+
+@media (max-width: 576px) {
+  .deck-select-input {
+    font-size: var(--fs-md);
+    font-weight: 500;
+  }
+}
+
+/* Querent row styling */
+.querent-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center; /* keep centered */
+  margin-top: 0.75rem;
+}
+.querent-row .form-label {
+  /* make label visually match the select/input font-size and align vertically */
+  display: inline-flex;
+  align-items: center;
+  height: auto;
+  padding: 0 8px;
+  margin: 0; /* remove default bottom margin */
+  /* use responsive token for label */
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+}
+.querent-row .form-select {
+  display: inline-block;
+}
+
+.querent-input {
+  width: 160px;
+}
+
+/* My Data block bottom border to match Profile separation */
+.my-data {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  /* slightly darker to match Profile separator */
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+}
+
+/* Responsive: make elements smaller on small/mobile screens */
+@media (max-width: 576px) {
+  .reading h2 {
+    font-size: 1.6rem; /* reduce headline on mobile */
+    margin-top: 0.25rem;
+  }
+
+  .reading {
+    font-size: 0.95rem;
+  }
+
+  .querent-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .querent-row .form-label {
+    font-size: 1rem; /* smaller label on mobile */
+    padding: 0 6px;
+  }
+
+  .querent-row .form-select {
+    width: 160px !important;
+  }
+
+  .querent-input {
+    width: 120px;
+  }
+
+  .deletion-controls {
+    padding: 8px 10px;
+  }
+}
