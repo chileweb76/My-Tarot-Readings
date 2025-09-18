@@ -1,9 +1,11 @@
 const express = require('express')
 const cors = require('cors')
 const dotenv = require('dotenv')
+const path = require('path')
 
-// Load environment variables early so other modules (passport) can use them
-dotenv.config()
+// Load environment variables from server/.env explicitly so running from
+// project root picks up the server env values reliably.
+dotenv.config({ path: path.resolve(__dirname, '.env') })
 
 const mongoose = require('mongoose')
 const session = require('express-session')
@@ -11,7 +13,6 @@ const passport = require('./config/passport')
 
 const app = express()
 
-const path = require('path')
 const fs = require('fs')
 
 // Ensure uploads directory exists and serve it statically
@@ -169,7 +170,10 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }))
-app.use(express.json())
+// Increase default JSON size limit so large requests don't get rejected by
+// the global parser before route-specific parsers run. Keep this moderate
+// and allow the export route to accept even bigger payloads.
+app.use(express.json({ limit: '10mb' }))
 
 // Session configuration (for Passport)
 app.use(session({
@@ -196,7 +200,12 @@ app.use('/api/decks', require('./routes/decks'))
 app.use('/api/spreads', require('./routes/spreads'))
 app.use('/api/card-image', require('./routes/card-image'))
 // Server-side PDF export endpoint
-app.use('/api/export', require('./routes/export-pdf'))
+// Allow larger JSON payloads on this route because clients may POST full-page
+// HTML with inlined base64 images (canvas data URLs). Default express.json
+// limit is too small and will throw PayloadTooLargeError for those requests.
+app.use('/api/export', express.json({ limit: '50mb' }), require('./routes/export-pdf'))
+// Insights endpoints
+app.use('/api/insights', require('./routes/insights'))
 
 // Backwards-compatible redirect: some emails may contain /auth/verify (no /api/)
 // Redirect those to the API verify endpoint so legacy links don't 404.

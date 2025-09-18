@@ -19,8 +19,25 @@ if (typeof fetch === 'undefined') {
 // Expected body: { reading: { by, date, querent, spread, deck, question, cards: [{title}], interpretation }, fileName }
 router.post('/pdf', async (req, res) => {
   try {
-    const { reading, fileName = 'reading.pdf' } = req.body
-    if (!reading) return res.status(400).json({ error: 'reading object required' })
+    const { reading, fileName = 'reading.pdf', html } = req.body
+
+    // If caller provided raw HTML, render it directly to PDF. This allows clients
+    // (like the Insights page) to assemble a full HTML snapshot (including an
+    // inlined chart image) and have the server return a PDF of exactly that HTML.
+    if (html && typeof html === 'string') {
+      console.log('[export-pdf] Rendering raw HTML payload to PDF (fileName=%s, htmlLength=%d)', fileName, html.length)
+      const pdfBuffer = await renderPdfFromHtml(html)
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Length': pdfBuffer.length
+      })
+      return res.send(pdfBuffer)
+    }
+
+  const readData = reading || req.body.reading
+  if (!readData) return res.status(400).json({ error: 'reading object required' })
+  const normalizedReading = readData
 
     // Load and compile template
     const tplPath = path.join(__dirname, '..', 'templates', 'reading-template.hbs')
@@ -38,7 +55,7 @@ router.post('/pdf', async (req, res) => {
       cards: [],
       interpretation: '',
       exportedAt: new Date().toLocaleString()
-    }, reading)
+    }, normalizedReading)
 
     // Normalize image URLs: make relative paths absolute using request host
     try {
@@ -120,10 +137,10 @@ router.post('/pdf', async (req, res) => {
       console.warn('Image inlining step failed', e)
     }
 
-    const html = tpl(data)
+  const renderedHtml = tpl(data)
 
     // Render PDF using reusable worker
-    const pdfBuffer = await renderPdfFromHtml(html)
+  const pdfBuffer = await renderPdfFromHtml(renderedHtml)
 
     res.set({
       'Content-Type': 'application/pdf',
