@@ -139,6 +139,31 @@
   padding: 0.4rem 0.75rem !important;
 }
 
+/* Tarot secondary variant (lighter, complementary action color) */
+.btn-tarot-secondary,
+.btn-solid-tarot-secondary {
+  background: var(--tarot-secondary) !important;
+  border-color: var(--tarot-secondary) !important;
+  color: #fff !important;
+}
+.btn-tarot-secondary:hover,
+.btn-solid-tarot-secondary:hover {
+  /* Use a fixed slightly darker tint for hover to avoid depending on SCSS color functions
+     which keeps the compiled CSS predictable. Chosen hex is a darker variant of --tarot-secondary. */
+  background: #cc2f76 !important;
+  border-color: #cc2f76 !important;
+}
+
+.btn-tarot-secondary {
+  font-size: 1.5rem !important;
+  padding: 0.56rem 1.125rem !important;
+  line-height: 1.2 !important;
+}
+.btn-tarot-secondary.btn-sm {
+  font-size: 1.125rem !important;
+  padding: 0.4rem 0.75rem !important;
+}
+
 /* Ensure small variant still scales reasonably */
 .btn-tarot-primary.btn-sm {
   font-size: 1.125rem; /* scale small by 50% from typical 0.75rem -> ~1.125rem */

@@ -484,7 +484,7 @@ export default function ReadingPage() {
                     </div>
                     <div className="card-body" style={{ paddingTop: '50px' }}>
                       <button
-                        className={`btn btn-sm position-absolute ${hasOutcome ? 'btn-tarot-dark' : 'btn-tarot-primary'}`}
+                        className={`btn btn-sm position-absolute btn-tarot-secondary`}
                         style={{ top: '10px', right: '10px' }}
                         onClick={(e) => handleEditClick(e, reading)}
                         title={hasOutcome ? 'Edit Outcome' : 'Add Outcome'}

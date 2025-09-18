@@ -2,9 +2,22 @@
 
 .navbar {
   background: linear-gradient(90deg, var(--tarot-mystical), #3a103a);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  /* Remove the bottom border and any box-shadow so the navbar blends cleanly with the page */
+  border-bottom: none !important;
+  box-shadow: none !important;
   backdrop-filter: blur(6px);
   color: #fff;
+}
+
+/* Ensure the header element that wraps the navbar uses the same background and no shadow
+   so the navbar appears to be part of the header (blends seamlessly). This overrides
+   Bootstrap's `bg-primary` and `shadow-sm` utility classes when applied to the header. */
+header.bg-primary,
+header.bg-primary.shadow-sm,
+.bg-primary.shadow-sm {
+  background: linear-gradient(90deg, var(--tarot-mystical), #3a103a) !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
 }
 
 /* Ensure navbar links remain readable on the mystical background */
@@ -108,6 +121,53 @@
   
   &:focus {
     box-shadow: none !important;
+  }
+}
+
+/* Ensure header and navbar render above the body overlay and remove any residual
+   rounded backgrounds on desktop collapsed elements. This prevents a dark rounded
+   'pill' appearing behind the nav links when the collapse element has background
+   styles in other files or when the `show` class is present. */
+header, header .navbar {
+  position: relative;
+  z-index: 3;
+}
+
+@media (min-width: 992px) {
+  .navbar .collapse,
+  .navbar .navbar-collapse,
+  .navbar .collapse.show,
+  .navbar .navbar-collapse.show,
+  .navbar .container > .collapse,
+  header .navbar-collapse {
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+  }
+}
+
+/* Additional strict overrides to remove any grouped backgrounds behind nav links */
+@media (min-width: 992px) {
+  header .navbar .container,
+  header .navbar .container *,
+  header .navbar .navbar-collapse,
+  header .navbar .navbar-collapse * {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  header::before,
+  header::after,
+  header .navbar::before,
+  header .navbar::after {
+    content: none !important;
+    display: none !important;
   }
 }
 

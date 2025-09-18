@@ -53,6 +53,32 @@
   backdrop-filter: none;
 }
 
+/* Extra-high specificity desktop overrides to erase any residual rounded pill */
+@media (min-width: 992px) {
+  .navbar .container, .navbar .container > .collapse, .navbar .container .navbar-collapse, header .navbar-collapse {
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+  }
+  /* Ensure nav links don't have a grouped rounded background behind them */
+  .navbar .nav-link, .navbar .nav-item {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Clear any pseudo elements that might be used for grouping or hover clusters */
+  .navbar .nav-link::before,
+  .navbar .nav-link::after,
+  .navbar .navbar-nav::before,
+  .navbar .navbar-nav::after {
+    content: none !important;
+    background: transparent !important;
+    display: none !important;
+  }
+}
+
 /* Ensure navbar links remain readable on the mystical background */
 .navbar .nav-link,
 .navbar .navbar-brand,

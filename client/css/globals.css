@@ -535,6 +535,33 @@ main.container {
   padding: 0.4rem 0.75rem !important;
 }
 
+/* Tarot secondary variant (lighter, complementary action color) */
+.btn-tarot-secondary,
+.btn-solid-tarot-secondary {
+  background: var(--tarot-secondary) !important;
+  border-color: var(--tarot-secondary) !important;
+  color: #fff !important;
+}
+
+.btn-tarot-secondary:hover,
+.btn-solid-tarot-secondary:hover {
+  /* Use a fixed slightly darker tint for hover to avoid depending on SCSS color functions
+     which keeps the compiled CSS predictable. Chosen hex is a darker variant of --tarot-secondary. */
+  background: #cc2f76 !important;
+  border-color: #cc2f76 !important;
+}
+
+.btn-tarot-secondary {
+  font-size: 1.5rem !important;
+  padding: 0.56rem 1.125rem !important;
+  line-height: 1.2 !important;
+}
+
+.btn-tarot-secondary.btn-sm {
+  font-size: 1.125rem !important;
+  padding: 0.4rem 0.75rem !important;
+}
+
 /* Ensure small variant still scales reasonably */
 .btn-tarot-primary.btn-sm {
   font-size: 1.125rem; /* scale small by 50% from typical 0.75rem -> ~1.125rem */
@@ -613,6 +640,31 @@ main.container {
           backdrop-filter: none;
 }
 
+/* Extra-high specificity desktop overrides to erase any residual rounded pill */
+@media (min-width: 992px) {
+  .navbar .container, .navbar .container > .collapse, .navbar .container .navbar-collapse, header .navbar-collapse {
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+  }
+  /* Ensure nav links don't have a grouped rounded background behind them */
+  .navbar .nav-link, .navbar .nav-item {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  /* Clear any pseudo elements that might be used for grouping or hover clusters */
+  .navbar .nav-link::before,
+  .navbar .nav-link::after,
+  .navbar .navbar-nav::before,
+  .navbar .navbar-nav::after {
+    content: none !important;
+    background: transparent !important;
+    display: none !important;
+  }
+}
 /* Ensure navbar links remain readable on the mystical background */
 .navbar .nav-link,
 .navbar .navbar-brand,
@@ -1194,10 +1246,23 @@ main.container {
 /* Navbar, toast, and other component styles */
 .navbar {
   background: linear-gradient(90deg, var(--tarot-mystical), #3a103a);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  /* Remove the bottom border and any box-shadow so the navbar blends cleanly with the page */
+  border-bottom: none !important;
+  box-shadow: none !important;
   -webkit-backdrop-filter: blur(6px);
           backdrop-filter: blur(6px);
   color: #fff;
+}
+
+/* Ensure the header element that wraps the navbar uses the same background and no shadow
+   so the navbar appears to be part of the header (blends seamlessly). This overrides
+   Bootstrap's `bg-primary` and `shadow-sm` utility classes when applied to the header. */
+header.bg-primary,
+header.bg-primary.shadow-sm,
+.bg-primary.shadow-sm {
+  background: linear-gradient(90deg, var(--tarot-mystical), #3a103a) !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
 }
 
 /* Ensure navbar links remain readable on the mystical background */
@@ -1294,6 +1359,50 @@ main.container {
   box-shadow: none !important;
 }
 
+/* Ensure header and navbar render above the body overlay and remove any residual
+   rounded backgrounds on desktop collapsed elements. This prevents a dark rounded
+   'pill' appearing behind the nav links when the collapse element has background
+   styles in other files or when the `show` class is present. */
+header, header .navbar {
+  position: relative;
+  z-index: 3;
+}
+
+@media (min-width: 992px) {
+  .navbar .collapse,
+  .navbar .navbar-collapse,
+  .navbar .collapse.show,
+  .navbar .navbar-collapse.show,
+  .navbar .container > .collapse,
+  header .navbar-collapse {
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+/* Additional strict overrides to remove any grouped backgrounds behind nav links */
+@media (min-width: 992px) {
+  header .navbar .container,
+  header .navbar .container *,
+  header .navbar .navbar-collapse,
+  header .navbar .navbar-collapse * {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  header::before,
+  header::after,
+  header .navbar::before,
+  header .navbar::after {
+    content: none !important;
+    display: none !important;
+  }
+}
 /* App toast styles (replace bootstrap toast) */
 .app-toast-wrapper {
   position: fixed;
