@@ -1,24 +1,33 @@
 {
   "name": "mytarotreadings",
   "private": true,
-  "workspaces": [
-    "client"
-  ],
   "scripts": {
-    "dev": "cd client && npm run dev",
-    "dev:client": "cd client && npm run dev",
-    "build": "cd client && npm run build",
-    "vercel-build": "cd client && npm run build",
-    "start": "cd client && npm run start",
-    "install:all": "npm install && npm install --prefix client"
+    "dev": "next dev",
+    "dev:client": "next dev",
+    "build": "next build",
+    "vercel-build": "next build",
+    "start": "next start",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "install:all": "npm install"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "@types/node": "24.3.1",
+    "@types/react": "19.1.12",
+    "eslint": "^9.36.0",
+    "eslint-config-next": "^15.5.3"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^7.0.1",
     "@fortawesome/free-solid-svg-icons": "^7.0.1",
     "@fortawesome/react-fontawesome": "^3.0.2",
-    "sharp": "^0.34.4"
+    "bootstrap": "^5.3.2",
+    "chart.js": "^4.5.0",
+    "next": "^15.5.3",
+    "react": "^18.3.1",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^18.3.1",
+    "sass": "^1.69.5",
+    "sharp": "^0.32.6"
   }
 }
