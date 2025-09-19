@@ -15,8 +15,7 @@ export {
   faDatabase,
   faSave
 } from '@fortawesome/free-solid-svg-icons'
-
-// Brand icons  
+// Brand icons
 export { faGoogle } from '@fortawesome/free-brands-svg-icons'
 
 // Regular icons (if needed)

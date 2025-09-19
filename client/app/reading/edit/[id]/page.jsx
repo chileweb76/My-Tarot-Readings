@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import AuthWrapper from '../../../../components/AuthWrapper'
 import { apiFetch } from '../../../../lib/api'
@@ -214,10 +215,13 @@ export default function EditReadingPage() {
               <div className="card-body">
                 {reading.image && (
                   <div className="text-center mb-3">
-                    <img 
-                      src={reading.image} 
-                      alt="Reading image" 
-                      style={{ maxWidth: '300px', maxHeight: '200px', borderRadius: '6px' }}
+                    <Image
+                      src={reading.image}
+                      alt="Reading image"
+                      width={300}
+                      height={200}
+                      style={{ borderRadius: '6px', objectFit: 'contain' }}
+                      unoptimized
                     />
                   </div>
                 )}
@@ -276,10 +280,13 @@ export default function EditReadingPage() {
                             </h6>
                             {card.image && (
                               <div className="mb-3">
-                                <img 
-                                  src={card.image} 
-                                  alt={card.title || card.name || 'Card'} 
-                                  style={{ maxWidth: '120px', maxHeight: '180px', borderRadius: '6px' }}
+                                <Image
+                                  src={card.image}
+                                  alt={card.title || card.name || 'Card'}
+                                  width={120}
+                                  height={180}
+                                  style={{ borderRadius: '6px', objectFit: 'cover' }}
+                                  unoptimized
                                 />
                               </div>
                             )}

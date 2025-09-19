@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCog, faUserCircle, faSignOutAlt, faFileExport, faDatabase, faSave } from '../../lib/icons'
 import AuthWrapper from '../../components/AuthWrapper'
@@ -380,13 +381,21 @@ export default function SettingsPage() {
     let mounted = true
   apiFetch('/auth/me')
       .then(async (r) => {
+        // Handle 401 unauthorized by clearing tokens and redirecting
+        if (r.status === 401) {
+          localStorage.removeItem('token')
+          localStorage.removeItem('refreshToken')
+          localStorage.removeItem('user')
+          window.location.href = '/auth'
+          return
+        }
         const ct = r.headers.get('content-type') || ''
         if (ct.includes('application/json')) return r.json()
         const text = await r.text()
         throw new Error(`Unexpected non-JSON response (${r.status}): ${text.slice(0,200)}`)
       })
       .then(data => {
-        if (mounted && data.user) {
+        if (mounted && data && data.user) {
           setUser(data.user)
         }
       }).catch((err) => {
@@ -670,14 +679,17 @@ export default function SettingsPage() {
                 <label className="d-block mb-2">Avatar</label>
                 <div className="mb-2">
                   {picturePreview ? (
-                    <img
+                    <Image
                       key={picturePreview}
                       src={picturePreview}
                       alt="avatar preview"
-                      onLoad={() => setPreviewLoaded(true)}
+                      onLoadingComplete={() => setPreviewLoaded(true)}
                       onError={() => setPreviewLoaded(true)}
                       className={`avatar-transition ${previewLoaded ? 'loaded' : ''}`}
-                      style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: '50%' }}
+                      width={96}
+                      height={96}
+                      style={{ objectFit: 'cover', borderRadius: '50%' }}
+                      unoptimized
                     />
                   ) : (
                     <div style={{ width: 96, height: 96, borderRadius: '50%', background: '#eee', display: 'inline-block' }} />
@@ -789,7 +801,7 @@ export default function SettingsPage() {
                 </div>
                 {decks.length === 0 && (
                   <div className="text-muted mt-2">
-                    <em>You don't have any custom decks to delete.</em>
+                    <em>You do not have any custom decks to delete.</em>
                   </div>
                 )}
               </div>
@@ -807,7 +819,7 @@ export default function SettingsPage() {
                 </div>
                 {spreads.length === 0 && (
                   <div className="text-muted mt-2">
-                    <em>You don't have any custom spreads to delete.</em>
+                    <em>You do not have any custom spreads to delete.</em>
                   </div>
                 )}
               </div>
@@ -894,7 +906,7 @@ export default function SettingsPage() {
               body={(
                 <div>
                   <p>This will permanently delete the selected querent and their associated readings. This action cannot be undone.</p>
-                  <p>Please type the querent's name to confirm.</p>
+                  <p>Please type the querent name to confirm.</p>
                   <div className="mb-2">
                     <input className="form-control" placeholder="Type querent name to confirm" value={deleteQuerentVerifyName} onChange={(e) => setDeleteQuerentVerifyName(e.target.value)} />
                   </div>

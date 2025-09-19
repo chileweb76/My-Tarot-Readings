@@ -11,7 +11,8 @@
   border: none;
   backdrop-filter: blur(10px);
   color: #fff;
-  padding: 0.5rem 0;
+  padding: 1rem 0; /* increase vertical padding to allow larger logo */
+  min-height: 100px; /* ensure navbar can accommodate larger logos */
 }
 
 /* Navbar layout: fixed max-width compact container with logo left and nav right */
@@ -95,13 +96,61 @@
   
   img {
     transition: transform 0.2s ease, opacity 0.2s ease;
-    height: 50px !important;
+    height: auto !important; /* remove fixed height constraint */
     width: auto !important;
     max-width: 200px;
+    max-height: 80px; /* increase from previous 50px constraint */
   }
   
   &:hover img {
     transform: scale(1.02);
+  }
+}
+
+/* Site logo utility class for consistent responsive sizing */
+.site-logo {
+  display: inline-block;
+  /* Responsive sizing: min 120px, ideal 12vw, max 320px */
+  width: clamp(160px, 14vw, 420px);
+  height: auto;
+  max-height: 240px;
+}
+
+/* Small variant for footer and other compact placements */
+.site-logo--small {
+  width: clamp(36px, 4.5vw, 80px);
+  max-height: 80px;
+}
+
+/* Ensure the image inside .site-logo scales responsively */
+.site-logo img,
+.site-logo :global(img),
+.site-logo--small img,
+.site-logo--small :global(img) {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* Fine vertical alignment tweak so the logo sits in the center of the navbar */
+.navbar .navbar-brand,
+.navbar .site-logo {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Override legacy rule that forced navbar-brand img to a small fixed height */
+.navbar .site-logo img,
+.navbar .site-logo :global(img) {
+  height: auto !important;
+  max-height: 240px !important;
+  width: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .site-logo {
+    width: clamp(100px, 26vw, 220px);
   }
 }
 

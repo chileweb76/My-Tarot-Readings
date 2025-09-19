@@ -15,7 +15,7 @@ export function LargeImageWarningModal({ info, getImageSizeLimitBytes, onClose }
             <button type="button" className="btn-close" onClick={handleCancel} aria-label="Close"></button>
           </div>
           <div className="modal-body">
-            <p>The image you're about to include is large ({humanSize}). Embedding it as a data URL may produce a very large export and could be slow or fail.</p>
+            <p>The image you are about to include is large ({humanSize}). Embedding it as a data URL may produce a very large export and could be slow or fail.</p>
             {typeof getImageSizeLimitBytes === 'function' && (<p>Current configured limit: {(getImageSizeLimitBytes() / 1024 / 1024).toFixed(2)} MB</p>)}
             <p>Do you want to continue converting this image?</p>
           </div>
@@ -40,7 +40,7 @@ export function ExportSignInModal({ show, onClose }) {
             <button type="button" className="btn-close" onClick={onClose} aria-label="Close"></button>
           </div>
           <div className="modal-body">
-            <p>To export this reading with the attached image, please sign in so the image can be uploaded. You can sign in and then retry the export.</p>
+            <p>To export this reading with the attached image, please sign in so the image can be uploaded. You may sign in and then retry the export.</p>
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
@@ -52,4 +52,5 @@ export function ExportSignInModal({ show, onClose }) {
   )
 }
 
-export default { LargeImageWarningModal, ExportSignInModal }
+const ExportModals = { LargeImageWarningModal, ExportSignInModal }
+export default ExportModals

@@ -1,5 +1,6 @@
-'use client'
+"use client"
 
+import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faExclamationTriangle } from '../../../lib/icons'
 
@@ -23,12 +24,12 @@ export default function AuthErrorPage() {
                 <li>Network connectivity problems</li>
               </ul>
               <div className="d-grid gap-2">
-                <a href="/auth" className="btn btn-primary">
-                  Try Again
-                </a>
-                <a href="/" className="btn btn-outline-secondary">
+                                <Link href="/auth" className="btn btn-tarot-primary">
+                  Return to Sign In
+                </Link>
+                <Link href="/" className="btn btn-outline-secondary">
                   Go to Home
-                </a>
+                </Link>
               </div>
             </div>
           </div>

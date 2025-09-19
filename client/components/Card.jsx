@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
+import Image from 'next/image'
 import { apiFetch } from '../lib/api'
 import ConfirmModal from './ConfirmModal'
 import { notify } from '../lib/toast'
@@ -86,42 +87,60 @@ export default function Card({
     }
   })() : []
 
-  useEffect(() => {
-    if (selectedSuit && selectedCard) {
-      fetchCardImage()
-    } else if (title && deck) {
-      // Try to fetch image using the title prop (for spread positions)
-      fetchCardImageByTitle()
-    } else {
-      setCurrentImage(null)
-    }
-  }, [selectedSuit, selectedCard, deck, title])
-
-  // Notify parent of current card state when relevant values change
-  const onChangeRef = React.useRef(onChange)
-  useEffect(() => { onChangeRef.current = onChange }, [onChange])
-
-  useEffect(() => {
+  // Wrap functions in useCallback to keep stable references for effects
+  const fetchCardImage = useCallback(async () => {
+    setLoading(true)
     try {
-      const fn = onChangeRef.current
-      if (typeof fn === 'function') {
-        fn({
-          title,
-          selectedSuit,
-          selectedCard,
-          reversed,
-          interpretation,
-          image: currentImage
-        })
+      if (getCardImageUrl) {
+        const imageUrl = getCardImageUrl(selectedSuit, selectedCard)
+        setCurrentImage(imageUrl)
+      } else {
+        const cardName = selectedSuit.toLowerCase() === 'major arcana' 
+          ? selectedCard 
+          : `${selectedCard} of ${selectedSuit}`
+        
+        if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
+          // For Rider-Waite, use direct static paths
+          const imageUrl = generateRiderWaiteStaticUrl(cardName)
+          setCurrentImage(imageUrl)
+        } else if (deckData && deckData.cards) {
+          // For custom decks, look up the card image in deckData
+          const card = deckData.cards.find(c => 
+            (c.name || '').toLowerCase() === cardName.toLowerCase()
+          )
+          if (card && card.image) {
+            console.log(`Found card image for "${cardName}":`, card.image)
+            setCurrentImage(card.image)
+          } else {
+            console.log(`No image found for card "${cardName}" in deck data`)
+            setCurrentImage(null)
+          }
+        } else {
+          console.log(`Fetching image for card: "${cardName}" from deck: "${deck}"`)
+          try {
+            const response = await apiFetch(`/api/card-image?name=${encodeURIComponent(cardName)}&deck=${encodeURIComponent(deck)}`)
+            console.log('API response:', response)
+            if (response.imageUrl) {
+              setCurrentImage(response.imageUrl)
+            } else {
+              console.log('No image URL returned from API')
+              setCurrentImage(null)
+            }
+          } catch (apiError) {
+            console.error('API call failed:', apiError)
+            setCurrentImage(null)
+          }
+        }
       }
-    } catch (e) {
-      // ignore
+    } catch (error) {
+      console.error('Error fetching card image:', error)
+      setCurrentImage(null)
+    } finally {
+      setLoading(false)
     }
-    // Intentionally exclude onChange from deps to avoid infinite loops when parent
-    // provides a new function reference each render; we sync the ref above.
-  }, [title, selectedSuit, selectedCard, reversed, interpretation, currentImage])
+  }, [getCardImageUrl, selectedSuit, selectedCard, deck, deckData])
 
-  const fetchCardImageByTitle = async () => {
+  const fetchCardImageByTitle = useCallback(async () => {
     setLoading(true)
     try {
       if (getCardImageUrl) {
@@ -174,7 +193,43 @@ export default function Card({
     } finally {
       setLoading(false)
     }
-  }
+  }, [getCardImageUrl, title, deck, deckData])
+
+  useEffect(() => {
+    if (selectedSuit && selectedCard) {
+      fetchCardImage()
+    } else if (title && deck) {
+      // Try to fetch image using the title prop (for spread positions)
+      fetchCardImageByTitle()
+    } else {
+      setCurrentImage(null)
+    }
+  }, [selectedSuit, selectedCard, deck, title, fetchCardImage, fetchCardImageByTitle])
+
+  // Notify parent of current card state when relevant values change
+  const onChangeRef = React.useRef(onChange)
+  useEffect(() => { onChangeRef.current = onChange }, [onChange])
+
+  useEffect(() => {
+    try {
+      const fn = onChangeRef.current
+      if (typeof fn === 'function') {
+        fn({
+          title,
+          selectedSuit,
+          selectedCard,
+          reversed,
+          interpretation,
+          image: currentImage
+        })
+      }
+    } catch (e) {
+      // ignore
+    }
+    // Intentionally exclude onChange from deps to avoid infinite loops when parent
+    // provides a new function reference each render; we sync the ref above.
+  }, [title, selectedSuit, selectedCard, reversed, interpretation, currentImage])
+
 
   // Helper function to check if a title is likely a tarot card name
   const isValidTarotCardName = (name) => {
@@ -272,64 +327,14 @@ export default function Card({
     return null
   }
 
-  const fetchCardImage = async () => {
-    setLoading(true)
-    try {
-      if (getCardImageUrl) {
-        const imageUrl = getCardImageUrl(selectedSuit, selectedCard)
-        setCurrentImage(imageUrl)
-      } else {
-        const cardName = selectedSuit.toLowerCase() === 'major arcana' 
-          ? selectedCard 
-          : `${selectedCard} of ${selectedSuit}`
-        
-        if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
-          // For Rider-Waite, use direct static paths
-          const imageUrl = generateRiderWaiteStaticUrl(cardName)
-          setCurrentImage(imageUrl)
-        } else if (deckData && deckData.cards) {
-          // For custom decks, look up the card image in deckData
-          const card = deckData.cards.find(c => 
-            (c.name || '').toLowerCase() === cardName.toLowerCase()
-          )
-          if (card && card.image) {
-            console.log(`Found card image for "${cardName}":`, card.image)
-            setCurrentImage(card.image)
-          } else {
-            console.log(`No image found for card "${cardName}" in deck data`)
-            setCurrentImage(null)
-          }
-        } else {
-          console.log(`Fetching image for card: "${cardName}" from deck: "${deck}"`)
-          try {
-            const response = await apiFetch(`/api/card-image?name=${encodeURIComponent(cardName)}&deck=${encodeURIComponent(deck)}`)
-            console.log('API response:', response)
-            if (response.imageUrl) {
-              setCurrentImage(response.imageUrl)
-            } else {
-              console.log('No image URL returned from API')
-              setCurrentImage(null)
-            }
-          } catch (apiError) {
-            console.error('API call failed:', apiError)
-            setCurrentImage(null)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching card image:', error)
-      setCurrentImage(null)
-    } finally {
-      setLoading(false)
-    }
-  }
+
 
   return (
   <div className={`card card-with-image ${className}`} style={style}>
       <ConfirmModal
         show={showSaveConfirm}
         title="Image not uploaded"
-        body={"This image appears to be a local preview and isn't available to the server. Please save the reading to upload the image before sharing."}
+  body={"This image appears to be a local preview and is not available to the server. Please save the reading to upload the image before sharing."}
         confirmText="Scroll to Save"
         onConfirm={() => {
           setShowSaveConfirm(false)
@@ -416,15 +421,20 @@ export default function Card({
                 </div>
               </div>
             ) : currentImage ? (
-              <div className="card-image-wrapper">
-                <img
+              <div className="card-image-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Image
                   src={currentImage}
                   alt={selectedCard ? `${selectedCard} of ${selectedSuit}` : 'Card'}
                   className={`card-image ${reversed ? 'reversed' : ''}`}
-                  onError={(e) => {
+                  onError={() => {
                     console.error('Image failed to load:', currentImage)
                     setCurrentImage(null)
                   }}
+                  onLoadingComplete={() => { /* no-op, kept for parity with previous loader */ }}
+                  width={220}
+                  height={320}
+                  style={{ objectFit: 'cover' }}
+                  unoptimized
                 />
                 <div className="mt-2 d-flex justify-content-center">
                   <button

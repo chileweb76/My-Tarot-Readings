@@ -36,7 +36,7 @@ export default function ResetPage() {
           <input className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div>
-          <button className="btn btn-primary" disabled={loading}>{loading ? 'Sending...' : 'Send reset'}</button>
+          <button className="btn btn-tarot-primary" disabled={loading}>{loading ? 'Sending...' : 'Send reset'}</button>
         </div>
       </form>
     </AuthWrapper>

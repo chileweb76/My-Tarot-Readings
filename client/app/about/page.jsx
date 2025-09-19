@@ -1,5 +1,6 @@
-'use client'
+"use client"
 
+import Link from 'next/link'
 import AuthWrapper from '../../components/AuthWrapper'
 
 export default function AboutPage() {
@@ -11,14 +12,14 @@ export default function AboutPage() {
             <h1 className="mb-4">About Tarot Readings</h1>
           
           <p className="lead">
-            Tarot is an ancient practice that uses symbolic cards to provide insights 
-            into your life's journey and spiritual path.
+            Tarot is an ancient practice that uses symbolic cards to provide insights
+            into your life and spiritual path.
           </p>
           
           <h3 className="mt-4 mb-3">How It Works</h3>
           <p>
             Each tarot card contains rich symbolism and meaning. When cards are drawn 
-            and arranged in specific patterns called "spreads," they can offer guidance 
+            and arranged in specific patterns called spreads, they can offer guidance 
             and reflection on various aspects of your life.
           </p>
           
@@ -48,9 +49,9 @@ export default function AboutPage() {
           </div>
           
           <div className="text-center">
-            <a href="/reading" className="btn btn-primary btn-lg">
+            <Link href="/reading" className="btn btn-primary btn-lg">
               Get Your Reading Now
-            </a>
+            </Link>
           </div>
         </div>
       </div>

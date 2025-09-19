@@ -1,6 +1,6 @@
  'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import { apiFetch } from '../../lib/api'
 import { notify } from '../../lib/toast'
@@ -314,7 +314,7 @@ export default function InsightsPage() {
     return true
   })()
 
-  const fetchCount = async () => {
+  const fetchCount = useCallback(async () => {
     if (!isInputValid) { setLastFetchError('Invalid inputs for selected timeframe'); return }
     setIsFetchingCount(true)
     setLastFetchError(null)
@@ -354,9 +354,9 @@ export default function InsightsPage() {
     } finally {
       setIsFetchingCount(false)
     }
-  }
+  }, [selectedQuerent, startDate, endDate, selectedDeck, selectedTag, isInputValid])
 
-  useEffect(() => { fetchCount(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [selectedQuerent, startDate, endDate, selectedDeck, timeframe, selectedTag])
+  useEffect(() => { fetchCount(); }, [fetchCount])
 
   // Export / Print / Share handlers
   const handlePrint = async () => {

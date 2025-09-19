@@ -10,9 +10,9 @@ export const dynamic = 'force-dynamic'
 
 export default function AuthSuccessPage() {
   const [status, setStatus] = useState('processing')
-    const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('')
 
   useEffect(() => {
+      const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('')
       const token = sp.get('token')
       const verified = sp.get('verified')
 
@@ -35,7 +35,7 @@ export default function AuthSuccessPage() {
     } else {
       setStatus('error')
     }
-  }, [searchParams])
+  }, [])
 
   const fetchUserData = async (token) => {
     try {
@@ -124,8 +124,8 @@ export default function AuthSuccessPage() {
                   </div>
                   <h4 className="text-danger">Authentication Failed</h4>
                   <p className="text-muted">There was an error processing your sign-in.</p>
-                  <a href="/auth" className="btn btn-primary">
-                    Try Again
+                                    <a href="/auth" className="btn btn-tarot-primary">
+                    Return to Sign In
                   </a>
                 </div>
               )}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import AuthWrapper from '../components/AuthWrapper'
 import { apiFetch } from '../lib/api'
 import { addListener } from '../lib/toast'
@@ -910,12 +911,12 @@ export default function HomePage() {
         if (!mounted) return
         const list = Array.isArray(data) ? data : (data.decks || [])
         setDecks(list)
-        if (list.length && !selectedDeck) {
+        if (list.length) {
           // Prefer a public Rider-Waite deck (no owner) or a deck explicitly named 'Rider-Waite Tarot'
           const publicRider = list.find(d => !d.owner && (d.deckName === 'Rider-Waite Tarot' || d.deckName.toLowerCase().includes('rider')))
           const byName = list.find(d => d.deckName === 'Rider-Waite Tarot')
           const defaultDeck = publicRider || byName || list[0]
-          setSelectedDeck(defaultDeck._id)
+          setSelectedDeck(prev => prev || defaultDeck._id)
         }
       } catch (err) {
         console.warn('Failed to load decks', err)
@@ -1111,9 +1112,17 @@ export default function HomePage() {
           <div className="row">
             <div className="col-12 col-lg-6 mb-3">
               <div className="card h-100">
-                <div className="card-body d-flex align-items-center justify-content-center" style={{ minHeight: 220 }}>
+                <div className="card-body d-flex align-items-center justify-content-center" style={{ minHeight: 360 }}>
                   {spreadImage ? (
-                    <img src={spreadImage} alt="Spread" style={{ maxWidth: '100%', maxHeight: 360 }} />
+                    <Image
+                      src={spreadImage}
+                      alt="Spread"
+                      width={1600}
+                      height={720}
+                      className="spread-image"
+                      style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
+                      unoptimized
+                    />
                   ) : (
                     <div className="text-center text-muted">No spread image selected</div>
                   )}
@@ -1128,7 +1137,14 @@ export default function HomePage() {
                   <div className="mb-2">Connect an image to this reading (upload or use camera)</div>
                   {uploadedImage ? (
                     <div className="mb-2 text-center">
-                      <img src={uploadedImage} alt="Uploaded preview" style={{ maxWidth: '100%', maxHeight: 280 }} />
+                      <Image
+                        src={uploadedImage}
+                        alt="Uploaded preview"
+                        width={600}
+                        height={280}
+                        style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
+                        unoptimized
+                      />
                     </div>
                   ) : (
                     <div className="mb-2 text-center text-muted">No image chosen</div>

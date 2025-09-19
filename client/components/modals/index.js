@@ -1,3 +1,4 @@
 export { LargeImageWarningModal, ExportSignInModal } from './ExportModals'
 import * as _mods from './ExportModals'
-export default { LargeImageWarningModal: _mods.LargeImageWarningModal, ExportSignInModal: _mods.ExportSignInModal }
+const modalExports = { LargeImageWarningModal: _mods.LargeImageWarningModal, ExportSignInModal: _mods.ExportSignInModal }
+export default modalExports

@@ -96,6 +96,15 @@
   width: 160px;
 }
 
+/* Ensure spread images scale responsively and don't get clipped */
+.spread-image {
+  /* Cap the displayed spread image so it doesn't fill very large left column
+     on wide viewports. Use a smaller responsive cap: at most 40% of column or 420px. */
+  max-width: min(40%, 420px);
+  height: auto;
+  display: block;
+}
+
 /* My Data block bottom border to match Profile separation */
 .my-data {
   padding-bottom: 18px;

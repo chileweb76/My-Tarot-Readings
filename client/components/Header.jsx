@@ -1,8 +1,9 @@
-'use client'
+"use client"
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 
 
 export default function Header() {
@@ -82,15 +83,17 @@ export default function Header() {
       <nav className="navbar navbar-expand-lg navbar-dark">
         <div className="container">
           {/* Brand */}
-          <a className="navbar-brand d-flex align-items-center" href="/" onClick={closeMenu}>
+          <Link className="navbar-brand d-flex align-items-center" href="/" onClick={closeMenu}>
             <Image 
               src="/images/logo.png" 
               alt="My Tarot Readings" 
-              width={150}
-              height={50}
+              width={400}
+              height={200} /* doubled to twice previous size */
               priority
+              className="site-logo"
+              style={{ height: 'auto', objectFit: 'contain' }}
             />
-          </a>
+          </Link>
 
           {/* Mobile menu button */}
           <button
@@ -112,21 +115,21 @@ export default function Header() {
                 <ul className="navbar-nav ms-auto">
                   {navLinks.map((link) => (
                     <li key={link.href} className="nav-item">
-                      <a
+                      <Link
                         className={`nav-link ${isActive(link.href)}`}
                         href={link.href}
                         onClick={closeMenu}
                       >
                         {pathname === link.href ? <span className="me-1">🌗</span> : null}
                         {link.label}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
 
                 {/* User avatar on the right (clickable to settings) */}
                 <div className="d-flex align-items-center ms-3">
-                  <a href="/settings" onClick={closeMenu} title="Account settings" style={{ display: 'inline-block' }}>
+                  <Link href="/settings" onClick={closeMenu} title="Account settings" style={{ display: 'inline-block' }}>
                     {
                       (() => {
                         // choose the best available variant
@@ -156,12 +159,12 @@ export default function Header() {
                         // Render image only when a source exists and it hasn't errored. If it errors, show the placeholder div
                         if (imgSrc && !avatarError) {
                           return (
-                            <img
+                            <Image
                               key={imgSrc}
                               src={imgSrc}
                               alt="" /* intentionally blank to avoid rendering the user's name when image fails */
                               aria-label={user?.username || 'Account'}
-                              onLoad={() => {
+                              onLoadingComplete={() => {
                                 setAvatarLoaded(true)
                                 setAvatarError(false)
                               }}
@@ -170,7 +173,10 @@ export default function Header() {
                                 setAvatarError(true)
                               }}
                               className={`avatar-transition ${avatarLoaded ? 'loaded' : ''}`}
-                              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
+                              width={36}
+                              height={36}
+                              style={{ borderRadius: '50%', objectFit: 'cover' }}
+                              unoptimized
                             />
                           )
                         }
@@ -180,7 +186,7 @@ export default function Header() {
                         )
                       })()
                     }
-                  </a>
+                  </Link>
                 </div>
               </>
             )}

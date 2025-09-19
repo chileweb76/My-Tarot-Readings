@@ -18,4 +18,5 @@ export function notify(msg) {
   }
 }
 
-export default { addListener, removeListener, notify }
+const toastHelpers = { addListener, removeListener, notify }
+export default toastHelpers

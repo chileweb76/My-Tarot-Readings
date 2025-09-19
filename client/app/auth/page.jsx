@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGoogle } from '../../lib/icons'
 import { apiFetch } from '../../lib/api'
@@ -115,11 +116,24 @@ export default function AuthPage() {
         <div className="col-md-6 col-lg-5">
           <div className="card shadow auth-card">
             <div className="card-body p-5">
+              {/* Logo */}
+              <div className="text-center mb-4">
+                <Image 
+                  src="/images/logo.png" 
+                  alt="My Tarot Readings Logo" 
+                  width={400}
+                  height={200}
+                  priority
+                  className="site-logo"
+                  style={{ height: 'auto', objectFit: 'contain' }}
+                />
+              </div>
+
               {/* Toggle Buttons */}
               <div className="btn-group w-100 mb-4" role="group">
                 <button
                   type="button"
-                  className={`btn ${isSignIn ? 'btn-primary' : 'btn-outline-primary'}`}
+                  className={`btn ${isSignIn ? 'btn-tarot-primary' : 'btn-outline-tarot-primary'}`}
                   onClick={() => {
                     setIsSignIn(true)
                     setError('')
@@ -130,7 +144,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   type="button"
-                  className={`btn ${!isSignIn ? 'btn-primary' : 'btn-outline-primary'}`}
+                  className={`btn ${!isSignIn ? 'btn-tarot-primary' : 'btn-outline-tarot-primary'}`}
                   onClick={() => {
                     setIsSignIn(false)
                     setError('')
@@ -154,7 +168,6 @@ export default function AuthPage() {
               )}            {/* Sign In Form */}
             {isSignIn ? (
               <div>
-                <h3 className="text-center mb-4">Welcome Back</h3>
                 <form onSubmit={handleSignIn}>
                   <div className="mb-3">
                     <label htmlFor="email" className="form-label">Email</label>
@@ -181,7 +194,7 @@ export default function AuthPage() {
                     />
                   </div>
                                       <div className="d-flex justify-content-between align-items-center mb-3">
-                                        <button type="submit" className="btn btn-primary w-100 me-2" disabled={isLoading}>
+                                        <button type="submit" className="btn btn-tarot-primary w-100 me-2" disabled={isLoading}>
                                           {isLoading ? (
                                             <>
                                               <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -191,7 +204,7 @@ export default function AuthPage() {
                                             'Sign In'
                                           )}
                                         </button>
-                                        <a href="/auth/reset" className="small text-decoration-none">Forgot password?</a>
+                                        <a href="/auth/reset" className="small text-decoration-none forgot-password-link">Forgot password?</a>
                                       </div>
                     
                 </form>
@@ -209,6 +222,15 @@ export default function AuthPage() {
                     <FontAwesomeIcon icon={faGoogle} className="me-2" />
                     {isLoading ? 'Redirecting...' : 'Sign in with Google'}
                   </button>
+
+                  {/* App Description */}
+                  <div className="text-center">
+                    <div className="border-top pt-4">
+                      <p className="text-muted small mb-0">
+                        Welcome to your tarot journal where you can document your tarot journey. Whether they are personal readings for yourself or readings for others, you can keep track of each spread used, the cards drawn, the interpretation of each card, as well as an overall interpretation and the image of your reading. Update later with the overall outcome. Insights included, plus the ability to share and print each reading.
+                      </p>
+                    </div>
+                  </div>
               </div>
             ) : (
               /* Register Form */
@@ -263,7 +285,7 @@ export default function AuthPage() {
                       required
                     />
                   </div>
-                  <button type="submit" className="btn btn-primary w-100 mb-4" disabled={isLoading}>
+                  <button type="submit" className="btn btn-tarot-primary w-100 mb-4" disabled={isLoading}>
                     {isLoading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -278,7 +300,7 @@ export default function AuthPage() {
                     <div className="text-center">
                       <button
                         type="button"
-                        className="btn btn-outline-secondary w-100"
+                        className="btn btn-outline-tarot-primary w-100"
                         onClick={handleResend}
                         disabled={isLoading}
                       >
@@ -290,18 +312,6 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* App Description */}
-            <div className="text-center">
-              <div className="border-top pt-4">
-                <h5 className="text-primary mb-3">🔮 My Tarot Readings</h5>
-                <p className="text-muted small">
-                  Discover your spiritual path through personalized tarot readings. 
-                  Connect with ancient wisdom and gain insights into your past, present, 
-                  and future. Our platform offers authentic tarot experiences to guide 
-                  you on your journey of self-discovery and spiritual growth.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
         </div>
