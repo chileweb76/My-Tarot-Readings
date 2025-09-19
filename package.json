@@ -2,17 +2,15 @@
   "name": "mytarotreadings",
   "private": true,
   "workspaces": [
-    "client",
-    "server"
+    "client"
   ],
   "scripts": {
-    "dev": "concurrently \"cd client && npm run dev\" \"cd server && npm run dev\"",
+    "dev": "cd client && npm run dev",
     "dev:client": "cd client && npm run dev",
-    "dev:server": "cd server && npm run dev",
     "build": "cd client && npm run build",
     "vercel-build": "cd client && npm run build",
-    "start": "concurrently \"cd client && npm run start\" \"cd server && npm run start\"",
-    "install:all": "npm install && npm install --prefix client && npm install --prefix server"
+    "start": "cd client && npm run start",
+    "install:all": "npm install && npm install --prefix client"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
