@@ -1,11 +1,11 @@
-/**
- * Next.js configuration - temporarily disable ESLint during build to allow
- * production build to complete. Fix lint errors in source to re-enable.
- */
+/** @type {import('next').NextConfig} */
+const path = require('path')
+
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true
-  }
+  sassOptions: {
+    includePaths: ['./styles'],
+  },
+  outputFileTracingRoot: path.join(__dirname, '../'),
 }
 
 module.exports = nextConfig

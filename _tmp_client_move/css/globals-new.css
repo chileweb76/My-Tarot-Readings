@@ -1,0 +1,1415 @@
+/* Import all SASS modules in order of dependency */
+/* 1. Variables and tokens first */
+:root {
+  --tarot-primary: #6f42c1;
+  --tarot-secondary: #e83e8c;
+  --tarot-dark: #2d1b69;
+  --tarot-mystical: #4a154b;
+  /* icon size for buttons (easy-to-tweak variable) */
+  --btn-icon-size: 0.95rem;
+  /* Responsive font-size tokens (use these throughout the app) */
+  --fs-xs: 0.875rem; /* ~14px */
+  --fs-sm: 1rem; /* 16px */
+  --fs-md: 1.125rem; /* 18px */
+  --fs-lg: 1.25rem; /* 20px */
+  --fs-xl: 1.5rem; /* 24px */
+  --root-font-size: 16px;
+}
+
+/* Responsive token overrides (kept here so themes live with variables) */
+@media (max-width: 575.98px) {
+  :root {
+    --fs-xs: 0.8125rem; /* 13px */
+    --fs-sm: 0.95rem; /* ~15px */
+    --fs-md: 1.04rem; /* ~16.6px */
+    --fs-lg: 1.125rem; /* 18px */
+    --fs-xl: 1.25rem; /* 20px */
+    --root-font-size: 14px;
+  }
+}
+@media (min-width: 576px) and (max-width: 767.98px) {
+  :root {
+    --fs-xs: 0.875rem;
+    --fs-sm: 1rem;
+    --fs-md: 1.0625rem;
+    --fs-lg: 1.1875rem;
+    --fs-xl: 1.375rem;
+    --root-font-size: 15px;
+  }
+}
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  :root {
+    --fs-xs: 0.95rem;
+    --fs-sm: 1rem;
+    --fs-md: 1.125rem;
+    --fs-lg: 1.25rem;
+    --fs-xl: 1.5rem;
+    --root-font-size: 16px;
+  }
+}
+@media (min-width: 1200px) {
+  :root {
+    --fs-xs: 0.95rem;
+    --fs-sm: 1rem;
+    --fs-md: 1.1875rem;
+    --fs-lg: 1.3125rem;
+    --fs-xl: 1.625rem;
+    --root-font-size: 18px;
+  }
+}
+/* Utility classes for consistent typography use */
+.fs-xs {
+  font-size: var(--fs-xs) !important;
+}
+
+.fs-sm {
+  font-size: var(--fs-sm) !important;
+}
+
+.fs-md {
+  font-size: var(--fs-md) !important;
+}
+
+.fs-lg {
+  font-size: var(--fs-lg) !important;
+}
+
+.fs-xl {
+  font-size: var(--fs-xl) !important;
+}
+
+/* 2. Base styles (layout, body, typography) */
+/* Base layout, body, and app-shell rules */
+/* Import Font Awesome (installed via npm) for icon fonts used in compact UI */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #0b1020;
+  background-image: url("/images/galaxybg.jpg");
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  min-height: 100vh;
+  position: relative;
+  color: #fff;
+  /* base font-size uses token so rems can scale if needed */
+  font-size: var(--fs-sm);
+}
+
+/* Subtle overlay for readability */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(11, 16, 32, 0.6) 0%, rgba(11, 16, 32, 0.6) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure main container content sits above the background overlay */
+main.container {
+  position: relative;
+  z-index: 2;
+}
+
+/* App shell: full height flex layout so footer sticks to bottom */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell main {
+  flex: 1 1 auto;
+}
+
+.footer {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  background: linear-gradient(90deg, rgba(74, 21, 75, 0.9), rgba(58, 16, 58, 0.9));
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Scoped utility: card variant that ensures image area has vertical space */
+.card-with-image {
+  /* base min-height for the card so image wrapper can stretch */
+  min-height: 320px;
+}
+
+@media (min-width: 768px) {
+  .card-with-image {
+    min-height: 300px; /* slightly smaller on tablet/desktop where layout is wider */
+  }
+}
+@media (min-width: 1200px) {
+  .card-with-image {
+    min-height: 420px; /* larger on very wide screens for pleasing proportions */
+  }
+}
+/* Left column and interpretation helpers to allow textarea to match image height */
+.card-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.interpretation-fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+
+.interpretation-fill .form-control {
+  flex: 1 1 auto;
+  height: auto; /* allow flex to control height */
+}
+
+/* Small helper: spacing for reversed checkbox input */
+.reversed-checkbox-input {
+  margin-right: 0.35rem;
+}
+
+/* Tarot-themed modal styles (scoped) */
+.tarot-modal .modal-dialog {
+  max-width: 540px;
+}
+
+.tarot-modal .modal-content {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 245, 255, 0.96));
+  border-radius: 12px;
+  border: 2px solid rgba(74, 21, 75, 0.08);
+  box-shadow: 0 12px 40px rgba(10, 8, 20, 0.6);
+  color: #222;
+}
+
+.tarot-modal .modal-header {
+  background: linear-gradient(90deg, var(--tarot-mystical), var(--tarot-primary));
+  color: #fff;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.tarot-modal .modal-title {
+  font-weight: 700;
+}
+
+.tarot-modal .modal-body {
+  color: #222;
+}
+
+.tarot-modal .modal-footer {
+  border-top: none;
+}
+
+.tarot-modal .btn-primary {
+  background: linear-gradient(90deg, var(--tarot-primary), var(--tarot-dark));
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.tarot-modal .btn-secondary {
+  background: rgba(0, 0, 0, 0.06);
+  color: #222;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.tarot-modal .btn-close {
+  filter: invert(1) brightness(0.9);
+}
+
+.card-reading {
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Card image area used by client/components/Card.jsx */
+.card-image-wrapper {
+  height: 100%;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.card-image {
+  height: 100%;
+  width: auto;
+  -o-object-fit: cover;
+     object-fit: cover;
+  transition: transform 0.3s ease;
+  display: block;
+  max-width: 100%;
+}
+
+.card-image.reversed {
+  transform: rotate(180deg);
+}
+
+.card-image-fallback {
+  background-color: var(--tarot-primary);
+  color: white;
+  min-height: 150px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  width: 100%;
+}
+
+.card-image-spinner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+/* Avatar transition: subtle fade + scale on source change */
+.avatar-transition {
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity 280ms ease, transform 280ms ease;
+}
+
+.avatar-transition.loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Deletion controls visual separation */
+.deletion-controls {
+  border: 1px solid rgba(220, 53, 69, 0.12); /* subtle red border */
+  background: rgba(220, 53, 69, 0.03); /* very light red tint */
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.deletion-controls .btn {
+  min-width: 140px;
+}
+
+/* Reading section text color (ensure high contrast on dark background) */
+.reading {
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+}
+
+.reading h2 {
+  color: #ffffff;
+  margin-top: 0.25rem;
+  /* use responsive font-size token for large section headings */
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+/* Responsive: make elements smaller on small/mobile screens */
+@media (max-width: 576px) {
+  .reading h2 {
+    font-size: 1.6rem; /* reduce headline on mobile */
+    margin-top: 0.25rem;
+  }
+  .reading {
+    font-size: 0.95rem;
+  }
+  .querent-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .querent-row .form-label {
+    font-size: 1rem; /* smaller label on mobile */
+    padding: 0 6px;
+  }
+  .querent-row .form-select {
+    width: 160px !important;
+  }
+  .querent-input {
+    width: 120px;
+  }
+  .deletion-controls {
+    padding: 8px 10px;
+  }
+}
+/* Querent row styling */
+.querent-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center; /* keep centered */
+  margin-top: 0.75rem;
+}
+
+.querent-row .form-label {
+  /* make label visually match the select/input font-size and align vertically */
+  display: inline-flex;
+  align-items: center;
+  height: auto;
+  padding: 0 8px;
+  margin: 0; /* remove default bottom margin */
+  /* use responsive token for label */
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+}
+
+.querent-row .form-select {
+  display: inline-block;
+}
+
+.querent-input {
+  width: 160px;
+}
+
+/* My Data block bottom border to match Profile separation */
+.my-data {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  /* slightly darker to match Profile separator */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Utility classes for consistent typography use */
+@media (max-width: 575.98px) {
+  :root {
+    --fs-xs: 0.8125rem; /* 13px */
+    --fs-sm: 0.95rem; /* ~15px */
+    --fs-md: 1.04rem; /* ~16.6px */
+    --fs-lg: 1.125rem; /* 18px */
+    --fs-xl: 1.25rem; /* 20px */
+    --root-font-size: 14px;
+  }
+}
+/* ...end of file ... */
+/* 3. Component modules */
+/* Button variants, sizes, and icon handling */
+/* Tarot primary solid button */
+.btn-tarot-primary {
+  /* use tarot primary for the Add button */
+  background: var(--tarot-primary) !important;
+  color: #fff !important;
+  border: 1px solid var(--tarot-primary) !important;
+  /* make the Add button 50% larger: increase font-size and padding */
+  font-size: 1.5rem; /* assumed base 1rem -> 1.5rem (50% larger) */
+  padding: 0.56rem 1.125rem; /* ~1.5x default padding */
+  line-height: 1.2;
+}
+
+.btn-tarot-primary:hover {
+  /* slightly darker primary for hover */
+  background: #5a31a8 !important;
+  border-color: #5a31a8 !important;
+}
+
+/* Solid-styled action buttons (used for Print / Export / Share actions) */
+.btn-solid {
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+  /* Symmetric padding so text appears centered within the button */
+  padding: 0.45rem 0.9rem !important;
+}
+
+.btn-solid:active,
+.btn-solid:focus {
+  transform: translateY(0.5px);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  outline: none !important;
+}
+
+/* Center icon + label horizontally and vertically inside buttons */
+.btn-solid,
+.btn-tarot-primary,
+.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn i.fas,
+.btn i.far,
+.btn i.fab {
+  /* reset icon margins when inside flex buttons; spacing is handled by gap */
+  margin: 0 !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Give icons a small fixed width so text centers relative to icon block
+   without creating an apparent left-gap when font rendering varies. */
+.btn i.fas,
+.btn i.far,
+.btn i.fab {
+  /* allow icon to size naturally; avoid reserving a fixed width that can create a visual gap */
+  width: auto !important;
+  display: inline-block;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Normalize icon size inside buttons for consistent glyph metrics */
+.btn i.fas,
+.btn i.far,
+.btn i.fab {
+  font-size: var(--btn-icon-size);
+  line-height: 1;
+}
+
+/* Prefer gap on flex containers so icon+label are centered as a single block */
+.btn,
+.btn-solid,
+.btn-tarot-primary {
+  gap: 0.35rem;
+}
+
+/* Accessible focus-visible outlines for keyboard users */
+.btn:focus-visible,
+.btn-solid:focus-visible,
+.btn-tarot-primary:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 4px rgba(111, 66, 193, 0.18), 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Variant-specific focus rings for stronger contrast when needed */
+.btn-solid-primary:focus-visible {
+  box-shadow: 0 0 0 4px rgba(111, 66, 193, 0.32), 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.btn-solid-secondary:focus-visible {
+  box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.28), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.btn-solid-success:focus-visible {
+  box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.28), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Variants to match existing outline colors used in the UI */
+.btn-solid-primary,
+.btn-solid-secondary,
+.btn-solid-success,
+.btn-solid-info {
+  background: var(--tarot-mystical) !important;
+  border-color: var(--tarot-mystical) !important;
+}
+
+.btn-solid-primary:hover,
+.btn-solid-secondary:hover,
+.btn-solid-success:hover,
+.btn-solid-info:hover {
+  background: #3a103a !important; /* slightly darker mystical shade */
+  border-color: #3a103a !important;
+}
+
+/* Utility class for actions that should use the darker tarot color */
+.btn-tarot-dark,
+.btn-solid-tarot-dark {
+  background: var(--tarot-dark) !important;
+  border-color: var(--tarot-dark) !important;
+  color: #fff !important;
+}
+
+.btn-tarot-dark:hover,
+.btn-solid-tarot-dark:hover {
+  background: #231132 !important; /* slightly darker tarot-dark */
+  border-color: #231132 !important;
+}
+
+/* Make dark tarot action buttons match the larger sizing of the primary Add button */
+.btn-tarot-dark {
+  /* match primary sizing so Edit Outcome visually matches Add Outcome */
+  font-size: 1.5rem !important;
+  padding: 0.56rem 1.125rem !important;
+  line-height: 1.2 !important;
+}
+
+.btn-tarot-dark.btn-sm {
+  /* scale-down variant to mirror the .btn-tarot-primary.btn-sm rule */
+  font-size: 1.125rem !important;
+  padding: 0.4rem 0.75rem !important;
+}
+
+/* Ensure small variant still scales reasonably */
+.btn-tarot-primary.btn-sm {
+  font-size: 1.125rem; /* scale small by 50% from typical 0.75rem -> ~1.125rem */
+  padding: 0.4rem 0.75rem;
+}
+
+.btn-new-deck {
+  white-space: nowrap;
+  min-width: 120px;
+  padding: 0.5rem 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .btn-new-deck {
+    min-width: 140px;
+    padding: 0.56rem 1.05rem;
+  }
+}
+@media (min-width: 992px) {
+  .btn-new-deck {
+    min-width: 160px;
+    padding: 0.6rem 1.25rem;
+  }
+}
+/* Header and Navigation Styles */
+.navbar-brand {
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+/* Header background: use mystical tarot color with subtle gradient */
+.navbar {
+  background: linear-gradient(90deg, var(--tarot-mystical), #3a103a);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+  color: #fff;
+}
+
+/* Ensure navbar links remain readable on the mystical background */
+.navbar .nav-link,
+.navbar .navbar-brand,
+.navbar .navbar-text {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Tweak collapsed mobile menu background to use a semi-opaque mystical shade */
+.navbar-collapse {
+  background: linear-gradient(180deg, rgba(74, 21, 75, 0.95), rgba(58, 16, 58, 0.95));
+  border-radius: 0.5rem;
+}
+
+.navbar-brand {
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-decoration: none !important;
+}
+.navbar-brand:hover {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.nav-link {
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 0.5rem;
+  margin: 0 0.25rem;
+}
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9) !important;
+  transform: translateY(-1px);
+}
+.nav-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white !important;
+  font-weight: 600;
+}
+.nav-link i {
+  opacity: 0.8;
+}
+
+.dropdown-menu {
+  background-color: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+.dropdown-menu .dropdown-item {
+  transition: all 0.2s ease;
+}
+.dropdown-menu .dropdown-item:hover {
+  background-color: var(--tarot-primary);
+  color: white;
+}
+
+/* Mobile Navigation */
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    background-color: rgba(111, 66, 193, 0.95);
+    -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+    border-radius: 0.75rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .navbar-nav {
+    padding: 0.5rem 0;
+  }
+  .nav-link {
+    padding: 0.75rem 1rem;
+    margin: 0.25rem 0;
+    border-radius: 0.5rem;
+  }
+  .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+  .navbar-nav.ms-auto {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+}
+.navbar-toggler {
+  border: none !important;
+  padding: 0.25rem 0.5rem;
+}
+.navbar-toggler:focus {
+  box-shadow: none !important;
+}
+
+/* Authentication and Form Styles */
+.auth-container {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+}
+
+.auth-card {
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 15px;
+}
+
+.btn-outline-danger:hover {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.form-control:focus {
+  border-color: var(--tarot-primary);
+  box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+}
+
+.btn-primary {
+  background-color: var(--tarot-primary);
+  border-color: var(--tarot-primary);
+}
+.btn-primary:hover {
+  background-color: var(--tarot-dark);
+  border-color: var(--tarot-dark);
+}
+
+.text-primary {
+  color: var(--tarot-primary) !important;
+}
+
+/* Tarot Card and Reading Card Styles */
+.card-reading {
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Scoped utility: card variant that ensures image area has vertical space */
+.card-with-image {
+  /* base min-height for the card so image wrapper can stretch */
+  min-height: 320px;
+}
+
+@media (min-width: 768px) {
+  .card-with-image {
+    min-height: 300px; /* slightly smaller on tablet/desktop where layout is wider */
+  }
+}
+@media (min-width: 1200px) {
+  .card-with-image {
+    min-height: 420px; /* larger on very wide screens for pleasing proportions */
+  }
+}
+/* Left column and interpretation helpers to allow textarea to match image height */
+.card-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.interpretation-fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+
+.interpretation-fill .form-control {
+  flex: 1 1 auto;
+  height: auto; /* allow flex to control height */
+}
+
+/* Small helper: spacing for reversed checkbox input */
+.reversed-checkbox-input {
+  margin-right: 0.35rem;
+}
+
+.tarot-card {
+  aspect-ratio: 2/3;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  border-radius: 0.75rem;
+  border: 2px solid var(--tarot-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  transition: transform 0.3s ease;
+}
+.tarot-card:hover {
+  transform: scale(1.05);
+}
+
+/* Card image area used by client/components/Card.jsx */
+.card-image-wrapper {
+  height: 100%;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.card-image {
+  height: 100%;
+  width: auto;
+  -o-object-fit: cover;
+     object-fit: cover;
+  transition: transform 0.3s ease;
+  display: block;
+  max-width: 100%;
+}
+
+.card-image.reversed {
+  transform: rotate(180deg);
+}
+
+.card-image-fallback {
+  background-color: var(--tarot-primary);
+  color: white;
+  min-height: 150px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  width: 100%;
+}
+
+.card-image-spinner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+/* Avatar transition: subtle fade + scale on source change */
+.avatar-transition {
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity 280ms ease, transform 280ms ease;
+}
+
+.avatar-transition.loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Toast and Modal Styles */
+/* App toast styles (replace bootstrap toast) */
+.app-toast-wrapper {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+}
+
+.app-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  min-width: 220px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-weight: 500;
+}
+
+.app-toast__body {
+  flex: 1 1 auto;
+  font-size: var(--fs-sm);
+}
+
+.app-toast__close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.app-toast--success {
+  background: linear-gradient(90deg, rgba(40, 167, 69, 0.95), rgba(33, 136, 56, 0.95));
+}
+
+.app-toast--error {
+  background: linear-gradient(90deg, rgba(220, 53, 69, 0.95), rgba(200, 40, 55, 0.95));
+}
+
+.app-toast--neutral {
+  background: linear-gradient(90deg, rgba(74, 21, 75, 0.9), rgba(58, 16, 58, 0.9));
+}
+
+/* Toast stack + animations */
+.app-toast-stack {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.app-toast {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.995);
+  transition: opacity 220ms ease, transform 220ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.app-toast--enter {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.app-toast--exit {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.995);
+}
+
+/* Tarot-themed modal styles (scoped) */
+.tarot-modal .modal-dialog {
+  max-width: 540px;
+}
+
+.tarot-modal .modal-content {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 245, 255, 0.96));
+  border-radius: 12px;
+  border: 2px solid rgba(74, 21, 75, 0.08);
+  box-shadow: 0 12px 40px rgba(10, 8, 20, 0.6);
+  color: #222;
+}
+
+.tarot-modal .modal-header {
+  background: linear-gradient(90deg, var(--tarot-mystical), var(--tarot-primary));
+  color: #fff;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.tarot-modal .modal-title {
+  font-weight: 700;
+}
+
+.tarot-modal .modal-body {
+  color: #222;
+}
+
+.tarot-modal .modal-footer {
+  border-top: none;
+}
+
+.tarot-modal .btn-primary {
+  background: linear-gradient(90deg, var(--tarot-primary), var(--tarot-dark));
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.tarot-modal .btn-secondary {
+  background: rgba(0, 0, 0, 0.06);
+  color: #222;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.tarot-modal .btn-close {
+  filter: invert(1) brightness(0.9);
+}
+
+/* Reading-specific Styles */
+/* Deletion controls visual separation */
+.deletion-controls {
+  border: 1px solid rgba(220, 53, 69, 0.12); /* subtle red border */
+  background: rgba(220, 53, 69, 0.03); /* very light red tint */
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.deletion-controls .btn {
+  min-width: 140px;
+}
+
+/* Reading section text color (ensure high contrast on dark background) */
+.reading {
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+}
+
+.reading h2 {
+  color: #ffffff;
+  margin-top: 0.25rem;
+  /* use responsive font-size token for large section headings */
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+/* Label for the deck select should be white for contrast on dark bg */
+.deck-select-label {
+  color: #ffffff;
+  /* match querent label sizing and weight */
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+  font-weight: 400;
+}
+
+@media (max-width: 576px) {
+  .deck-select-label {
+    font-size: 1rem;
+  }
+}
+/* Make the deck select input text match the large reading heading */
+.deck-select-input {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+}
+
+/* Querent label: larger and bolder to match Insights styling */
+.querent-label {
+  color: #ffffff;
+  font-size: var(--fs-lg); /* 1.25rem */
+  font-weight: 600;
+  line-height: 1.1;
+  min-width: 80px;
+}
+
+@media (max-width: 576px) {
+  .querent-label {
+    font-size: var(--fs-md);
+    min-width: 60px;
+  }
+}
+@media (max-width: 576px) {
+  .deck-select-input {
+    font-size: var(--fs-md);
+    font-weight: 500;
+  }
+}
+/* Querent row styling */
+.querent-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center; /* keep centered */
+  margin-top: 0.75rem;
+}
+
+.querent-row .form-label {
+  /* make label visually match the select/input font-size and align vertically */
+  display: inline-flex;
+  align-items: center;
+  height: auto;
+  padding: 0 8px;
+  margin: 0; /* remove default bottom margin */
+  /* use responsive token for label */
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+}
+
+.querent-row .form-select {
+  display: inline-block;
+}
+
+.querent-input {
+  width: 160px;
+}
+
+/* My Data block bottom border to match Profile separation */
+.my-data {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  /* slightly darker to match Profile separator */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Responsive: make elements smaller on small/mobile screens */
+@media (max-width: 576px) {
+  .reading h2 {
+    font-size: 1.6rem; /* reduce headline on mobile */
+    margin-top: 0.25rem;
+  }
+  .reading {
+    font-size: 0.95rem;
+  }
+  .querent-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .querent-row .form-label {
+    font-size: 1rem; /* smaller label on mobile */
+    padding: 0 6px;
+  }
+  .querent-row .form-select {
+    width: 160px !important;
+  }
+  .querent-input {
+    width: 120px;
+  }
+  .deletion-controls {
+    padding: 8px 10px;
+  }
+}
+/* Export toolbar and per-card compact toolbar rules */
+/* Export toolbar responsive: show icons-only on narrow screens */
+.export-toolbar .toolbar-label {
+  display: inline-block;
+}
+
+@media (max-width: 540px) {
+  .export-toolbar {
+    gap: 0.25rem !important;
+  }
+  .export-toolbar .toolbar-label {
+    display: none !important;
+  }
+  .export-toolbar .btn {
+    padding-left: 0.45rem !important;
+    padding-right: 0.45rem !important;
+    min-width: 36px;
+    justify-content: center;
+  }
+}
+/* Per-card toolbar (compact) - used inside reading cards
+   Adjusted to visually align with the Edit/Add Outcome button
+   (.btn-tarot-dark) so both controls appear vertically balanced.
+*/
+.reading-card > div[style] > .export-toolbar,
+.reading-card .export-toolbar {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 6px 6px; /* slightly increased vertical padding to better match .btn-tarot-dark */
+  border-radius: 8px; /* match slightly larger radius */
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  display: inline-flex;
+  align-items: center; /* vertically center with outcome button */
+  gap: 0.35rem; /* consistent with button gap */
+  margin-top: 0; /* remove extra top gap so toolbar aligns with surrounding content */
+}
+
+.reading-card .export-toolbar .btn {
+  padding: 0.3rem 0.5rem !important; /* tweak vertical padding for baseline alignment */
+  font-size: 1rem; /* match base button sizing so icons and text align */
+  min-width: 40px;
+  line-height: 1.2; /* align with .btn-tarot-dark line-height */
+  border-radius: 6px;
+}
+
+.reading-card .export-toolbar .btn .toolbar-label {
+  display: none;
+}
+
+@media (max-width: 540px) {
+  .reading-card > div[style] > .export-toolbar,
+  .reading-card .export-toolbar {
+    margin-top: 0px; /* remove extra spacing on small screens to avoid crowding */
+    padding: 4px 6px; /* slightly smaller padding on mobile */
+  }
+}
+/* Navbar, toast, and other component styles */
+.navbar {
+  background: linear-gradient(90deg, var(--tarot-mystical), #3a103a);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+  color: #fff;
+}
+
+/* Ensure navbar links remain readable on the mystical background */
+.navbar .nav-link,
+.navbar .navbar-brand,
+.navbar .navbar-text {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Tweak collapsed mobile menu background to use a semi-opaque mystical shade */
+.navbar-collapse {
+  background: linear-gradient(180deg, rgba(74, 21, 75, 0.95), rgba(58, 16, 58, 0.95));
+  border-radius: 0.5rem;
+}
+
+.navbar-brand {
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-decoration: none !important;
+}
+.navbar-brand:hover {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.nav-link {
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 0.5rem;
+  margin: 0 0.25rem;
+}
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9) !important;
+  transform: translateY(-1px);
+}
+.nav-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white !important;
+  font-weight: 600;
+}
+.nav-link i {
+  opacity: 0.8;
+}
+
+.dropdown-menu {
+  background-color: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+.dropdown-menu .dropdown-item {
+  transition: all 0.2s ease;
+}
+.dropdown-menu .dropdown-item:hover {
+  background-color: var(--tarot-primary);
+  color: white;
+}
+
+/* Mobile Navigation */
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    background-color: rgba(111, 66, 193, 0.95);
+    -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+    border-radius: 0.75rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .navbar-nav {
+    padding: 0.5rem 0;
+  }
+  .nav-link {
+    padding: 0.75rem 1rem;
+    margin: 0.25rem 0;
+    border-radius: 0.5rem;
+  }
+  .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+  .navbar-nav.ms-auto {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+}
+.navbar-toggler {
+  border: none !important;
+  padding: 0.25rem 0.5rem;
+}
+.navbar-toggler:focus {
+  box-shadow: none !important;
+}
+
+/* App toast styles (replace bootstrap toast) */
+.app-toast-wrapper {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+}
+
+.app-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  min-width: 220px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-weight: 500;
+}
+
+.app-toast__body {
+  flex: 1 1 auto;
+  font-size: var(--fs-sm);
+}
+
+.app-toast__close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.app-toast--success {
+  background: linear-gradient(90deg, rgba(40, 167, 69, 0.95), rgba(33, 136, 56, 0.95));
+}
+
+.app-toast--error {
+  background: linear-gradient(90deg, rgba(220, 53, 69, 0.95), rgba(200, 40, 55, 0.95));
+}
+
+.app-toast--neutral {
+  background: linear-gradient(90deg, rgba(74, 21, 75, 0.9), rgba(58, 16, 58, 0.9));
+}
+
+/* Toast stack + animations */
+.app-toast-stack {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.app-toast {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.995);
+  transition: opacity 220ms ease, transform 220ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.app-toast--enter {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.app-toast--exit {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.995);
+}
+
+/* 4. Utilities last */
+/* Small helpers and utilities used across the app */
+.reversed-checkbox-input {
+  margin-right: 0.35rem;
+}
+
+/* Small helpers used by cards and readings */
+.card-reading {
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-transition {
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity 280ms ease, transform 280ms ease;
+}
+
+.avatar-transition.loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.deletion-controls {
+  border: 1px solid rgba(220, 53, 69, 0.12); /* subtle red border */
+  background: rgba(220, 53, 69, 0.03); /* very light red tint */
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.deletion-controls .btn {
+  min-width: 140px;
+}
+
+.reading {
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+}
+
+.reading h2 {
+  color: #ffffff;
+  margin-top: 0.25rem;
+  /* use responsive font-size token for large section headings */
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+@media (max-width: 576px) {
+  .reading h2 {
+    font-size: 1.6rem; /* reduce headline on mobile */
+    margin-top: 0.25rem;
+  }
+  .reading {
+    font-size: 0.95rem;
+  }
+  .querent-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .querent-row .form-label {
+    font-size: 1rem; /* smaller label on mobile */
+    padding: 0 6px;
+  }
+  .querent-row .form-select {
+    width: 160px !important;
+  }
+  .querent-input {
+    width: 120px;
+  }
+  .deletion-controls {
+    padding: 8px 10px;
+  }
+}
+.querent-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center; /* keep centered */
+  margin-top: 0.75rem;
+}
+
+.querent-row .form-label {
+  /* make label visually match the select/input font-size and align vertically */
+  display: inline-flex;
+  align-items: center;
+  height: auto;
+  padding: 0 8px;
+  margin: 0; /* remove default bottom margin */
+  /* use responsive token for label */
+  font-size: var(--fs-lg);
+  line-height: 1.1;
+}
+
+.querent-row .form-select {
+  display: inline-block;
+}
+
+.querent-input {
+  width: 160px;
+}
+
+.my-data {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  /* slightly darker to match Profile separator */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}/*# sourceMappingURL=globals-new.css.map */
