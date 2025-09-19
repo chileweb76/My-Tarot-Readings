@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGoogle } from '../../lib/icons'
-import { apiFetch } from '../../lib/api'
+import { apiFetch, parseJsonSafe } from '../../lib/api'
 
 export default function AuthPage() {
   const [isSignIn, setIsSignIn] = useState(true)
@@ -41,8 +41,12 @@ export default function AuthPage() {
         body: JSON.stringify({ email: formData.email, password: formData.password })
       })
 
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Login failed')
+      const data = await parseJsonSafe(response)
+      if (!response.ok) {
+        // If the response isn't JSON, surface the HTTP status and any text body
+        const message = data?.error || data?.message || `Login failed (${response.status})`
+        throw new Error(message)
+      }
 
       // Store token in localStorage
       localStorage.setItem('token', data.token)
@@ -75,8 +79,11 @@ export default function AuthPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: formData.username, email: formData.email, password: formData.password, verifyPassword: formData.verifyPassword })
       })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Registration failed')
+      const data = await parseJsonSafe(response)
+      if (!response.ok) {
+        const message = data?.error || data?.message || `Registration failed (${response.status})`
+        throw new Error(message)
+      }
       setSuccess('Registration successful! Please check your email and verify your account before logging in.')
       setFormData((prev) => ({ ...prev, email: data.user.email }))
     } catch (error) {
@@ -95,8 +102,11 @@ export default function AuthPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email })
       })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Failed to resend')
+      const data = await parseJsonSafe(response)
+      if (!response.ok) {
+        const message = data?.error || data?.message || `Failed to resend (${response.status})`
+        throw new Error(message)
+      }
       setSuccess('Verification email resent. Please check your inbox.')
     } catch (err) {
       setError(err.message)
