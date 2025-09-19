@@ -44,7 +44,8 @@ export default function AuthPage() {
       const data = await parseJsonSafe(response)
       if (!response.ok) {
         // If the response isn't JSON, surface the HTTP status and any text body
-        const message = data?.error || data?.message || `Login failed (${response.status})`
+        const raw = data?.__rawText
+        const message = data?.error || data?.message || raw || `Login failed (${response.status})`
         throw new Error(message)
       }
 
