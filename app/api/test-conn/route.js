@@ -4,9 +4,11 @@ import { connectToDatabase } from '../../../lib/mongo'
 const ALLOWED_ORIGINS = [process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : undefined, process.env.NEXT_PUBLIC_API_URL].filter(Boolean)
 
 function getCorsHeaders(origin) {
-  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '*'
+  // If the origin matches one of our allowed origins, echo it so cookies
+  // will be accepted by browsers when 'Access-Control-Allow-Credentials' is true.
+  const allowOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : null
   return {
-    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Origin': allowOrigin || '*',
     'Access-Control-Allow-Methods': 'GET,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Credentials': 'true'
