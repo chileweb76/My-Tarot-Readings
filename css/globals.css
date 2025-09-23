@@ -706,21 +706,30 @@ main.container {
   max-height: 80px;
 }
 
-/* Responsive adjustments for the small logo variant */
 @media (min-width: 1200px) {
-  /* On very wide screens make the small variant slightly bigger */
-  .site-logo--small { width: clamp(48px, 2.6vw, 96px); max-height: 96px; }
+  .site-logo--small {
+    width: clamp(48px, 2.6vw, 96px);
+    max-height: 96px;
+  }
 }
 @media (max-width: 768px) {
-  .site-logo--small { width: clamp(28px, 6vw, 64px); max-height: 64px; }
+  .site-logo--small {
+    width: clamp(28px, 6vw, 64px);
+    max-height: 64px;
+  }
 }
 @media (max-width: 576px) {
-  .site-logo--small { width: clamp(24px, 8vw, 56px); max-height: 56px; }
+  .site-logo--small {
+    width: clamp(24px, 8vw, 56px);
+    max-height: 56px;
+  }
 }
 @media (max-width: 400px) {
-  .site-logo--small { width: clamp(20px, 10vw, 48px); max-height: 48px; }
+  .site-logo--small {
+    width: clamp(20px, 10vw, 48px);
+    max-height: 48px;
+  }
 }
-
 /* Ensure the image inside .site-logo scales responsively */
 .site-logo img,
 .site-logo :global(img),
