@@ -16,13 +16,7 @@ export default function Footer() {
       <div className="container py-3 d-flex justify-content-between align-items-center">
         <div>&copy; 2025 Christopher Hile</div>
         <div className="site-logo--small">
-          <Image 
-            src="/images/small-logo.png" 
-            alt="My Tarot Readings" 
-            width={100}
-            height={100}
-            style={{ height: 'auto', objectFit: 'contain' }}
-          />
+          <img src="/images/small-logo.png" alt="My Tarot Readings" style={{ height: 'auto', width: '100%', objectFit: 'contain', display: 'block' }} />
         </div>
       </div>
     </footer>

@@ -163,6 +163,20 @@
   width: 100% !important;
 }
 
+/* Footer/smaller logo inside navbar should not shrink; ensure flex rules apply */
+.navbar .site-logo--small {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: auto;
+}
+.navbar .site-logo--small img {
+  width: 100%;
+  height: auto !important;
+  max-width: 100%;
+}
+
 @media (max-width: 768px) {
   .site-logo {
     width: clamp(100px, 26vw, 220px);
