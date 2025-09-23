@@ -48,7 +48,7 @@ export default function TestConnPage() {
       )}
 
       {!result && !error && !loading && (
-        <div className="text-muted">No result yet. Click "Run test" to start.</div>
+        <div className="text-muted">No result yet. Click &quot;Run test&quot; to start.</div>
       )}
     </div>
   )
