@@ -24,7 +24,20 @@ export default function VerifyPage() {
           body: JSON.stringify({ token })
         })
 
-        const data = await parseJsonSafe(response)
+        let data = null
+        try {
+          data = await parseJsonSafe(response)
+        } catch (parseErr) {
+          // parseJsonSafe should normally never throw, but guard just in case
+          console.warn('parseJsonSafe threw an error while parsing verify response', parseErr)
+          try {
+            const raw = await response.text()
+            data = { __rawText: raw }
+          } catch (e) {
+            data = null
+          }
+        }
+
         if (response.ok) {
           setStatus('success')
           // redirect to the success page (exists at /auth/success in this app)
@@ -32,7 +45,9 @@ export default function VerifyPage() {
           return
         }
 
-        console.error('Verify failed', response.status, data)
+        // If non-JSON was returned (e.g., plain token string or HTML), surface
+        // the raw text to the console to aid debugging.
+        console.error('Verify failed', response.status, data && data.__rawText ? data.__rawText : data)
         setStatus('error')
       } catch (err) {
         console.error('Network or server error during verification', err)
