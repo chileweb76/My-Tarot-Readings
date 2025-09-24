@@ -42,8 +42,9 @@ export default function SpreadModal({ show, onClose, onCreated }) {
 
   useEffect(() => {
     // ensure arrays match number
+    // Use nullish coalescing so empty string values are preserved (allow clearing)
     setCards(prev => {
-      const next = Array.from({ length: number }, (_, i) => prev[i] || `Card ${i+1}`)
+      const next = Array.from({ length: number }, (_, i) => (prev[i] ?? ''))
       return next
     })
   }, [number])
@@ -151,7 +152,13 @@ export default function SpreadModal({ show, onClose, onCreated }) {
             <div className="mb-3">
               <label className="form-label">Card names</label>
               {cards.map((c, i) => (
-                <input key={i} className="form-control mb-2" value={c} onChange={(e) => handleCardNameChange(i, e.target.value)} />
+                <input
+                  key={i}
+                  className="form-control mb-2"
+                  value={c}
+                  placeholder={`Card ${i+1}`}
+                  onChange={(e) => handleCardNameChange(i, e.target.value)}
+                />
               ))}
             </div>
 
