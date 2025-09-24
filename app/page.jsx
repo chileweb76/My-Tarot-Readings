@@ -1203,9 +1203,16 @@ export default function HomePage() {
                       <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
                         const f = e.target.files && e.target.files[0]
                         if (!f) return
-                        const url = URL.createObjectURL(f)
-                        setUploadedImage(url)
-                        setUploadedFile(f)
+                        try {
+                          const { ensurePreviewableImage } = await import('../../lib/heicConverter')
+                          const { file: maybeFile, previewUrl } = await ensurePreviewableImage(f)
+                          setUploadedImage(previewUrl || URL.createObjectURL(maybeFile || f))
+                          setUploadedFile(maybeFile || f)
+                        } catch (err) {
+                          const url = URL.createObjectURL(f)
+                          setUploadedImage(url)
+                          setUploadedFile(f)
+                        }
                       }} />
                     </label>
 

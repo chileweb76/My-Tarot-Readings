@@ -487,16 +487,23 @@ export default function SettingsPage() {
     }
   }
 
-  const handlePictureChange = (e) => {
+  const handlePictureChange = async (e) => {
     const file = e.target.files && e.target.files[0]
     if (!file) return
-    setPictureFile(file)
-    const url = URL.createObjectURL(file)
-    if (typeof setPicturePreview === 'function') {
-      setPicturePreview(url)
-    } else {
-      // eslint-disable-next-line no-console
-      console.warn('setPicturePreview is not a function in handlePictureChange', setPicturePreview)
+    try {
+      const { ensurePreviewableImage } = await import('../../lib/heicConverter')
+      const { file: maybeFile, previewUrl } = await ensurePreviewableImage(file)
+      setPictureFile(maybeFile || file)
+      if (typeof setPicturePreview === 'function') {
+        setPicturePreview(previewUrl || URL.createObjectURL(maybeFile || file))
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn('setPicturePreview is not a function in handlePictureChange', setPicturePreview)
+      }
+    } catch (err) {
+      // Fallback: set raw file URL
+      setPictureFile(file)
+      try { if (typeof setPicturePreview === 'function') setPicturePreview(URL.createObjectURL(file)) } catch (e) {}
     }
   }
 
