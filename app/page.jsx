@@ -3,7 +3,20 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import AuthWrapper from '../components/AuthWrapper'
-import { apiFetch, extractBlobUrl, prepareBlobUpload } from '../lib/api'
+import { apiFetch } from '../lib/api'
+
+// Vercel Blob utility functions
+const extractBlobUrl = (uploadResponse) => {
+  if (!uploadResponse) return null
+  return uploadResponse.url || uploadResponse.image || uploadResponse.reading?.image
+}
+
+const prepareBlobUpload = (formData, options = {}) => {
+  if (options.filename) formData.append('filename', options.filename)
+  if (options.contentType) formData.append('contentType', options.contentType)
+  if (options.cacheControl) formData.append('cacheControl', options.cacheControl)
+  return formData
+}
 import { addListener } from '../lib/toast'
 import QuerentModal from '../components/QuerentModal'
 import SpreadSelect from '../components/SpreadSelect'

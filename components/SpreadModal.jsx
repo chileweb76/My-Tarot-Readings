@@ -1,7 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { apiFetch, extractBlobUrl, prepareBlobUpload } from '../lib/api'
+import { apiFetch } from '../lib/api'
+
+// Vercel Blob utility functions
+const extractBlobUrl = (uploadResponse) => {
+  if (!uploadResponse) return null
+  return uploadResponse.url || uploadResponse.image || uploadResponse.spread?.image
+}
+
+const prepareBlobUpload = (formData, options = {}) => {
+  if (options.filename) formData.append('filename', options.filename)
+  if (options.contentType) formData.append('contentType', options.contentType)
+  if (options.cacheControl) formData.append('cacheControl', options.cacheControl)
+  return formData
+}
 
 export default function SpreadModal({ show, onClose, onCreated }) {
   const [name, setName] = useState('')

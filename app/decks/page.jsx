@@ -4,7 +4,20 @@ import { useEffect, useState } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
 import CameraModal from '../../components/CameraModal'
-import { apiFetch, extractBlobUrl, prepareBlobUpload } from '../lib/api'
+import { apiFetch } from '../../lib/api'
+
+// Vercel Blob utility functions
+const extractBlobUrl = (uploadResponse) => {
+  if (!uploadResponse) return null
+  return uploadResponse.url || uploadResponse.image || uploadResponse.deck?.image || uploadResponse.card?.image
+}
+
+const prepareBlobUpload = (formData, options = {}) => {
+  if (options.filename) formData.append('filename', options.filename)
+  if (options.contentType) formData.append('contentType', options.contentType)
+  if (options.cacheControl) formData.append('cacheControl', options.cacheControl)
+  return formData
+}
 
 // Simple helper: since all images are now local, just return the URL as-is
 function normalizeImageUrl(url) {
