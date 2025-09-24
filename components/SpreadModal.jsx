@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { apiFetch } from '../lib/api'
 
 // Vercel Blob utility functions
@@ -19,6 +20,9 @@ const prepareBlobUpload = (formData, options = {}) => {
 export default function SpreadModal({ show, onClose, onCreated }) {
   const [name, setName] = useState('')
   const [number, setNumber] = useState(3)
+  // Keep a string form of the number input so the user can clear the field while typing
+  // without it immediately snapping back to 1. Sync to `number` only when input is a valid integer.
+  const [numberStr, setNumberStr] = useState(String(3))
   const [cards, setCards] = useState([])
   const [meanings, setMeanings] = useState([])
   const [saving, setSaving] = useState(false)
@@ -31,6 +35,7 @@ export default function SpreadModal({ show, onClose, onCreated }) {
     if (show) {
       setName('')
       setNumber(3)
+      setNumberStr(String(3))
       setCards([])
       setMeanings([])
       setError(null)
@@ -146,7 +151,29 @@ export default function SpreadModal({ show, onClose, onCreated }) {
             </div>
             <div className="mb-3">
               <label className="form-label">Number of cards</label>
-              <input type="number" className="form-control" value={number} min={1} max={20} onChange={(e) => setNumber(Math.max(1, Number(e.target.value || 1)))} />
+              <input
+                type="number"
+                className="form-control"
+                value={numberStr}
+                min={1}
+                max={20}
+                onChange={(e) => {
+                  const v = e.target.value
+                  // allow the user to clear the field while typing (empty string)
+                  if (v === '') {
+                    setNumberStr('')
+                    return
+                  }
+                  // only accept digits
+                  if (!/^\d+$/.test(v)) return
+                  // keep the string in sync
+                  setNumberStr(v)
+                  // parse and enforce bounds
+                  const parsed = parseInt(v, 10)
+                  const bounded = Math.max(1, Math.min(20, parsed || 1))
+                  setNumber(bounded)
+                }}
+              />
             </div>
 
             <div className="mb-3">
@@ -172,12 +199,17 @@ export default function SpreadModal({ show, onClose, onCreated }) {
               />
               {imagePreview && (
                 <div className="mt-2">
-                  <img 
-                    src={imagePreview} 
-                    alt="Spread preview" 
-                    style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'contain' }}
-                    className="img-thumbnail"
-                  />
+                  {/* Responsive preview: container can be styled via CSS; using a max-width and aspect ratio here */}
+                  <div className="img-thumbnail spread-preview spread-preview--thumbnail">
+                    <Image
+                      src={imagePreview}
+                      alt="Spread preview"
+                      fill
+                      style={{ objectFit: 'contain' }}
+                      sizes="(max-width: 600px) 90vw, 400px"
+                      priority={false}
+                    />
+                  </div>
                 </div>
               )}
             </div>

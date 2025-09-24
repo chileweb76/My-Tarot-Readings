@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import AuthWrapper from '../../../../components/AuthWrapper'
 import { apiFetch } from '../../../../lib/api'
+import SmartImage from '../../../../components/SmartImage'
 import { notify } from '../../../../lib/toast'
 
 export default function EditReadingPage() {
@@ -215,14 +216,7 @@ export default function EditReadingPage() {
               <div className="card-body">
                 {reading.image && (
                   <div className="text-center mb-3">
-                    <Image
-                      src={reading.image}
-                      alt="Reading image"
-                      width={300}
-                      height={200}
-                      style={{ borderRadius: '6px', objectFit: 'contain' }}
-                      unoptimized
-                    />
+                    <SmartImage src={reading.image} alt="Reading image" width={300} height={200} style={{ borderRadius: '6px', objectFit: 'contain' }} />
                   </div>
                 )}
                 <div className="row">
@@ -280,14 +274,7 @@ export default function EditReadingPage() {
                             </h6>
                             {card.image && (
                               <div className="mb-3">
-                                <Image
-                                  src={card.image}
-                                  alt={card.title || card.name || 'Card'}
-                                  width={120}
-                                  height={180}
-                                  style={{ borderRadius: '6px', objectFit: 'cover' }}
-                                  unoptimized
-                                />
+                                <SmartImage src={card.image} alt={card.title || card.name || 'Card'} width={120} height={180} style={{ borderRadius: '6px', objectFit: 'cover' }} />
                               </div>
                             )}
                             <div className="mt-2">

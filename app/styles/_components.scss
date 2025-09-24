@@ -246,3 +246,18 @@ header, header .navbar {
   .new-tag-input { justify-content: flex-start; margin-top: .5rem; }
   .new-tag-input input.form-control { width: 100% !important; min-width: 0; }
 }
+
+  /* Spread preview container used for image previews in modals and cards */
+  .spread-preview {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 4 / 3;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .spread-preview--thumbnail {
+    max-width: 200px;
+    aspect-ratio: 4 / 3;
+  }

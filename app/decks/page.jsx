@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
 import CameraModal from '../../components/CameraModal'
+import SmartImage from '../../components/SmartImage'
 import { apiFetch } from '../../lib/api'
 
 // Vercel Blob utility functions
@@ -686,16 +687,12 @@ export default function DecksPage() {
                   }}>
                     {deckDetails && deckDetails.image ? (
                       <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={normalizeImageUrl(deckDetails.image)} 
-                          alt="Deck cover" 
-                          style={{ 
-                            maxWidth: '100%', 
-                            maxHeight: '100%', 
-                            objectFit: 'cover',
-                            opacity: uploadingDeckImage ? 0.7 : 1
-                          }} 
+                        <SmartImage
+                          src={normalizeImageUrl(deckDetails.image)}
+                          alt="Deck cover"
+                          width={200}
+                          height={280}
+                          style={{ opacity: uploadingDeckImage ? 0.7 : 1 }}
                         />
                         {uploadingDeckImage && (
                           <div style={{ 
@@ -811,12 +808,13 @@ export default function DecksPage() {
                       const imgSrc = hasImage ? normalizeImageUrl(card.image) : null
                       return hasImage ? (
                         <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={imgSrc}
-                            alt={editingCard}
-                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', opacity: isUploading ? 0.7 : 1 }}
-                          />
+                              <SmartImage
+                                src={imgSrc}
+                                alt={editingCard}
+                                width={150}
+                                height={210}
+                                style={{ opacity: isUploading ? 0.7 : 1 }}
+                              />
                           {isUploading && (
                             <div style={{ 
                               position: 'absolute', 
@@ -921,17 +919,12 @@ export default function DecksPage() {
                           }}>
                             {deckDetails.image ? (
                               <>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img 
-                                  src={normalizeImageUrl(deckDetails.image)} 
-                                  alt="Deck cover" 
-                                  style={{ 
-                                    maxWidth: '100%', 
-                                    maxHeight: '100%', 
-                                    objectFit: 'cover',
-                                    borderRadius: '6px',
-                                    opacity: (deckDetails.uploading || uploadingDeckImage) ? 0.7 : 1
-                                  }} 
+                                <SmartImage
+                                  src={normalizeImageUrl(deckDetails.image)}
+                                  alt="Deck cover"
+                                  width={120}
+                                  height={168}
+                                  style={{ borderRadius: '6px', opacity: (deckDetails.uploading || uploadingDeckImage) ? 0.7 : 1 }}
                                 />
                                 {(deckDetails.uploading || uploadingDeckImage) && (
                                   <div style={{ 
@@ -1003,46 +996,13 @@ export default function DecksPage() {
                         <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#f8f9fa', position: 'relative' }}>
                           {hasImage ? (
                             <>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
+                              <SmartImage
                                 src={imgSrc}
                                 alt={card.name || 'card'}
-                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', opacity: isUploading ? 0.7 : 1 }}
-                                onError={(e) => {
-                                try {
-                                  const el = e.currentTarget
-                                  // avoid infinite loop
-                                  el.onerror = null
-                                  const url = imgSrc || ((card && card.image) || '')
-                                  // If the URL contains an /images/ path, use the local path as fallback
-                                  const idx = url.indexOf('/images/')
-                                  let fallback = ''
-                                  if (idx !== -1) {
-                                    fallback = url.slice(idx)
-                                  } else {
-                                    const idx2 = url.indexOf('/client/public')
-                                    if (idx2 !== -1) {
-                                      // convert /.../client/public/images/... to /images/...
-                                      fallback = url.slice(idx2 + '/client/public'.length)
-                                    } else if (url.includes('rider-waite-tarot')) {
-                                      // last resort: take the filename and map to /images/rider-waite-tarot/<file>
-                                      const parts = url.split('/')
-                                      const file = parts[parts.length - 1] || ''
-                                      if (file) fallback = '/images/rider-waite-tarot/' + file
-                                    }
-                                  }
-                                  if (!fallback) {
-                                    // inline SVG placeholder
-                                    fallback = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-                                      `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450"><rect width="100%" height="100%" fill="#f8f9fa"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="16">Image unavailable</text></svg>`
-                                    )
-                                  }
-                                  el.src = fallback
-                                } catch (err) {
-                                  // ignore
-                                }
-                              }}
-                            />
+                                width={220}
+                                height={160}
+                                style={{ objectFit: 'cover', opacity: isUploading ? 0.7 : 1 }}
+                              />
                             {/* Edit button overlay - only for non-Rider-Waite decks */}
                             {!isRiderWaiteDeck(deckDetails) && (
                               <button 

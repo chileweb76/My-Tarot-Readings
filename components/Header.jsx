@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
+import SmartImage from './SmartImage'
 import Link from 'next/link'
 
 
@@ -159,24 +160,14 @@ export default function Header() {
                         // Render image only when a source exists and it hasn't errored. If it errors, show the placeholder div
                         if (imgSrc && !avatarError) {
                           return (
-                            <Image
-                              key={imgSrc}
+                            <SmartImage
                               src={imgSrc}
-                              alt="" /* intentionally blank to avoid rendering the user's name when image fails */
-                              aria-label={user?.username || 'Account'}
-                              onLoadingComplete={() => {
-                                setAvatarLoaded(true)
-                                setAvatarError(false)
-                              }}
-                              onError={() => {
-                                setAvatarLoaded(true)
-                                setAvatarError(true)
-                              }}
-                              className={`avatar-transition ${avatarLoaded ? 'loaded' : ''}`}
+                              alt=""
+                              sizes="36px"
                               width={36}
                               height={36}
+                              className={`avatar-transition ${avatarLoaded ? 'loaded' : ''}`}
                               style={{ borderRadius: '50%', objectFit: 'cover' }}
-                              unoptimized
                             />
                           )
                         }

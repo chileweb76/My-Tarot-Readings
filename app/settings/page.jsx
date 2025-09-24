@@ -8,6 +8,7 @@ import AuthWrapper from '../../components/AuthWrapper'
 import ConfirmModal from '../../components/ConfirmModal'
 import { notify } from '../../lib/toast'
 import { apiFetch } from '../../lib/api'
+import SmartImage from '../../components/SmartImage'
 
 export default function SettingsPage() {
   const [user, setUser] = useState(null)
@@ -679,8 +680,7 @@ export default function SettingsPage() {
                 <label className="d-block mb-2">Avatar</label>
                 <div className="mb-2">
                   {picturePreview ? (
-                    <Image
-                      key={picturePreview}
+                    <SmartImage
                       src={picturePreview}
                       alt="avatar preview"
                       onLoadingComplete={() => setPreviewLoaded(true)}
@@ -689,7 +689,6 @@ export default function SettingsPage() {
                       width={96}
                       height={96}
                       style={{ objectFit: 'cover', borderRadius: '50%' }}
-                      unoptimized
                     />
                   ) : (
                     <div style={{ width: 96, height: 96, borderRadius: '50%', background: '#eee', display: 'inline-block' }} />
