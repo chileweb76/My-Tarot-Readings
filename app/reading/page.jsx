@@ -29,6 +29,19 @@ export default function ReadingPage() {
         setLoading(true)
         setError(null)
 
+        // Small delay to ensure authentication state is established
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // Check if user is authenticated before making API calls
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+        if (!token) {
+          console.warn('No authentication token found')
+          setError('Authentication required')
+          return
+        }
+
+        console.log('Making API calls with token:', token ? 'present' : 'missing')
+
         const querentsResponse = await apiFetch('/api/querents')
         if (querentsResponse.ok) {
           const querentsData = await querentsResponse.json()
@@ -37,8 +50,14 @@ export default function ReadingPage() {
         }
 
         const response = await apiFetch('/api/readings/user')
-        if (!response.ok) throw new Error('Failed to fetch readings')
+        console.log('Readings response status:', response.status)
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Readings API error:', errorText)
+          throw new Error(`Failed to fetch readings: ${response.status}`)
+        }
         const data = await response.json()
+        console.log('Readings data received:', data)
 
         let readingsList = []
         if (Array.isArray(data)) readingsList = data
