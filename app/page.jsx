@@ -54,6 +54,7 @@ export default function HomePage() {
   const [uploadedFile, setUploadedFile] = useState(null)
   const [savingReading, setSavingReading] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [convertingImage, setConvertingImage] = useState(false)
   const [exporting, setExporting] = useState(false)
   // autosave removed: explicit save only
   const [readingId, setReadingId] = useState(null)
@@ -1211,17 +1212,31 @@ export default function HomePage() {
                       <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
                         const f = e.target.files && e.target.files[0]
                         if (!f) return
+                        
                         console.log('File selected:', f.name, f.type, f.size)
+                        
                         try {
+                          // Check if it's a HEIC file and show loading
+                          const isHeic = f.type === 'image/heic' || f.name.toLowerCase().endsWith('.heic')
+                          if (isHeic) {
+                            setConvertingImage(true)
+                          }
+                          
                           const { ensurePreviewableImage } = await import('../lib/heicConverter')
                           const { file: maybeFile, previewUrl } = await ensurePreviewableImage(f)
+                          
                           console.log('Converted file:', maybeFile?.name, maybeFile?.type, 'Preview URL:', previewUrl)
                           const finalUrl = previewUrl || URL.createObjectURL(maybeFile || f)
                           setUploadedImage(finalUrl)
                           setUploadedFile(maybeFile || f)
                           console.log('Set uploadedImage to:', finalUrl)
+                          
+                          if (isHeic) {
+                            setConvertingImage(false)
+                          }
                         } catch (err) {
                           console.warn('HEIC conversion failed:', err)
+                          setConvertingImage(false)
                           const url = URL.createObjectURL(f)
                           setUploadedImage(url)
                           setUploadedFile(f)
@@ -1229,6 +1244,15 @@ export default function HomePage() {
                         }
                       }} />
                     </label>
+
+                    {convertingImage && (
+                      <div className="text-center mt-2 mb-2">
+                        <div className="spinner-border spinner-border-sm text-primary me-2" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                        <small className="text-muted">Converting HEIC image...</small>
+                      </div>
+                    )}
 
                     <button type="button" className="btn btn-outline-secondary mb-0" onClick={() => setShowCameraModal(true)}>
                       Camera
