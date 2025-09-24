@@ -718,7 +718,7 @@ export default function HomePage() {
 
       // If we don't have an id yet, create a new reading
       if (!readingId) {
-        const res = await apiFetch('/api/readings', {
+        const res = await apiFetch('/readings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(readingData)
@@ -748,7 +748,7 @@ export default function HomePage() {
                 contentType: uploadedFile.type
               })
               
-              const uploadRes = await apiFetch(`/api/readings/${idToUse}/blob/upload`, { 
+              const uploadRes = await apiFetch(`/readings/${idToUse}/blob/upload`, { 
                 method: 'POST', 
                 body: form,
                 headers: {
@@ -772,7 +772,7 @@ export default function HomePage() {
                 console.warn('Image upload during save failed', err)
                 // Roll back the created reading to avoid orphaned reading without image
                 try {
-                  await apiFetch(`/api/readings/${idToUse}`, { method: 'DELETE' })
+                  await apiFetch(`/readings/${idToUse}`, { method: 'DELETE' })
                   setReadingId(null)
                   pushToast({ type: 'error', text: 'Image upload failed during save — reading was rolled back.' })
                 } catch (delErr) {
@@ -788,7 +788,7 @@ export default function HomePage() {
             try {
               const idToUse = (result && result.reading && result.reading._id) || result && result._id
               if (idToUse) {
-                await apiFetch(`/api/readings/${idToUse}`, { method: 'DELETE' })
+                await apiFetch(`/readings/${idToUse}`, { method: 'DELETE' })
                 setReadingId(null)
                 pushToast({ type: 'error', text: 'Failed to upload image during save — reading rolled back.' })
               }
@@ -813,13 +813,13 @@ export default function HomePage() {
       // missing, recreate it via POST and continue.
       try {
         if (readingId) {
-          const checkRes = await apiFetch(`/api/readings/${readingId}`, { method: 'GET' })
+          const checkRes = await apiFetch(`/readings/${readingId}`, { method: 'GET' })
           if (!checkRes.ok) {
             // If server says not found, clear readingId and fall back to create a new reading
             if (checkRes.status === 404) {
               setReadingId(null)
               pushToast({ type: 'info', text: 'Previous reading was missing on server — recreating.' })
-              const createRes = await apiFetch('/api/readings', {
+              const createRes = await apiFetch('/readings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(readingData)
@@ -852,7 +852,7 @@ export default function HomePage() {
           })
           
           const idForUpload = readingId
-          const uploadRes = await apiFetch(`/api/readings/${idForUpload}/blob/upload`, { 
+          const uploadRes = await apiFetch(`/readings/${idForUpload}/blob/upload`, { 
             method: 'POST', 
             body: form,
             headers: {
@@ -882,7 +882,7 @@ export default function HomePage() {
         }
       }
 
-      const res = await apiFetch(`/api/readings/${readingId}`, {
+      const res = await apiFetch(`/readings/${readingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(readingData)
@@ -948,7 +948,7 @@ export default function HomePage() {
     let mounted = true
     const loadDecks = async () => {
       try {
-        const res = await apiFetch('/api/decks')
+        const res = await apiFetch('/decks')
         if (!res.ok) return
         const data = await res.json()
         if (!mounted) return
@@ -974,7 +974,7 @@ export default function HomePage() {
     let mounted = true
     const loadTags = async () => {
       try {
-        const res = await apiFetch('/api/tags')
+        const res = await apiFetch('/tags')
         if (!res.ok) return
         const data = await res.json()
         if (!mounted) return
@@ -1055,7 +1055,7 @@ export default function HomePage() {
 
     try {
       setAddingTag(true)
-      const res = await apiFetch('/api/tags', {
+      const res = await apiFetch('/tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newTagName.trim() })
