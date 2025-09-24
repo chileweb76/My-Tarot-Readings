@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { apiFetch } from '../lib/api'
+import { apiFetch, extractBlobUrl, prepareBlobUpload } from '../lib/api'
 
 export default function SpreadModal({ show, onClose, onCreated }) {
   const [name, setName] = useState('')
@@ -10,6 +10,9 @@ export default function SpreadModal({ show, onClose, onCreated }) {
   const [meanings, setMeanings] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (show) {
@@ -18,6 +21,9 @@ export default function SpreadModal({ show, onClose, onCreated }) {
       setCards([])
       setMeanings([])
       setError(null)
+      setImageFile(null)
+      setImagePreview(null)
+      setUploading(false)
     }
   }, [show])
 
@@ -37,18 +43,65 @@ export default function SpreadModal({ show, onClose, onCreated }) {
     })
   }
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImageFile(file)
+      const previewUrl = URL.createObjectURL(file)
+      setImagePreview(previewUrl)
+    }
+  }
+
   const handleCreate = async () => {
     setSaving(true)
     setError(null)
     try {
-      // include a hidden image field for custom spreads that points to the public static asset
-  const payload = { spread: name, cards, numberofCards: number, image: '/images/spreads/custom.png' }
-      const res = await apiFetch('/spreads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      // Create the spread first
+      const payload = { 
+        spread: name, 
+        cards, 
+        numberofCards: number, 
+        image: imageFile ? '/images/spreads/custom.png' : '/images/spreads/custom.png' // Will be updated after upload
+      }
+      const res = await apiFetch('/spreads', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload) 
+      })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || 'Failed to create spread')
       }
       const data = await res.json()
+
+      // Upload image if provided
+      if (imageFile && data._id) {
+        setUploading(true)
+        const formData = new FormData()
+        formData.append('image', imageFile)
+        
+        // Add Vercel Blob metadata for spread image
+        prepareBlobUpload(formData, {
+          filename: `spread-${data._id}-${Date.now()}.${imageFile.type.split('/')[1] || 'jpg'}`,
+          contentType: imageFile.type
+        })
+        
+        const uploadRes = await apiFetch(`/api/spreads/${data._id}/blob/upload`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Vercel-Blob-Store': 'true',
+          }
+        })
+        
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json()
+          // Handle Vercel Blob response format using utility
+          const blobUrl = extractBlobUrl(uploadData)
+          data.image = blobUrl
+        }
+      }
+
       // notify other components
       try { window.dispatchEvent(new CustomEvent('spreadsUpdated', { detail: data })) } catch (e) {}
       if (onCreated) onCreated(data)
@@ -57,6 +110,7 @@ export default function SpreadModal({ show, onClose, onCreated }) {
       setError(e.message || 'Error')
     } finally {
       setSaving(false)
+      setUploading(false)
     }
   }
 
@@ -87,10 +141,32 @@ export default function SpreadModal({ show, onClose, onCreated }) {
                 <input key={i} className="form-control mb-2" value={c} onChange={(e) => handleCardNameChange(i, e.target.value)} />
               ))}
             </div>
+
+            <div className="mb-3">
+              <label className="form-label">Spread Image (optional)</label>
+              <input 
+                type="file" 
+                className="form-control mb-2" 
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img 
+                    src={imagePreview} 
+                    alt="Spread preview" 
+                    style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'contain' }}
+                    className="img-thumbnail"
+                  />
+                </div>
+              )}
+            </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={saving}>Cancel</button>
-            <button type="button" className="btn btn-primary" onClick={handleCreate} disabled={saving || !name}>Create</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={saving || uploading}>Cancel</button>
+            <button type="button" className="btn btn-primary" onClick={handleCreate} disabled={saving || uploading || !name}>
+              {saving ? 'Creating...' : uploading ? 'Uploading Image...' : 'Create'}
+            </button>
           </div>
         </div>
       </div>

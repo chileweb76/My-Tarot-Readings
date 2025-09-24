@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import AuthWrapper from '../components/AuthWrapper'
-import { apiFetch } from '../lib/api'
+import { apiFetch, extractBlobUrl, prepareBlobUpload } from '../lib/api'
 import { addListener } from '../lib/toast'
 import QuerentModal from '../components/QuerentModal'
 import SpreadSelect from '../components/SpreadSelect'
@@ -728,14 +728,29 @@ export default function HomePage() {
             if (idToUse) {
               const form = new FormData()
               form.append('image', uploadedFile)
-              const uploadRes = await apiFetch(`/readings/${idToUse}/image`, { method: 'POST', body: form })
+              
+              // Add Vercel Blob metadata for reading image
+              prepareBlobUpload(form, {
+                filename: `reading-${idToUse}-${Date.now()}.${uploadedFile.type.split('/')[1] || 'jpg'}`,
+                contentType: uploadedFile.type
+              })
+              
+              const uploadRes = await apiFetch(`/api/readings/${idToUse}/blob/upload`, { 
+                method: 'POST', 
+                body: form,
+                headers: {
+                  'X-Vercel-Blob-Store': 'true',
+                }
+              })
               if (uploadRes.ok) {
                 const ures = await uploadRes.json().catch(() => ({}))
-                if (ures && ures.image) {
-                  setUploadedImage(ures.image)
+                // Handle Vercel Blob response format using utility
+                const blobImageUrl = extractBlobUrl(ures)
+                if (blobImageUrl) {
+                  setUploadedImage(blobImageUrl)
                   // Update readingData.image so callers receive the final URL
-                  readingData.image = ures.image
-                  pushToast({ type: 'success', text: 'Image uploaded and attached to reading.' })
+                  readingData.image = blobImageUrl
+                  pushToast({ type: 'success', text: 'Image uploaded to Vercel Blob and attached to reading.' })
                   // clear pending file
                   setUploadedFile(null)
                 }
@@ -816,15 +831,30 @@ export default function HomePage() {
           setUploadingImage(true)
           const form = new FormData()
           form.append('image', uploadedFile)
+          
+          // Add Vercel Blob metadata for reading image update
+          prepareBlobUpload(form, {
+            filename: `reading-${idForUpload}-update-${Date.now()}.${uploadedFile.type.split('/')[1] || 'jpg'}`,
+            contentType: uploadedFile.type
+          })
+          
           const idForUpload = readingId
-          const uploadRes = await apiFetch(`/readings/${idForUpload}/image`, { method: 'POST', body: form })
+          const uploadRes = await apiFetch(`/api/readings/${idForUpload}/blob/upload`, { 
+            method: 'POST', 
+            body: form,
+            headers: {
+              'X-Vercel-Blob-Store': 'true',
+            }
+          })
           if (uploadRes.ok) {
             const ures = await uploadRes.json().catch(() => ({}))
-            if (ures && ures.image) {
-              setUploadedImage(ures.image)
-              readingData.image = ures.image
+            // Handle Vercel Blob response format using utility
+            const blobImageUrl = extractBlobUrl(ures)
+            if (blobImageUrl) {
+              setUploadedImage(blobImageUrl)
+              readingData.image = blobImageUrl
               setUploadedFile(null)
-              pushToast({ type: 'success', text: 'Image uploaded and attached to reading.' })
+              pushToast({ type: 'success', text: 'Image uploaded to Vercel Blob and attached to reading.' })
             }
           } else {
             const err = await uploadRes.json().catch(() => ({}))

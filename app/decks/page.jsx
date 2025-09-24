@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
 import CameraModal from '../../components/CameraModal'
-import { apiFetch } from '../../lib/api'
+import { apiFetch, extractBlobUrl, prepareBlobUpload } from '../lib/api'
 
 // Simple helper: since all images are now local, just return the URL as-is
 function normalizeImageUrl(url) {
@@ -142,7 +142,20 @@ export default function DecksPage() {
     try {
       const apiBase = getApiBase()
       const fd = new FormData()
-      fd.append('card', file)
+      fd.append('image', file)
+      
+      // Add Vercel Blob metadata for card image
+      prepareBlobUpload(fd, {
+        filename: `deck-${selectedDeck}-card-${cardName}-${Date.now()}.${file.type.split('/')[1] || 'jpg'}`,
+        contentType: file.type
+      })
+      
+      // Add Vercel Blob metadata
+      prepareBlobUpload(fd, {
+        filename: `deck-${selectedDeck}-${Date.now()}.${file.type.split('/')[1] || 'jpg'}`,
+        contentType: file.type,
+        cacheControl: 'public, max-age=31536000'
+      })
   // show uploading indicator by finding index
   const idx = deckDetails && Array.isArray(deckDetails.cards) ? deckDetails.cards.findIndex(c => (c.name||'').toLowerCase() === (cardName||'').toLowerCase()) : -1
   if (idx !== -1) setUploadingCardIndex(idx)
@@ -163,16 +176,23 @@ export default function DecksPage() {
         return { ...prev, cards }
       })
 
-      const res = await apiFetch(`/api/decks/${selectedDeck}/card/${encodeURIComponent(cardName)}/upload`, {
+      const res = await apiFetch(`/api/decks/${selectedDeck}/card/${encodeURIComponent(cardName)}/blob/upload`, {
         method: 'POST',
-        body: fd
+        body: fd,
+        headers: {
+          'X-Vercel-Blob-Store': 'true',
+        }
       })
       if (!res.ok) {
         const txt = await res.text().catch(() => '')
         throw new Error(`Upload failed: ${res.status} ${txt}`)
       }
       const updated = await res.json()
-  setToast({ message: 'Image uploaded', type: 'success' })
+      
+      // Handle Vercel Blob response format using utility
+      const cardImageUrl = extractBlobUrl(updated)
+      
+      setToast({ message: 'Card image uploaded to Vercel Blob', type: 'success' })
   setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
   setUploadingCardIndex(null)
       
@@ -187,7 +207,7 @@ export default function DecksPage() {
           if (cards[idx].image && cards[idx].image.startsWith('blob:')) {
             URL.revokeObjectURL(cards[idx].image)
           }
-          cards[idx] = { ...cards[idx], ...updated, uploading: false }
+          cards[idx] = { ...cards[idx], image: cardImageUrl || updated.image, uploading: false }
         } else {
           cards.push({...updated, uploading: false})
         }
@@ -293,9 +313,13 @@ export default function DecksPage() {
         setDeckDetails(prev => ({ ...prev, image: previewUrl, uploading: true }))
       }
 
-      const res = await apiFetch(`/api/decks/${selectedDeck}/upload`, {
+      const res = await apiFetch(`/api/decks/${selectedDeck}/blob/upload`, {
         method: 'POST',
-        body: fd
+        body: fd,
+        headers: {
+          'X-Vercel-Blob-Store': 'true',
+          // Let browser set Content-Type for multipart/form-data
+        }
       })
       
       if (!res.ok) {
@@ -304,7 +328,11 @@ export default function DecksPage() {
       }
       
       const updated = await res.json()
-      setToast({ message: 'Deck image uploaded', type: 'success' })
+      
+      // Handle Vercel Blob response format using utility
+      const imageUrl = extractBlobUrl(updated)
+      
+      setToast({ message: 'Deck image uploaded to Vercel Blob', type: 'success' })
       setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
 
       // Update with server response
@@ -314,13 +342,13 @@ export default function DecksPage() {
           if (deck.image && deck.image.startsWith('blob:')) {
             URL.revokeObjectURL(deck.image)
           }
-          return { ...deck, image: updated.deck.image, uploading: false }
+          return { ...deck, image: imageUrl || updated.deck?.image, uploading: false }
         }
         return deck
       }))
 
       if (deckDetails && deckDetails._id === selectedDeck) {
-        setDeckDetails(prev => ({ ...prev, image: updated.deck.image, uploading: false }))
+        setDeckDetails(prev => ({ ...prev, image: imageUrl || updated.deck?.image, uploading: false }))
       }
 
       return updated
@@ -402,9 +430,12 @@ export default function DecksPage() {
       formData.append('image', file)
       formData.append('cardName', cardName)
 
-      const res = await apiFetch(`/api/decks/${selectedDeck}/upload`, {
+      const res = await apiFetch(`/api/decks/${selectedDeck}/card/${encodeURIComponent(cardName)}/blob/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+          'X-Vercel-Blob-Store': 'true',
+        }
       })
 
       if (!res.ok) {
