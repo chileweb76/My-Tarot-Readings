@@ -501,6 +501,7 @@ export default function SettingsPage() {
         console.warn('setPicturePreview is not a function in handlePictureChange', setPicturePreview)
       }
     } catch (err) {
+      console.warn('HEIC conversion failed:', err)
       // Fallback: set raw file URL
       setPictureFile(file)
       try { if (typeof setPicturePreview === 'function') setPicturePreview(URL.createObjectURL(file)) } catch (e) {}

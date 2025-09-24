@@ -1179,13 +1179,21 @@ export default function HomePage() {
                   <div className="mb-2">Connect an image to this reading (upload or use camera)</div>
                   {uploadedImage ? (
                     <div className="mb-2 text-center">
-                      <Image
-                        src={uploadedImage}
-                        alt="Uploaded preview"
-                        width={600}
-                        height={280}
-                        style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
-                      />
+                      {uploadedImage.startsWith('blob:') ? (
+                        <img
+                          src={uploadedImage}
+                          alt="Uploaded preview"
+                          style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain', maxHeight: '280px' }}
+                        />
+                      ) : (
+                        <Image
+                          src={uploadedImage}
+                          alt="Uploaded preview"
+                          width={600}
+                          height={280}
+                          style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className="mb-2 text-center text-muted">No image chosen</div>
@@ -1203,15 +1211,21 @@ export default function HomePage() {
                       <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
                         const f = e.target.files && e.target.files[0]
                         if (!f) return
+                        console.log('File selected:', f.name, f.type, f.size)
                         try {
-                          const { ensurePreviewableImage } = await import('../../lib/heicConverter')
+                          const { ensurePreviewableImage } = await import('../lib/heicConverter')
                           const { file: maybeFile, previewUrl } = await ensurePreviewableImage(f)
-                          setUploadedImage(previewUrl || URL.createObjectURL(maybeFile || f))
+                          console.log('Converted file:', maybeFile?.name, maybeFile?.type, 'Preview URL:', previewUrl)
+                          const finalUrl = previewUrl || URL.createObjectURL(maybeFile || f)
+                          setUploadedImage(finalUrl)
                           setUploadedFile(maybeFile || f)
+                          console.log('Set uploadedImage to:', finalUrl)
                         } catch (err) {
+                          console.warn('HEIC conversion failed:', err)
                           const url = URL.createObjectURL(f)
                           setUploadedImage(url)
                           setUploadedFile(f)
+                          console.log('Fallback: set uploadedImage to:', url)
                         }
                       }} />
                     </label>

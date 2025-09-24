@@ -7,7 +7,7 @@ import Image from 'next/image'
 // behavior: if the provided src fails to load, compute a reasonable fallback
 // (local /images path heuristics) or an inline SVG placeholder and update
 // the displayed source.
-export default function SmartImage({ src, alt = '', className, style, width, height, fill, sizes, priority, objectFit = 'cover' }) {
+export default function SmartImage({ src, alt = '', className, style, width, height, fill, sizes, priority, objectFit = 'cover', onLoadingComplete, onError }) {
   const [currentSrc, setCurrentSrc] = useState(src)
 
   useEffect(() => {
@@ -36,6 +36,47 @@ export default function SmartImage({ src, alt = '', className, style, width, hei
     } catch (err) {
       // ignore and keep currentSrc unchanged
     }
+    if (onError) onError()
+  }
+
+  // For blob URLs, use regular img tag instead of Next.js Image
+  if (currentSrc?.startsWith('blob:')) {
+    if (fill) {
+      return (
+        <img
+          src={currentSrc}
+          alt={alt}
+          className={className}
+          style={{ 
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            objectFit: objectFit,
+            ...style 
+          }}
+          onLoad={() => onLoadingComplete && onLoadingComplete()}
+          onError={handleError}
+        />
+      )
+    }
+    
+    return (
+      <img
+        src={currentSrc}
+        alt={alt}
+        className={className}
+        style={{ 
+          objectFit: objectFit,
+          width: width || '100%',
+          height: height || 'auto',
+          ...style 
+        }}
+        onLoad={() => onLoadingComplete && onLoadingComplete()}
+        onError={handleError}
+      />
+    )
   }
 
   // If fill is requested, use the fill prop and require a positioned container.
