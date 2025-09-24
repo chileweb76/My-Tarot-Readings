@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
 import CameraModal from '../../components/CameraModal'
-import SmartImage from '../../components/SmartImage'
+import SmartImageV2 from '../../components/SmartImageV2'
 import { apiFetch } from '../../lib/api'
+import { IMAGE_TYPES, getDeckImageUrl, getCardImageUrl } from '../../lib/imageService'
 
 // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
@@ -687,12 +688,14 @@ export default function DecksPage() {
                   }}>
                     {deckDetails && deckDetails.image ? (
                       <>
-                        <SmartImage
-                          src={normalizeImageUrl(deckDetails.image)}
+                        <SmartImageV2
+                          src={deckDetails.image}
                           alt="Deck cover"
                           width={200}
                           height={280}
                           style={{ opacity: uploadingDeckImage ? 0.7 : 1 }}
+                          imageType={IMAGE_TYPES.DECK}
+                          imageContext={{ deckId: selectedDeck }}
                         />
                         {uploadingDeckImage && (
                           <div style={{ 
@@ -805,15 +808,20 @@ export default function DecksPage() {
                       const card = deckDetails?.cards?.find(c => c.name === editingCard)
                       const hasImage = card && card.image
                       const isUploading = card && card.uploading
-                      const imgSrc = hasImage ? normalizeImageUrl(card.image) : null
+                      const imgSrc = hasImage ? card.image : null
                       return hasImage ? (
                         <>
-                              <SmartImage
+                              <SmartImageV2
                                 src={imgSrc}
                                 alt={editingCard}
                                 width={150}
                                 height={210}
                                 style={{ opacity: isUploading ? 0.7 : 1 }}
+                                imageType={IMAGE_TYPES.CARD}
+                                imageContext={{ 
+                                  cardName: editingCard,
+                                  deck: selectedDeck
+                                }}
                               />
                           {isUploading && (
                             <div style={{ 
@@ -919,12 +927,14 @@ export default function DecksPage() {
                           }}>
                             {deckDetails.image ? (
                               <>
-                                <SmartImage
-                                  src={normalizeImageUrl(deckDetails.image)}
+                                <SmartImageV2
+                                  src={deckDetails.image}
                                   alt="Deck cover"
                                   width={120}
                                   height={168}
                                   style={{ borderRadius: '6px', opacity: (deckDetails.uploading || uploadingDeckImage) ? 0.7 : 1 }}
+                                  imageType={IMAGE_TYPES.DECK}
+                                  imageContext={{ deckId: selectedDeck }}
                                 />
                                 {(deckDetails.uploading || uploadingDeckImage) && (
                                   <div style={{ 
@@ -989,19 +999,24 @@ export default function DecksPage() {
                   const hasImage = card && card.image
                   const inputId = `card-upload-${i}`
                   const isUploading = uploadingCardIndex === i || (card && card.uploading)
-                  const imgSrc = hasImage ? normalizeImageUrl(card.image) : null
+                  const imgSrc = hasImage ? card.image : null
                   return (
                     <div className="col-6 col-sm-4 col-md-3" key={(card && card.name) || i}>
                       <div className="card p-2 h-100">
                         <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#f8f9fa', position: 'relative' }}>
                           {hasImage ? (
                             <>
-                              <SmartImage
+                              <SmartImageV2
                                 src={imgSrc}
                                 alt={card.name || 'card'}
                                 width={220}
                                 height={160}
                                 style={{ objectFit: 'cover', opacity: isUploading ? 0.7 : 1 }}
+                                imageType={IMAGE_TYPES.CARD}
+                                imageContext={{ 
+                                  cardName: card.name,
+                                  deck: selectedDeck
+                                }}
                               />
                             {/* Edit button overlay - only for non-Rider-Waite decks */}
                             {!isRiderWaiteDeck(deckDetails) && (

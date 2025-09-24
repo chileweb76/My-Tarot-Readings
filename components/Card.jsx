@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { apiFetch } from '../lib/api'
+import { getCardImageUrl, IMAGE_TYPES } from '../lib/imageService'
 import ConfirmModal from './ConfirmModal'
 import { notify } from '../lib/toast'
 
@@ -118,16 +119,17 @@ export default function Card({
         } else {
           console.log(`Fetching image for card: "${cardName}" from deck: "${deck}"`)
           try {
-            const response = await apiFetch(`/api/card-image?name=${encodeURIComponent(cardName)}&deck=${encodeURIComponent(deck)}`)
-            console.log('API response:', response)
-            if (response.imageUrl) {
-              setCurrentImage(response.imageUrl)
+            // Use the new image service for backend API calls
+            const imageUrl = await getCardImageUrl(cardName, deck)
+            if (imageUrl) {
+              console.log('Got image URL from service:', imageUrl)
+              setCurrentImage(imageUrl)
             } else {
-              console.log('No image URL returned from API')
+              console.log('No image URL returned from service')
               setCurrentImage(null)
             }
           } catch (apiError) {
-            console.error('API call failed:', apiError)
+            console.error('Image service call failed:', apiError)
             setCurrentImage(null)
           }
         }
@@ -169,16 +171,17 @@ export default function Card({
           } else {
             console.log(`Fetching image for card: "${title}" from deck: "${deck}"`)
             try {
-              const response = await apiFetch(`/api/card-image?name=${encodeURIComponent(title)}&deck=${encodeURIComponent(deck)}`)
-              console.log('API response:', response)
-              if (response.imageUrl) {
-                setCurrentImage(response.imageUrl)
+              // Use the new image service for backend API calls
+              const imageUrl = await getCardImageUrl(title, deck)
+              if (imageUrl) {
+                console.log('Got image URL from service:', imageUrl)
+                setCurrentImage(imageUrl)
               } else {
-                console.log('No image URL returned from API')
+                console.log('No image URL returned from service')
                 setCurrentImage(null)
               }
             } catch (apiError) {
-              console.error('API call failed:', apiError)
+              console.error('Image service call failed:', apiError)
               setCurrentImage(null)
             }
           }
