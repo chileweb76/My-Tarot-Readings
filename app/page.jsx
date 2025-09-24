@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import AuthWrapper from '../components/AuthWrapper'
 import { apiFetch } from '../lib/api'
+import { getSpreadImageUrl } from '../lib/imageService'
 
   // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
@@ -1036,14 +1037,26 @@ export default function HomePage() {
     const load = async () => {
       if (!selectedSpread) { setSpreadImage(null); return }
       try {
-        // if selectedSpread looks like an ObjectId (24 hex) try id endpoint
+        // First try to get image URL from the blob service (much faster)
+        const blobImageUrl = await getSpreadImageUrl(selectedSpread)
+        if (blobImageUrl && mounted) {
+          console.log('📸 Using blob URL for spread:', blobImageUrl)
+          setSpreadImage(blobImageUrl)
+        }
+        
+        // Get spread data from API for cards and metadata
         const isId = /^[0-9a-fA-F]{24}$/.test(selectedSpread)
         const url = isId ? `/spreads/${selectedSpread}` : `/spreads/by-name?name=${encodeURIComponent(selectedSpread)}`
         const res = await apiFetch(url)
         if (!res.ok) return
         const data = await res.json()
         if (!mounted) return
-        setSpreadImage(data.image || null)
+        
+        // If we didn't get a blob URL, use the API image as fallback
+        if (!blobImageUrl && data.image) {
+          setSpreadImage(data.image)
+        }
+        
         // spreads store card position names in `cards` (array)
         const cards = Array.isArray(data.cards) ? data.cards : []
         setSpreadCards(cards)

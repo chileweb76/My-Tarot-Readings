@@ -17,8 +17,40 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public')
 const SPREADS_DIR = path.join(PUBLIC_DIR, 'images', 'spreads')
 const RIDER_WAITE_DIR = path.join(PUBLIC_DIR, 'images', 'rider-waite-tarot')
 
+// Spread ID to name mapping (from your database)
+const SPREAD_MAPPINGS = {
+  '68d467f1ee640a8d8e47ca7a': 'One Card',
+  '68d467f1ee640a8d8e47ca7b': 'Two Card (Situation/Advice)',
+  '68d467f1ee640a8d8e47ca7c': 'Two Card (Pros/Cons)', 
+  '68d467f1ee640a8d8e47ca7d': 'Two Card (Yes/No)',
+  '68d467f1ee640a8d8e47ca7e': 'Three Card (Past/Present/Future)',
+  '68d467f1ee640a8d8e47ca7f': 'Three Card (Within, Without, Advice)',
+  '68d467f1ee640a8d8e47ca80': 'Three Card (Body, Mind, Spirit)',
+  '68d467f1ee640a8d8e47ca81': 'Three Card (Energy, Obstacle, Advice)',
+  '68d467f1ee640a8d8e47ca82': 'Four Card Guidance',
+  '68d467f1ee640a8d8e47ca83': 'Celtic Cross',
+  '68d467f1ee640a8d8e47ca84': 'Horseshoe',
+  '68d467f1ee640a8d8e47ca85': 'Relationship Five'
+}
+
+// Helper function to get spread filename from name or ID
+const getSpreadFileName = (nameOrId) => {
+  // If it's an ID, get the name first
+  const name = SPREAD_MAPPINGS[nameOrId] || nameOrId
+  return name.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '') // Remove special chars except spaces
+    .replace(/\s+/g, '-') // Replace spaces with dashes
+}
+
 // Vercel Blob token should be in environment
 const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN
+
+console.log('🔍 Environment check:')
+console.log(`   - Current directory: ${__dirname}`)
+console.log(`   - Token found: ${BLOB_READ_WRITE_TOKEN ? 'Yes (' + BLOB_READ_WRITE_TOKEN.substring(0, 20) + '...)' : 'No'}`)
+console.log(`   - Spreads directory: ${SPREADS_DIR}`)
+console.log(`   - Cards directory: ${RIDER_WAITE_DIR}`)
+console.log(`   - Known spreads: ${Object.keys(SPREAD_MAPPINGS).length}`)
 
 if (!BLOB_READ_WRITE_TOKEN) {
   console.error('❌ BLOB_READ_WRITE_TOKEN environment variable is required')
@@ -137,15 +169,30 @@ async function migrateRiderWaiteImages() {
 async function generateMappingFile(spreadResults, cardResults) {
   const mapping = {
     migrationDate: new Date().toISOString(),
+    spreadMappings: SPREAD_MAPPINGS, // Include the ID to name mappings
     spreads: {},
     cards: {}
   }
   
-  // Map spread images
+  // Map spread images with multiple lookup paths
   for (const result of spreadResults) {
     const fileName = path.basename(result.originalPath)
+    const fileNameWithoutExt = path.basename(fileName, path.extname(fileName))
+    
+    // Add original path mapping
     mapping.spreads[result.originalPath] = result.blobUrl
     mapping.spreads[`/images/spreads/${fileName}`] = result.blobUrl
+    
+    // Add spread name mappings (try to match with known spreads)
+    for (const [spreadId, spreadName] of Object.entries(SPREAD_MAPPINGS)) {
+      const expectedFileName = getSpreadFileName(spreadName)
+      if (fileNameWithoutExt.toLowerCase().includes(expectedFileName) || 
+          expectedFileName.includes(fileNameWithoutExt.toLowerCase())) {
+        mapping.spreads[spreadId] = result.blobUrl // Map by ID
+        mapping.spreads[spreadName] = result.blobUrl // Map by name
+        console.log(`🎯 Mapped spread: "${spreadName}" (${spreadId}) -> ${fileName}`)
+      }
+    }
   }
   
   // Map card images
@@ -160,8 +207,9 @@ async function generateMappingFile(spreadResults, cardResults) {
   await fs.writeFile(mappingPath, JSON.stringify(mapping, null, 2))
   
   console.log(`\n📄 Created URL mapping file: ${mappingPath}`)
-  console.log(`   - ${Object.keys(mapping.spreads).length} spread URLs`)
+  console.log(`   - ${Object.keys(mapping.spreads).length} spread URLs (including ID mappings)`)
   console.log(`   - ${Object.keys(mapping.cards).length} card URLs`)
+  console.log(`   - Spread ID mappings: ${Object.keys(SPREAD_MAPPINGS).length}`)
 }
 
 async function main() {
