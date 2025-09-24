@@ -35,7 +35,14 @@ export default function SmartImage({
         return
       }
 
+      // If transform is disabled, use src as-is
       if (!enableTransform) {
+        setCurrentSrc(src)
+        return
+      }
+
+      // If src is already a full HTTP URL (including blob URLs), use it directly
+      if (typeof src === 'string' && (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:'))) {
         setCurrentSrc(src)
         return
       }
