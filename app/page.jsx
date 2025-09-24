@@ -676,6 +676,40 @@ export default function HomePage() {
     }
   }
 
+  // Reset reading to original state for new reading
+  const resetReadingToOriginalState = () => {
+    // Reset reading content
+    setQuestion('')
+    setInterpretation('')
+    setReadingDateTime(() => {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const hour = String(now.getHours()).padStart(2, '0')
+      const minute = String(now.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day}T${hour}:${minute}`
+    })
+
+    // Reset spread and cards
+    setSelectedSpread('')
+    setSpreadName('')
+    setSpreadImage(null)
+    setSpreadCards([])
+    setCardStates([])
+
+    // Reset image uploads
+    setUploadedImage(null)
+    setUploadedFile(null)
+
+    // Reset reading metadata
+    setReadingId(null)
+    setSelectedTags([])
+
+    // Keep querent and deck selections as they're likely to be reused
+    // Keep user preferences like selectedQuerent and selectedDeck
+  }
+
   // Save reading function
   // Reusable save helper: create (POST) if no readingId, otherwise update (PUT)
   const saveReading = async ({ explicit = false } = {}) => {
@@ -802,7 +836,10 @@ export default function HomePage() {
             setUploadingImage(false)
           }
         }
-        if (explicit) pushToast({ type: 'success', text: 'Reading saved successfully!' })
+        if (explicit) {
+          pushToast({ type: 'success', text: 'Reading saved successfully!' })
+          resetReadingToOriginalState()
+        }
         return result
       }
 
@@ -894,7 +931,10 @@ export default function HomePage() {
         throw new Error(error.error || 'Failed to update reading')
       }
 
-      if (explicit) pushToast({ type: 'success', text: 'Reading updated.' })
+      if (explicit) {
+        pushToast({ type: 'success', text: 'Reading updated.' })
+        resetReadingToOriginalState()
+      }
       return await res.json()
     } catch (err) {
       console.error('Error saving/updating reading:', err)
