@@ -1233,13 +1233,6 @@ export default function HomePage() {
                     <button type="button" className="btn btn-outline-secondary mb-0" onClick={() => setShowCameraModal(true)}>
                       Camera
                     </button>
-                    <div className="ms-2 align-self-center small text-muted">Limit: {(getImageSizeLimitBytes() / 1024 / 1024).toFixed(2)} MB</div>
-
-                    <button className="btn btn-tarot-primary" disabled={!uploadedImage || uploadingImage} onClick={async () => {
-                      // Attach: queue image for upload; actual upload happens on Save
-                      if (!uploadedImage) return
-                      pushToast({ type: 'info', text: 'Image queued — it will be uploaded when you save the reading.' })
-                    }}>Attach</button>
 
                     <button className="btn btn-outline-danger" disabled={!uploadedImage} onClick={() => { setUploadedImage(null); /* legacy message cleared */ }}>Remove</button>
                   </div>

@@ -126,7 +126,6 @@ main.container {
 .footer {
   margin-top: auto;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
-  background: linear-gradient(90deg, rgba(74, 21, 75, 0.9), rgba(58, 16, 58, 0.9));
   color: rgba(255, 255, 255, 0.9);
 }
 .footer img {
@@ -1421,10 +1420,21 @@ main.container {
    Bootstrap's `bg-primary` and `shadow-sm` utility classes when applied to the header. */
 header.bg-primary,
 header.bg-primary.shadow-sm,
+footer.bg-primary,
+footer.bg-primary.shadow-sm,
+footer.bg-primary.navbar-dark,
+footer.bg-primary.navbar-dark.shadow-sm,
 .bg-primary.shadow-sm {
   background: linear-gradient(90deg, var(--tarot-mystical), #3a103a) !important;
+  background-color: transparent !important;
   box-shadow: none !important;
   border-bottom: none !important;
+}
+
+/* Override Bootstrap navbar-dark background specifically for footer */
+footer.navbar-dark {
+  background: linear-gradient(90deg, var(--tarot-mystical), #3a103a) !important;
+  background-color: transparent !important;
 }
 
 /* Ensure navbar links remain readable on the mystical background */
