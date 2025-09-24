@@ -128,9 +128,9 @@ export default function ReadingPage() {
   const getImageSizeLimitBytes = () => {
     try {
       const v = localStorage.getItem('IMAGE_SIZE_LIMIT_MB')
-      const mb = v ? parseFloat(v) : 2.0
+      const mb = v ? parseFloat(v) : 5.0
       return Math.max(0.1, mb) * 1024 * 1024
-    } catch (e) { return 2.0 * 1024 * 1024 }
+    } catch (e) { return 5.0 * 1024 * 1024 }
   }
   const [largeImagePending, setLargeImagePending] = useState(null)
   const [showExportSignInModal, setShowExportSignInModal] = useState(false)

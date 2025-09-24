@@ -5,7 +5,7 @@ import Image from 'next/image'
 import AuthWrapper from '../components/AuthWrapper'
 import { apiFetch } from '../lib/api'
 
-// Vercel Blob utility functions
+  // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
   if (!uploadResponse) return null
   return uploadResponse.url || uploadResponse.image || uploadResponse.reading?.image
@@ -29,8 +29,8 @@ import { LargeImageWarningModal, ExportSignInModal } from '../components/modals'
 
 export default function HomePage() {
   // Image size threshold (MB) can be configured via NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB (build-time)
-  // or overridden at runtime via localStorage key 'IMAGE_SIZE_LIMIT_MB'. Default 2.0 MB.
-  const DEFAULT_IMAGE_SIZE_LIMIT_MB = 2.0
+  // or overridden at runtime via localStorage key 'IMAGE_SIZE_LIMIT_MB'. Default 5.0 MB.
+  const DEFAULT_IMAGE_SIZE_LIMIT_MB = 5.0
   const envLimitMb = typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB ? parseFloat(process.env.NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB) : null
   const [runtimeLimitMb, setRuntimeLimitMb] = useState(null)
   const getImageSizeLimitBytes = () => {
@@ -1209,7 +1209,10 @@ export default function HomePage() {
                       }} />
                     </label>
 
-                    <button type="button" className="btn btn-outline-secondary mb-0" onClick={() => setShowCameraModal(true)}>Camera</button>
+                    <button type="button" className="btn btn-outline-secondary mb-0" onClick={() => setShowCameraModal(true)}>
+                      Camera
+                    </button>
+                    <div className="ms-2 align-self-center small text-muted">Limit: {(getImageSizeLimitBytes() / 1024 / 1024).toFixed(2)} MB</div>
 
                     <button className="btn btn-tarot-primary" disabled={!uploadedImage || uploadingImage} onClick={async () => {
                       // Attach: queue image for upload; actual upload happens on Save

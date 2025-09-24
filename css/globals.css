@@ -1678,6 +1678,21 @@ header, header .navbar {
     min-width: 0;
   }
 }
+/* Spread preview container used for image previews in modals and cards */
+.spread-preview {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 4/3;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.spread-preview--thumbnail {
+  max-width: 200px;
+  aspect-ratio: 4/3;
+}
+
 /* 4. Utilities last */
 /* Small helpers and utilities used across the app */
 .reversed-checkbox-input {

@@ -29,6 +29,13 @@ export default function CameraModal({ show, onClose, onCaptured }) {
   }, [show, onClose])
 
   if (!show) return null
+  // Determine current image size limit (MB) from localStorage or build-time env
+  let imageLimitMb = 5.0
+  try {
+    const v = typeof window !== 'undefined' ? localStorage.getItem('IMAGE_SIZE_LIMIT_MB') : null
+    if (v) imageLimitMb = parseFloat(v)
+    else if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB) imageLimitMb = parseFloat(process.env.NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB)
+  } catch (e) { /* ignore */ }
 
   return (
     <div className="modal show d-block" tabIndex={-1} role="dialog">
@@ -42,6 +49,9 @@ export default function CameraModal({ show, onClose, onCaptured }) {
             <div style={{ width: '100%', height: 360, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <video ref={videoRef} autoPlay playsInline style={{ maxWidth: '100%', maxHeight: 360 }} />
             </div>
+          </div>
+          <div className="px-3 pb-2 text-center text-muted" style={{ fontSize: '0.9rem' }}>
+            Note: images larger than <strong>{Number.isFinite(imageLimitMb) ? imageLimitMb.toFixed(1) : '5.0'} MB</strong> will prompt for confirmation when embedding in exports.
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={() => { try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {} ; if (onClose) onClose() }}>Cancel</button>

@@ -32,7 +32,7 @@ export default function SettingsPage() {
   const MAX_IMAGE_LIMIT_MB = 50
   const PRESETS = [
     { label: 'Small', value: 0.5 },
-    { label: 'Medium', value: 2.0 },
+    { label: 'Medium', value: 5.0 },
     { label: 'Large', value: 8.0 }
   ]
 
@@ -106,7 +106,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="form-text mt-2">
-          Recommended: <strong>2.0 MB</strong>. Images above this size will ask for confirmation before
+          Recommended: <strong>5.0 MB</strong>. Images above this size will ask for confirmation before
           embedding. Increase the value to embed more images automatically, or lower it to avoid
           large exports. Allowed range: {MIN_IMAGE_LIMIT_MB} MB — {MAX_IMAGE_LIMIT_MB} MB.
         </div>
@@ -129,7 +129,7 @@ export default function SettingsPage() {
 
   // IMAGE size limit control (client-side only)
   const [imageLimitMb, setImageLimitMb] = useState(() => {
-    try { return parseFloat(localStorage.getItem('IMAGE_SIZE_LIMIT_MB')) || 2.0 } catch (e) { return 2.0 }
+    try { return parseFloat(localStorage.getItem('IMAGE_SIZE_LIMIT_MB')) || 5.0 } catch (e) { return 5.0 }
   })
 
   const saveImageLimit = () => {
