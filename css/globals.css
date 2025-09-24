@@ -1639,6 +1639,45 @@ header, header .navbar {
   transform: translateY(-8px) scale(0.995);
 }
 
+/* Tags component responsive helpers used on the Reading page */
+.tags-row {
+  gap: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tags-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.new-tag-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 450px) {
+  .tags-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tags-row select.form-select {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .new-tag-input {
+    justify-content: flex-start;
+    margin-top: 0.5rem;
+  }
+  .new-tag-input input.form-control {
+    width: 100% !important;
+    min-width: 0;
+  }
+}
 /* 4. Utilities last */
 /* Small helpers and utilities used across the app */
 .reversed-checkbox-input {

@@ -1271,7 +1271,7 @@ export default function HomePage() {
         
         {/* Selected tags display */}
         {selectedTags.length > 0 && (
-          <div className="mb-2">
+          <div className="mb-2 tags-badges">
             {selectedTags.map(tagId => {
               const tag = tags.find(t => t._id === tagId)
               if (!tag) return null
@@ -1291,7 +1291,7 @@ export default function HomePage() {
         )}
 
         {/* Tags dropdown and add button */}
-        <div className="d-flex justify-content-center align-items-center gap-2">
+        <div className="tags-row d-flex justify-content-center align-items-center gap-2">
           <select 
             className="form-select" 
             style={{ width: 'auto', minWidth: '200px' }}
@@ -1325,7 +1325,7 @@ export default function HomePage() {
           </select>
 
           {/* Add new tag input and button */}
-          <div className="d-flex align-items-center gap-1">
+          <div className="new-tag-input d-flex align-items-center gap-1">
             <input
               type="text"
               className="form-control"
@@ -1349,6 +1349,7 @@ export default function HomePage() {
             </button>
           </div>
         </div>
+        {/* Styles moved to `app/styles/_components.scss` */}
       </div>
 
       {/* Save Reading Button */}
@@ -1373,14 +1374,16 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Export/Share Actions (reusable) */}
-      <ExportToolbar
-        onPrint={handlePrintReading}
-        onSharePdf={handleShareAsPdf}
-        onExport={handleExportReading}
-        onShareText={handleShareReading}
-        busy={exporting}
-      />
+      {/* Export/Share Actions (reusable) - add spacing from Save button */}
+      <div className="mt-3 d-flex justify-content-center">
+        <ExportToolbar
+          onPrint={handlePrintReading}
+          onSharePdf={handleShareAsPdf}
+          onExport={handleExportReading}
+          onShareText={handleShareReading}
+          busy={exporting}
+        />
+      </div>
       </form>
       <QuerentModal
         show={addingQuerent}
