@@ -1068,6 +1068,8 @@ export default function HomePage() {
         setCardStates(cards.map((c) => ({ title: typeof c === 'string' ? c : (c.name || c.title || ''), selectedSuit: '', selectedCard: '', reversed: false, interpretation: '', image: null })))
       } catch (err) {
         console.warn('Failed to load spread image', err)
+        // Show a user-visible message so missing API config is obvious in the UI
+        try { pushToast({ type: 'error', text: 'Failed to load spread data. Check NEXT_PUBLIC_API_URL and server availability.' }) } catch (e) { /* ignore if pushToast not available */ }
         if (mounted) setSpreadImage(null)
       }
     }
