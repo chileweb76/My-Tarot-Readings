@@ -1346,6 +1346,19 @@ export default function HomePage() {
       <div className="mt-2">
         <p className="mb-0 text-white" style={{ fontSize: '20px', fontWeight: 400, textAlign: 'left' }}>Cards Drawn:</p>
       </div>
+      {/* Debug: show spread/card state to diagnose rendering issues (temporary) */}
+      <div className="mt-1 mb-2 text-white-50 small">
+        <div style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: 'rgba(0,0,0,0.25)', padding: '8px', borderRadius: 6}}>
+          <strong>Debug</strong>
+          <div>selectedSpread: {String(selectedSpread || '')}</div>
+          <div>spreadCards.length: {(spreadCards || []).length}</div>
+          <div>cardStates.length: {(cardStates || []).length}</div>
+          <details style={{marginTop:6, color:'#fff'}}>
+            <summary style={{cursor:'pointer', color:'#fff'}}>Data (click)</summary>
+            <pre style={{maxHeight:200, overflow:'auto', color:'#fff'}}>{JSON.stringify({ spreadCards, cardStates }, null, 2)}</pre>
+          </details>
+        </div>
+      </div>
       {/* Render a Card component for each position in the selected spread */}
       <div className="mt-3">
         <div className="row">
