@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { apiFetch } from '../lib/api'
-import { getCardImageUrl, IMAGE_TYPES } from '../lib/imageService'
+import { getCardImageUrl as getCardImageUrlService, IMAGE_TYPES } from '../lib/imageService'
 import ConfirmModal from './ConfirmModal'
 import { notify } from '../lib/toast'
 
@@ -101,9 +101,20 @@ export default function Card({
           : `${selectedCard} of ${selectedSuit}`
         
         if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
-          // For Rider-Waite, use direct static paths
-          const imageUrl = generateRiderWaiteStaticUrl(cardName)
-          setCurrentImage(imageUrl)
+          // For Rider-Waite, use the image service which will check blob mapping first
+          try {
+            const imageUrl = await getCardImageUrlService(cardName, deck)
+            if (imageUrl) {
+              console.log('Got image URL from service:', imageUrl)
+              setCurrentImage(imageUrl)
+            } else {
+              console.log('No image URL returned from service')
+              setCurrentImage(null)
+            }
+          } catch (apiError) {
+            console.error('Image service call failed:', apiError)
+            setCurrentImage(null)
+          }
         } else if (deckData && deckData.cards) {
           // For custom decks, look up the card image in deckData
           const card = deckData.cards.find(c => 
@@ -120,7 +131,7 @@ export default function Card({
           console.log(`Fetching image for card: "${cardName}" from deck: "${deck}"`)
           try {
             // Use the new image service for backend API calls
-            const imageUrl = await getCardImageUrl(cardName, deck)
+            const imageUrl = await getCardImageUrlService(cardName, deck)
             if (imageUrl) {
               console.log('Got image URL from service:', imageUrl)
               setCurrentImage(imageUrl)
@@ -153,9 +164,20 @@ export default function Card({
         const isActualCardName = isValidTarotCardName(title)
         if (isActualCardName) {
           if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
-            // For Rider-Waite, use direct static paths
-            const imageUrl = generateRiderWaiteStaticUrl(title)
-            setCurrentImage(imageUrl)
+            // For Rider-Waite, use the image service which will check blob mapping first
+            try {
+              const imageUrl = await getCardImageUrlService(title, deck)
+              if (imageUrl) {
+                console.log('Got image URL from service:', imageUrl)
+                setCurrentImage(imageUrl)
+              } else {
+                console.log('No image URL returned from service')
+                setCurrentImage(null)
+              }
+            } catch (apiError) {
+              console.error('Image service call failed:', apiError)
+              setCurrentImage(null)
+            }
           } else if (deckData && deckData.cards) {
             // For custom decks, look up the card image in deckData
             const card = deckData.cards.find(c => 
@@ -172,7 +194,7 @@ export default function Card({
             console.log(`Fetching image for card: "${title}" from deck: "${deck}"`)
             try {
               // Use the new image service for backend API calls
-              const imageUrl = await getCardImageUrl(title, deck)
+              const imageUrl = await getCardImageUrlService(title, deck)
               if (imageUrl) {
                 console.log('Got image URL from service:', imageUrl)
                 setCurrentImage(imageUrl)
