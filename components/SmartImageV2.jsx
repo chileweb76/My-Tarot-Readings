@@ -157,7 +157,12 @@ export default function SmartImage({
       const u = new URL(url)
       const host = u.hostname || ''
       // Skip optimization for Vercel Blob hosts or same-origin / vercel.app hosts
-      if (host.endsWith('vercel-storage.com') || host === window.location.hostname || host.endsWith('.vercel.app')) {
+      // Avoid accessing `window` during SSR by guarding with typeof window
+      if (
+        host.endsWith('vercel-storage.com') ||
+        (typeof window !== 'undefined' && host === window.location.hostname) ||
+        host.endsWith('.vercel.app')
+      ) {
         return true
       }
     } catch (e) {
