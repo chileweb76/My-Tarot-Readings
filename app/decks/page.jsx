@@ -71,7 +71,9 @@ export default function DecksPage() {
 
   async function loadDecks() {
       try {
+    console.log('Frontend: Attempting to fetch /api/decks...');
     const res = await apiFetch('/api/decks')
+    console.log('Frontend: API response status:', res.status);
         if (!res.ok) {
           const text = await res.text().catch(() => '')
           console.error('Failed to fetch /api/decks:', res.status, text)
