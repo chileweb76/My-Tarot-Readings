@@ -8,9 +8,7 @@
     "vercel-build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "install:all": "npm install",
-    "migrate:images": "node scripts/migrate-images-to-blob.js",
-    "test:blob": "node scripts/test-blob-images.js"
+  "install:all": "npm install"
   },
   "devDependencies": {
     "@types/node": "24.3.1",
