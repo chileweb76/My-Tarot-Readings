@@ -690,6 +690,7 @@ export default function DecksPage() {
                   }}>
                     {deckDetails && deckDetails.image ? (
                       <>
+                        {console.log('Frontend: Rendering deck image with src:', deckDetails.image)}
                         <SmartImageV2
                           src={deckDetails.image}
                           alt="Deck cover"
@@ -698,6 +699,7 @@ export default function DecksPage() {
                           style={{ opacity: uploadingDeckImage ? 0.7 : 1 }}
                           imageType={IMAGE_TYPES.DECK}
                           imageContext={{ deckId: selectedDeck }}
+                          enableTransform={false}
                         />
                         {uploadingDeckImage && (
                           <div style={{ 
@@ -824,6 +826,7 @@ export default function DecksPage() {
                                   cardName: editingCard,
                                   deck: selectedDeck
                                 }}
+                                enableTransform={false}
                               />
                           {isUploading && (
                             <div style={{ 
@@ -937,6 +940,7 @@ export default function DecksPage() {
                                   style={{ borderRadius: '6px', opacity: (deckDetails.uploading || uploadingDeckImage) ? 0.7 : 1 }}
                                   imageType={IMAGE_TYPES.DECK}
                                   imageContext={{ deckId: selectedDeck }}
+                                  enableTransform={false}
                                 />
                                 {(deckDetails.uploading || uploadingDeckImage) && (
                                   <div style={{ 
@@ -1019,6 +1023,7 @@ export default function DecksPage() {
                                   cardName: card.name,
                                   deck: selectedDeck
                                 }}
+                                enableTransform={false}
                               />
                             {/* Edit button overlay - only for non-Rider-Waite decks */}
                             {!isRiderWaiteDeck(deckDetails) && (

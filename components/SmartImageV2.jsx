@@ -28,6 +28,11 @@ export default function SmartImage({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
 
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('SmartImageV2: Received props - src:', src, 'alt:', alt, 'enableTransform:', enableTransform);
+  }
+
   useEffect(() => {
     async function updateImageSrc() {
       if (!src) {

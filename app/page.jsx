@@ -1218,6 +1218,7 @@ export default function HomePage() {
                       height={720}
                       className="spread-image"
                       style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
+                      unoptimized={spreadImage?.includes('vercel-storage.com')}
                     />
                   ) : (
                     <div className="text-center text-muted">No spread image selected</div>
