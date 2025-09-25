@@ -39,8 +39,8 @@ export default function SmartImage({ src, alt = '', className, style, width, hei
     if (onError) onError()
   }
 
-  // For blob URLs, use regular img tag instead of Next.js Image
-  if (currentSrc?.startsWith('blob:')) {
+  // For blob URLs and external HTTP URLs, use regular img tag instead of Next.js Image
+  if (currentSrc?.startsWith('blob:') || (currentSrc?.startsWith('http') && currentSrc.includes('vercel-storage.com'))) {
     if (fill) {
       return (
         <img
