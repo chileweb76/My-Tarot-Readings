@@ -1050,8 +1050,19 @@ export default function HomePage() {
         const isId = /^[0-9a-fA-F]{24}$/.test(selectedSpread)
         const url = isId ? `/spreads/${selectedSpread}` : `/spreads/by-name?name=${encodeURIComponent(selectedSpread)}`
         const res = await apiFetch(url)
-        if (!res.ok) return
+        // Debug: log fetch outcome so we can see status and body when things fail
+        try {
+          console.debug('[Spread load] URL=', url, 'status=', res.status, 'ok=', res.ok)
+        } catch (e) {}
+        if (!res.ok) {
+          let bodyText = ''
+          try { bodyText = await res.text() } catch (e) { bodyText = '' }
+          console.warn('[Spread load] fetch failed', url, res.status, bodyText)
+          try { pushToast({ type: 'error', text: `Failed to load spread (${res.status})` }) } catch (e) {}
+          return
+        }
         const data = await res.json()
+        try { console.debug('[Spread load] data=', data) } catch (e) {}
         if (!mounted) return
         
         // If we didn't get a blob URL, use the API image as fallback
