@@ -389,9 +389,11 @@ export default function HomePage() {
 
           <div class="section">
             <h3>Cards Drawn</h3>
-            ${spreadCards.map(cardName => `
+            ${readingPayload.cards.map(cs => `
               <div class="card-item">
-                <div class="card-title">${typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || '')}</div>
+                <div class="card-title">${cs.title || ''}${cs.card ? (cs.suit && cs.suit.toLowerCase() !== 'major arcana' ? ` - ${cs.card} of ${cs.suit}` : ` - ${cs.card}`) : ''}${cs.reversed ? ' (reversed)' : ''}</div>
+                ${cs.interpretation ? `<div class="card-interpretation">${cs.interpretation}</div>` : ''}
+                ${cs.image ? `<div style="margin-top:8px"><img src="${cs.image}" style="max-width:120px;max-height:160px"/></div>` : ''}
               </div>
             `).join('')}
           </div>

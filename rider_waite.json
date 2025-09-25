@@ -6,91 +6,91 @@
   "cards": [
     {
       "name": "The Fool",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_fool-haI33vQ3le1D4EPGllV9ukxMQLLk5e.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_fool.png"
     },
     {
       "name": "The Magician",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_magician-9FukDRgYUUsI8m7xFBlZNS9EAh82Az.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_magician.png"
     },
     {
       "name": "The High Priestess",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_priestess-Krm4TetXhFZwz2xIRxHyEb7yxXyap8.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_priestess.png"
     },
     {
       "name": "The Empress",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_empress-kBQJMQlqojynBUI4qNjrJFoXLQvg3v.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_empress.png"
     },
     {
       "name": "The Emperor",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_emperor-MfCFbNjMCHM8xAA6wHKhrNsQFBaVoc.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_emperor.png"
     },
     {
       "name": "The Hierophant",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_hierophant-WUybuknz5HaWtMvVjRhc9NdXsVlGts.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_hierophant.png"
     },
     {
       "name": "The Lovers",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_lovers-EBD5559lytVT5R5OPG2FRE34uNzOsw.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_lovers.png"
     },
     {
       "name": "The Chariot",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_chariot-od3OSJLjUMRc5qMJWPZkgZVgueR3nN.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_chariot.png"
     },
     {
       "name": "Strength",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_strength-B9qsFTjR6lPaAto6rgnVbsVD0SPN8c.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_strength.png"
     },
     {
       "name": "The Hermit",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_hermit-tPs8Rjf5vy8x76CyLm9tllbC3fLHPY.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_hermit.png"
     },
     {
       "name": "Wheel of Fortune",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_fortune-3rcNc2RdqhG4QFQGtyokNAzbgm6kTh.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_fortune.png"
     },
     {
       "name": "Justice",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_justice-seJZ3BMiFBPZw7LHfq9G9ehH4ZIWxI.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_justice.png"
     },
     {
       "name": "The Hanged Man",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_hanged-fD82FdvsyJshcEgQvlm1qOko0KMW0o.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_hanged.png"
     },
     {
       "name": "Death",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_death-767cVLxgRV4GfFdFbuJfqAAp7vYtNe.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_death.png"
     },
     {
       "name": "Temperance",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_temperance-Qm1uDdJ3EdvFzgEs00AAjvmFQw9cPj.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_temperance.png"
     },
     {
       "name": "The Devil",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_devil-fHgYfV5aEqrgEVS64a1KcnD4XKlPEz.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_devil.png"
     },
     {
       "name": "The Tower",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_tower-NLCS5nYqp4CaXLzY3M2HaLilobAP0W.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_tower.png"
     },
     {
       "name": "The Star",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_star-B682kjBecsPW1Po72OruQsYIx2w1tz.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_star.png"
     },
     {
       "name": "The Moon",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_moon-5JeOYw6VnlO4haHybQlKNhbwyLxyhn.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_moon.png"
     },
     {
       "name": "The Sun",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_sun-q5b590YzCMQQLdWme6olXBorinYWXR.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_sun.png"
     },
     {
       "name": "Judgement",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_judgement-UGBqB03F4Uxq1tZ7hAG5AjC1VpXfiG.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_judgement.png"
     },
     {
       "name": "The World",
-      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_world-gKhAAH6xbcI7f2NjEGwr9DFg1Qagbj.png"
+      "image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/major_arcana_world.png"
     },
     {
       "name": "Ace of Wands",
