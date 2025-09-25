@@ -140,7 +140,14 @@ export default function DecksPage() {
           return
         }
         const data = await res.json()
-        if (!cancelled) setDeckDetails(data)
+        if (!cancelled) {
+          // Workaround: Fix incorrect deck cover URL for Rider-Waite deck
+          if (data && data.image === 'https://emfobsnlxploca6s.public.blob.vercel-storage.com/decks/Rider_Waite_Tarot_Deck_cover.jpg') {
+            data.image = 'https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/cover-1KaB9HnbWmssDeiwAOtWqkifDAc9FW.jpg';
+            console.log('Fixed deck image URL:', data.image);
+          }
+          setDeckDetails(data);
+        }
       } catch (err) {
         console.error('Error loading deck details', err)
         if (!cancelled) setDeckDetails(null)
