@@ -150,6 +150,22 @@ export default function SmartImage({
     )
   }
 
+  // Helper: determine if we should avoid Next.js optimization for this URL
+  const shouldSkipOptimization = (url) => {
+    if (!url) return false
+    try {
+      const u = new URL(url)
+      const host = u.hostname || ''
+      // Skip optimization for Vercel Blob hosts or same-origin / vercel.app hosts
+      if (host.endsWith('vercel-storage.com') || host === window.location.hostname || host.endsWith('.vercel.app')) {
+        return true
+      }
+    } catch (e) {
+      // if URL constructor fails, don't skip
+    }
+    return false
+  }
+
   // If fill is requested, use the fill prop and require a positioned container.
   if (fill) {
     return (
@@ -159,6 +175,7 @@ export default function SmartImage({
         fill
         sizes={sizes}
         priority={priority}
+        unoptimized={shouldSkipOptimization(currentSrc)}
         style={{ objectFit: objectFit, ...style }}
         className={className}
         onError={handleError}
@@ -175,6 +192,7 @@ export default function SmartImage({
       height={height}
       sizes={sizes}
       priority={priority}
+      unoptimized={shouldSkipOptimization(currentSrc)}
       style={{ objectFit: objectFit, ...style }}
       className={className}
       onError={handleError}
