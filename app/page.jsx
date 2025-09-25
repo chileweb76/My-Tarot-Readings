@@ -51,6 +51,7 @@ export default function HomePage() {
   const [spreadCards, setSpreadCards] = useState([])
   const [spreadName, setSpreadName] = useState('')
   const [cardStates, setCardStates] = useState([])
+  const [spreadLoadStatus, setSpreadLoadStatus] = useState('idle') // 'idle' | 'loading' | 'loaded' | 'failed'
   const [uploadedImage, setUploadedImage] = useState(null)
   const [uploadedFile, setUploadedFile] = useState(null)
   const [savingReading, setSavingReading] = useState(false)
@@ -1037,7 +1038,8 @@ export default function HomePage() {
   useEffect(() => {
     let mounted = true
     const load = async () => {
-      if (!selectedSpread) { setSpreadImage(null); return }
+      if (!selectedSpread) { setSpreadImage(null); setSpreadLoadStatus('idle'); return }
+      setSpreadLoadStatus('loading')
       try {
         // First try to get image URL from the blob service (much faster)
         const blobImageUrl = await getSpreadImageUrl(selectedSpread)
@@ -1059,6 +1061,7 @@ export default function HomePage() {
           try { bodyText = await res.text() } catch (e) { bodyText = '' }
           console.warn('[Spread load] fetch failed', url, res.status, bodyText)
           try { pushToast({ type: 'error', text: `Failed to load spread (${res.status})` }) } catch (e) {}
+          setSpreadLoadStatus('failed')
           return
         }
         const data = await res.json()
@@ -1077,10 +1080,12 @@ export default function HomePage() {
         setSpreadName(data.spread || (isId ? '' : selectedSpread))
         // initialize cardStates to match the cards array length
         setCardStates(cards.map((c) => ({ title: typeof c === 'string' ? c : (c.name || c.title || ''), selectedSuit: '', selectedCard: '', reversed: false, interpretation: '', image: null })))
+        setSpreadLoadStatus('loaded')
       } catch (err) {
         console.warn('Failed to load spread image', err)
         // Show a user-visible message so missing API config is obvious in the UI
         try { pushToast({ type: 'error', text: 'Failed to load spread data. Check NEXT_PUBLIC_API_URL and server availability.' }) } catch (e) { /* ignore if pushToast not available */ }
+        setSpreadLoadStatus('failed')
         if (mounted) setSpreadImage(null)
       }
     }
@@ -1364,6 +1369,7 @@ export default function HomePage() {
         <div style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: 'rgba(0,0,0,0.25)', padding: '8px', borderRadius: 6}}>
           <strong>Debug</strong>
           <div>selectedSpread: {String(selectedSpread || '')}</div>
+          <div>spreadLoadStatus: {spreadLoadStatus}</div>
           <div>spreadCards.length: {(spreadCards || []).length}</div>
           <div>cardStates.length: {(cardStates || []).length}</div>
           <details style={{marginTop:6, color:'#fff'}}>
