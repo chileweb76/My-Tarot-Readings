@@ -1052,21 +1052,15 @@ export default function HomePage() {
         const isId = /^[0-9a-fA-F]{24}$/.test(selectedSpread)
         const url = isId ? `/spreads/${selectedSpread}` : `/spreads/by-name?name=${encodeURIComponent(selectedSpread)}`
         const res = await apiFetch(url)
-        // Debug: log fetch outcome so we can see status and body when things fail
-        try {
-          console.debug('[Spread load] URL=', url, 'status=', res.status, 'ok=', res.ok)
-        } catch (e) {}
         if (!res.ok) {
-          let bodyText = ''
-          try { bodyText = await res.text() } catch (e) { bodyText = '' }
-          console.warn('[Spread load] fetch failed', url, res.status, bodyText)
-          try { pushToast({ type: 'error', text: `Failed to load spread (${res.status})` }) } catch (e) {}
+          console.warn('[Spread load] fetch failed', url, res.status)
           setSpreadLoadStatus('failed')
           return
         }
         const data = await res.json()
-        try { console.debug('[Spread load] data=', data) } catch (e) {}
-        if (!mounted) return
+        console.debug('[Spread load] data=', data)
+        // Store for debugging purposes
+        if (typeof window !== 'undefined') window.__lastSpreadData = data
         
         // If we didn't get a blob URL, use the API image as fallback
         if (!blobImageUrl && data.image) {
@@ -1074,10 +1068,25 @@ export default function HomePage() {
         }
         
         // spreads store card position names in `cards` (array)
-        const cards = Array.isArray(data.cards) ? data.cards : []
+        // Handle different response formats: direct object vs wrapped in array/other structure
+        let cards = []
+        if (Array.isArray(data.cards)) {
+          cards = data.cards
+        } else if (data && Array.isArray(data)) {
+          // If response is an array of spreads, find the matching one
+          const spread = data.find(s => s._id === selectedSpread || s.spread === selectedSpread)
+          if (spread && Array.isArray(spread.cards)) {
+            cards = spread.cards
+          }
+        } else if (data.spread && Array.isArray(data.spread.cards)) {
+          // If nested under spread property
+          cards = data.spread.cards
+        }
+        
         setSpreadCards(cards)
         // set spread display name (ensure we show the name, not an id)
-        setSpreadName(data.spread || (isId ? '' : selectedSpread))
+        const spreadDisplayName = data.spread || (data.name) || (isId ? '' : selectedSpread)
+        setSpreadName(spreadDisplayName)
         // initialize cardStates to match the cards array length
         setCardStates(cards.map((c) => ({ title: typeof c === 'string' ? c : (c.name || c.title || ''), selectedSuit: '', selectedCard: '', reversed: false, interpretation: '', image: null })))
         setSpreadLoadStatus('loaded')
@@ -1374,7 +1383,7 @@ export default function HomePage() {
           <div>cardStates.length: {(cardStates || []).length}</div>
           <details style={{marginTop:6, color:'#fff'}}>
             <summary style={{cursor:'pointer', color:'#fff'}}>Data (click)</summary>
-            <pre style={{maxHeight:200, overflow:'auto', color:'#fff'}}>{JSON.stringify({ spreadCards, cardStates }, null, 2)}</pre>
+            <pre style={{maxHeight:200, overflow:'auto', color:'#fff'}}>{JSON.stringify({ spreadCards, cardStates, apiData: typeof window !== 'undefined' ? window.__lastSpreadData : null }, null, 2)}</pre>
           </details>
         </div>
       </div>
