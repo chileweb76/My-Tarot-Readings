@@ -100,8 +100,20 @@ export default function Card({
           ? selectedCard 
           : `${selectedCard} of ${selectedSuit}`
         
-        if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
-          // For Rider-Waite, use the image service which will check blob mapping first
+        if (deckData && deckData.cards) {
+          // For any deck with card data (including Rider-Waite), use the deck data directly
+          const card = deckData.cards.find(c => 
+            (c.name || '').toLowerCase() === cardName.toLowerCase()
+          )
+          if (card && card.image) {
+            console.log(`Found card image for "${cardName}":`, card.image)
+            setCurrentImage(card.image)
+          } else {
+            console.log(`No image found for card "${cardName}" in deck data`)
+            setCurrentImage(null)
+          }
+        } else if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
+          // For Rider-Waite without deck data, use the image service which will check blob mapping first
           try {
             const imageUrl = await getCardImageUrlService(cardName, deck)
             if (imageUrl) {
@@ -113,18 +125,6 @@ export default function Card({
             }
           } catch (apiError) {
             console.error('Image service call failed:', apiError)
-            setCurrentImage(null)
-          }
-        } else if (deckData && deckData.cards) {
-          // For custom decks, look up the card image in deckData
-          const card = deckData.cards.find(c => 
-            (c.name || '').toLowerCase() === cardName.toLowerCase()
-          )
-          if (card && card.image) {
-            console.log(`Found card image for "${cardName}":`, card.image)
-            setCurrentImage(card.image)
-          } else {
-            console.log(`No image found for card "${cardName}" in deck data`)
             setCurrentImage(null)
           }
         } else {
@@ -163,8 +163,20 @@ export default function Card({
         // Only try to fetch image if title looks like an actual tarot card name
         const isActualCardName = isValidTarotCardName(title)
         if (isActualCardName) {
-          if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
-            // For Rider-Waite, use the image service which will check blob mapping first
+          if (deckData && deckData.cards) {
+            // For any deck with card data (including Rider-Waite), use the deck data directly
+            const card = deckData.cards.find(c => 
+              (c.name || '').toLowerCase() === title.toLowerCase()
+            )
+            if (card && card.image) {
+              console.log(`Found card image for "${title}":`, card.image)
+              setCurrentImage(card.image)
+            } else {
+              console.log(`No image found for card "${title}" in deck data`)
+              setCurrentImage(null)
+            }
+          } else if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
+            // For Rider-Waite without deck data, use the image service which will check blob mapping first
             try {
               const imageUrl = await getCardImageUrlService(title, deck)
               if (imageUrl) {
@@ -176,18 +188,6 @@ export default function Card({
               }
             } catch (apiError) {
               console.error('Image service call failed:', apiError)
-              setCurrentImage(null)
-            }
-          } else if (deckData && deckData.cards) {
-            // For custom decks, look up the card image in deckData
-            const card = deckData.cards.find(c => 
-              (c.name || '').toLowerCase() === title.toLowerCase()
-            )
-            if (card && card.image) {
-              console.log(`Found card image for "${title}":`, card.image)
-              setCurrentImage(card.image)
-            } else {
-              console.log(`No image found for card "${title}" in deck data`)
               setCurrentImage(null)
             }
           } else {
