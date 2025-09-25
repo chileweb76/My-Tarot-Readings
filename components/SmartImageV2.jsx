@@ -112,6 +112,9 @@ export default function SmartImage({
 
   // For blob URLs and external HTTP URLs, use regular img tag instead of Next.js Image
   if (currentSrc?.startsWith('blob:') || (currentSrc?.startsWith('http') && currentSrc.includes('vercel-storage.com'))) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('SmartImageV2: Using img tag for blob/external URL:', currentSrc);
+    }
     if (fill) {
       return (
         <img
@@ -173,6 +176,9 @@ export default function SmartImage({
 
   // If fill is requested, use the fill prop and require a positioned container.
   if (fill) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('SmartImageV2: Using Next/Image with unoptimized for:', currentSrc);
+    }
     return (
       <Image
         src={currentSrc}
@@ -189,6 +195,9 @@ export default function SmartImage({
     )
   }
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log('SmartImageV2: Using Next/Image with unoptimized for:', currentSrc);
+  }
   return (
     <Image
       src={currentSrc}
