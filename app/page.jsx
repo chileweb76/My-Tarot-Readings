@@ -786,7 +786,7 @@ export default function HomePage() {
                 contentType: uploadedFile.type
               })
               
-              const uploadRes = await apiFetch(`/readings/${idToUse}/blob/upload`, { 
+              const uploadRes = await apiFetch(`/blob-upload?id=${idToUse}`, { 
                 method: 'POST', 
                 body: form,
                 headers: {
@@ -893,7 +893,7 @@ export default function HomePage() {
           })
           
           const idForUpload = readingId
-          const uploadRes = await apiFetch(`/readings/${idForUpload}/blob/upload`, { 
+          const uploadRes = await apiFetch(`/blob-upload?id=${idForUpload}`, { 
             method: 'POST', 
             body: form,
             headers: {
