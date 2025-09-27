@@ -747,7 +747,13 @@ export default function HomePage() {
         image: uploadedImage,
         question: question,
         deck: selectedDeck,
-        dateTime: readingDateTime,
+        // Ensure we send an explicit ISO timestamp (includes timezone) so server
+        // and DB store the intended moment instead of relying on ambiguous
+        // local-only strings like "YYYY-MM-DDTHH:mm" which can be parsed
+        // inconsistently between environments.
+        dateTime: (function() {
+          try { return new Date(readingDateTime).toISOString() } catch (e) { return readingDateTime }
+        })(),
         drawnCards,
         interpretation: interpretation,
         selectedTags: selectedTags,
