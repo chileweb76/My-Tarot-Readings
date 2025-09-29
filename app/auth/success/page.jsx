@@ -17,9 +17,19 @@ export default function AuthSuccessPage() {
     const provider = sp.get('provider')
     const verified = sp.get('verified')
     const token = sp.get('token') // OAuth token from cross-domain callback
+    
+    // Enhanced debugging
+    console.log('Auth success page loaded with params:', {
+      provider,
+      verified,
+      token: token ? `${token.substring(0, 10)}...` : null,
+      fullUrl: window.location.href,
+      search: window.location.search
+    })
 
     // If verification flow (no provider) — show verified message and redirect to sign-in
     if (!provider && verified === 'true') {
+      console.log('Email verification flow detected')
       setStatus('verified')
       setTimeout(() => {
         // send user back to sign-in so they can log in
@@ -30,16 +40,22 @@ export default function AuthSuccessPage() {
 
     // For OAuth with token relay (cross-domain)
     if (provider && token) {
-      console.log('OAuth token relay detected, exchanging token...')
+      console.log('OAuth token relay detected, exchanging token...', { 
+        provider, 
+        tokenPresent: !!token,
+        tokenLength: token.length
+      })
       handleOAuthTokenRelay(token)
       return
     }
 
     // For authentication success (Google OAuth or other providers)
     if (provider || window.location.pathname.includes('success')) {
+      console.log('Standard OAuth flow detected (no token in URL), checking cookies...', { provider })
       // Fetch user data using Server Action (cookies are handled automatically)
       fetchUserData()
     } else {
+      console.log('No valid auth flow detected, showing error')
       setStatus('error')
     }
   }, []) // fetchUserData is stable, but including it would cause infinite loops
@@ -105,6 +121,25 @@ export default function AuthSuccessPage() {
       if (!debug.debug?.hasToken && retryCount < 3) {
         console.log(`No token found, retrying in 1 second (attempt ${retryCount + 1}/3)`)
         setTimeout(() => fetchUserData(retryCount + 1), 1000)
+        return
+      }
+
+      // If all retries failed and we're supposed to be in an OAuth flow, 
+      // but have no token, suggest going back to login
+      const sp = new URLSearchParams(window.location.search)
+      const provider = sp.get('provider')
+      
+      if (provider && !debug.debug?.hasToken) {
+        console.error('OAuth flow detected but no token available. Possible causes:')
+        console.error('1. OAuth callback failed to set cookie or redirect with token')
+        console.error('2. Backend environment variables not configured')
+        console.error('3. Cross-origin cookie issues')
+        console.error('Redirecting back to auth page...')
+        
+        // Redirect back to auth page after a delay
+        setTimeout(() => {
+          window.location.href = '/auth?error=oauth_failed'
+        }, 3000)
         return
       }
 
