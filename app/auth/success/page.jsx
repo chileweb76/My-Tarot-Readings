@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheckCircle, faExclamationTriangle } from '../../../lib/icons'
-import { getCurrentUserAction } from '../../../lib/actions'
+import { getCurrentUserAction, debugAuthStatusAction } from '../../../lib/actions'
 
 export const dynamic = 'force-dynamic'
 
 export default function AuthSuccessPage() {
   const [status, setStatus] = useState('processing')
+  const [debugInfo, setDebugInfo] = useState(null)
 
   useEffect(() => {
     const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('')
@@ -35,10 +36,16 @@ export default function AuthSuccessPage() {
     }
   }, [])
 
-  const fetchUserData = async () => {
+  const fetchUserData = async (retryCount = 0) => {
     try {
+      // First get debug info
+      const debug = await debugAuthStatusAction()
+      setDebugInfo(debug)
+      console.log('Auth debug info:', debug)
+      
       // Use Server Action to get current user (uses HTTP-only cookies)
       const result = await getCurrentUserAction()
+      console.log('getCurrentUserAction result:', result)
 
       if (result.success && result.user) {
         // Store user data in localStorage for client components that need it
@@ -54,10 +61,25 @@ export default function AuthSuccessPage() {
         return
       }
 
+      // If no token found and we haven't retried much, wait and retry
+      if (!debug.debug?.hasToken && retryCount < 3) {
+        console.log(`No token found, retrying in 1 second (attempt ${retryCount + 1}/3)`)
+        setTimeout(() => fetchUserData(retryCount + 1), 1000)
+        return
+      }
+
       console.error('auth/success: getCurrentUserAction failed:', result.error)
       setStatus('error')
     } catch (error) {
       console.error('Error fetching user data:', error)
+      
+      // Retry on network errors up to 3 times
+      if (retryCount < 3) {
+        console.log(`Retrying due to error (attempt ${retryCount + 1}/3):`, error.message)
+        setTimeout(() => fetchUserData(retryCount + 1), 1000)
+        return
+      }
+      
       setStatus('error')
     }
   }
@@ -107,7 +129,20 @@ export default function AuthSuccessPage() {
                   </div>
                   <h4 className="text-danger">Authentication Failed</h4>
                   <p className="text-muted">There was an error processing your sign-in.</p>
-                                    <a href="/auth" className="btn btn-tarot-primary">
+                  
+                  {debugInfo && (
+                    <div className="text-start mt-3">
+                      <small className="text-muted">
+                        Debug Info:<br />
+                        Token: {debugInfo.debug?.hasToken ? 'Yes' : 'No'}<br />
+                        API URL: {debugInfo.debug?.apiBaseUrl}<br />
+                        Environment: {debugInfo.debug?.nodeEnv}<br />
+                        Error: {debugInfo.error}
+                      </small>
+                    </div>
+                  )}
+                  
+                  <a href="/auth" className="btn btn-tarot-primary">
                     Return to Sign In
                   </a>
                 </div>
