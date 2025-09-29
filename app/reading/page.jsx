@@ -422,7 +422,7 @@ export default function ReadingPage() {
     const range = computeRange(timeframe); effectiveStart = range.start; effectiveEnd = range.end
   }
 
-  const filteredReadings = readings.filter(reading => {
+  const filteredReadings = (readings || []).filter(reading => {
     if (selectedQuerent === 'all') {}
     else if (selectedQuerent === 'self') {
       if (reading.querent) {

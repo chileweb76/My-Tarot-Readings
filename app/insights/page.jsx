@@ -282,9 +282,9 @@ export default function InsightsPage() {
     ;(async () => {
       try {
         const result = await getDecksAction()
-        if (!result.success) return
+        if (!result || !result.success) return
         if (!mounted) return
-        setDecks(Array.isArray(result.data) ? result.data : (result.data.decks || []))
+        setDecks(Array.isArray(result.decks) ? result.decks : [])
       } catch (e) {
         console.warn('Failed to load decks', e)
       }
@@ -297,9 +297,9 @@ export default function InsightsPage() {
     ;(async () => {
       try {
         const result = await getTagsAction()
-        if (!result.success) return
+        if (!result || !result.success) return
         if (!mounted) return
-        setTags(result.data.tags || [])
+        setTags(result.tags || [])
       } catch (e) {
         console.warn('Failed to load tags', e)
       }

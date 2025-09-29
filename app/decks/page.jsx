@@ -130,11 +130,15 @@ export default function DecksPage() {
     let cancelled = false
     async function loadDeck() {
       setLoadingDeck(true)
+      console.log('Loading deck with ID:', selectedDeck)
       try {
         const result = await getSingleDeckAction(selectedDeck)
         
         if (!result.success) {
           console.error('Failed to fetch deck:', result.error)
+          console.error('Full result object:', result)
+          setToastMessage(`Failed to load deck: ${result.error}`)
+          setToastType('error')
           setDeckDetails(null)
           setLoadingDeck(false)
           return
