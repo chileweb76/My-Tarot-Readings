@@ -20,41 +20,68 @@ export default function Header() {
   useEffect(() => {
     setMounted(true)
     
-    const token = localStorage.getItem('token')
-    const userData = localStorage.getItem('user')
-    
-    console.log('Header: token exists?', !!token)
-    console.log('Header: user data exists?', !!userData)
-    
-    if (token && userData) {
+    // Check authentication using the same method as AuthWrapper
+    const checkAuth = async () => {
       try {
-        const parsedUser = JSON.parse(userData)
-        setIsAuthenticated(true)
-        setUser(parsedUser)
-        console.log('Header: authenticated as', parsedUser.username)
-      } catch (e) {
-        console.error('Header: failed to parse user data', e)
+        // Import getCurrentUserAction dynamically to avoid SSR issues
+        const { getCurrentUserAction } = await import('../lib/actions')
+        const result = await getCurrentUserAction()
+        
+        console.log('Header: auth check result', result)
+        
+        if (result.success && result.user) {
+          setIsAuthenticated(true)
+          setUser(result.user)
+          console.log('Header: authenticated as', result.user.username)
+          // Keep user data in localStorage for backwards compatibility
+          localStorage.setItem('user', JSON.stringify(result.user))
+        } else {
+          console.log('Header: not authenticated via cookie')
+          setIsAuthenticated(false)
+          setUser(null)
+          // Clear any stale data
+          localStorage.removeItem('user')
+          localStorage.removeItem('token')
+        }
+      } catch (error) {
+        console.error('Header: auth check failed', error)
         setIsAuthenticated(false)
         setUser(null)
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
       }
-    } else {
-      console.log('Header: not authenticated')
-      setIsAuthenticated(false)
-      setUser(null)
     }
-    // update user when storage changes (other tabs) or when same-tab components dispatch userUpdated
+    
+    checkAuth()
+    // Update user when storage changes (other tabs) or when same-tab components dispatch userUpdated
     const handleStorage = (e) => {
       if (e.key === 'user') {
         const ud = localStorage.getItem('user')
-        setUser(ud ? JSON.parse(ud) : null)
-        setIsAuthenticated(!!localStorage.getItem('token'))
+        if (ud) {
+          try {
+            const userData = JSON.parse(ud)
+            setUser(userData)
+            setIsAuthenticated(true)
+            console.log('Header: updated from storage', userData.username)
+          } catch (err) {
+            console.error('Header: failed to parse user data from storage', err)
+            setUser(null)
+            setIsAuthenticated(false)
+          }
+        } else {
+          setUser(null)
+          setIsAuthenticated(false)
+          console.log('Header: user data cleared from storage')
+        }
       }
     }
+    
     const handleUserUpdated = (e) => {
       const detail = e?.detail
       if (detail) {
         setUser(detail)
-        setIsAuthenticated(!!localStorage.getItem('token'))
+        setIsAuthenticated(true)
+        console.log('Header: user updated via event', detail.username)
       }
     }
 
