@@ -54,7 +54,14 @@ function Toast({ message, type = 'info', onClose }) {
 
 export default function DecksPage() {
   const [decks, setDecks] = useState([])
-  const [selectedDeck, setSelectedDeck] = useState('')
+  const [selectedDeck, setSelectedDeckState] = useState('')
+  
+  // Wrap setSelectedDeck with logging
+  const setSelectedDeck = (value) => {
+    console.log('🎯 setSelectedDeck called with:', value)
+    console.trace('🎯 setSelectedDeck stack trace')
+    setSelectedDeckState(value)
+  }
   const [deckDetails, setDeckDetails] = useState(null)
   const [loadingDeck, setLoadingDeck] = useState(false)
   const [showNewDeckModal, setShowNewDeckModal] = useState(false)
@@ -103,7 +110,8 @@ export default function DecksPage() {
         console.log('Normalized decks:', normalized)
         setDecks(normalized)
         if (normalized.length) {
-          console.log('Setting selected deck to:', normalized[0]._id)
+          console.log('loadDecks: Setting selected deck to:', normalized[0]._id)
+          console.trace('loadDecks setSelectedDeck stack trace')
           setSelectedDeck(normalized[0]._id)
         }
       } catch (err) {
@@ -116,8 +124,9 @@ export default function DecksPage() {
   }, [])
 
   const handleSelectDeck = (deckId) => {
+    console.log('handleSelectDeck called with:', deckId)
+    console.trace('handleSelectDeck stack trace')
     setSelectedDeck(deckId)
-    console.log(`Selected deck: ${deckId}`)
   }
 
   // Helper to normalize API base
@@ -135,7 +144,7 @@ export default function DecksPage() {
 
     // Validate that selectedDeck looks like a valid MongoDB ObjectId
     if (typeof selectedDeck !== 'string' || selectedDeck.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(selectedDeck)) {
-      console.warn('Invalid deck ID format:', selectedDeck)
+      console.warn('Invalid deck ID format:', selectedDeck, 'Skipping load.')
       setDeckDetails(null)
       return
     }
@@ -144,41 +153,50 @@ export default function DecksPage() {
     setUploadingCardIndex(null)
     setUploadingDeckImage(false)
 
-    let cancelled = false
-    async function loadDeck() {
-      setLoadingDeck(true)
-      console.log('Loading deck with ID:', selectedDeck)
-      try {
-        const result = await getSingleDeckAction(selectedDeck)
-        
-        if (!result.success) {
-          console.error('Failed to fetch deck:', result.error)
-          console.error('Full result object:', result)
-          setToast({ message: `Failed to load deck: ${result.error}`, type: 'error' })
-          setDeckDetails(null)
-          setLoadingDeck(false)
-          return
-        }
-        
-        const data = result.deck
-        if (!cancelled) {
-          // Workaround: Fix incorrect deck cover URL for Rider-Waite deck
-          if (data && data.image === 'https://emfobsnlxploca6s.public.blob.vercel-storage.com/decks/Rider_Waite_Tarot_Deck_cover.jpg') {
-            data.image = 'https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/cover-1KaB9HnbWmssDeiwAOtWqkifDAc9FW.jpg';
-            console.log('Fixed deck image URL:', data.image);
+    // Add a small delay to prevent race conditions and multiple rapid calls
+    const timeoutId = setTimeout(async () => {
+      let cancelled = false
+      
+      const loadDeck = async () => {
+        setLoadingDeck(true)
+        console.log('Loading deck with ID:', selectedDeck)
+        try {
+          const result = await getSingleDeckAction(selectedDeck)
+          
+          if (!result.success) {
+            console.error('Failed to fetch deck:', result.error)
+            console.error('Full result object:', result)
+            setToast({ message: `Failed to load deck: ${result.error}`, type: 'error' })
+            setDeckDetails(null)
+            setLoadingDeck(false)
+            return
           }
-          setDeckDetails(data);
+          
+          const data = result.deck
+          if (!cancelled) {
+            // Workaround: Fix incorrect deck cover URL for Rider-Waite deck
+            if (data && data.image === 'https://emfobsnlxploca6s.public.blob.vercel-storage.com/decks/Rider_Waite_Tarot_Deck_cover.jpg') {
+              data.image = 'https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/cover-1KaB9HnbWmssDeiwAOtWqkifDAc9FW.jpg';
+              console.log('Fixed deck image URL:', data.image);
+            }
+            setDeckDetails(data);
+          }
+        } catch (err) {
+          console.error('Error loading deck details', err)
+          if (!cancelled) setDeckDetails(null)
+        } finally {
+          if (!cancelled) setLoadingDeck(false)
         }
-      } catch (err) {
-        console.error('Error loading deck details', err)
-        if (!cancelled) setDeckDetails(null)
-      } finally {
-        if (!cancelled) setLoadingDeck(false)
       }
+      
+      if (!cancelled) {
+        await loadDeck()
+      }
+    }, 100) // 100ms delay to debounce rapid state changes
+    
+    return () => {
+      clearTimeout(timeoutId)
     }
-
-    loadDeck()
-    return () => { cancelled = true }
   }, [selectedDeck])
 
   // Upload a card image for a given card name
