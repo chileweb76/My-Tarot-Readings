@@ -1049,7 +1049,10 @@ export default function HomePage() {
     const loadDecks = async () => {
       try {
         const result = await getDecksAction()
-        if (!result.success) return
+        if (!result || !result.success) {
+          console.warn('Failed to load decks - no success result')
+          return
+        }
         if (!mounted) return
         const list = Array.isArray(result.decks) ? result.decks : []
         setDecks(list)
@@ -1074,7 +1077,10 @@ export default function HomePage() {
     const loadTags = async () => {
       try {
         const result = await getTagsAction()
-        if (!result.success) return
+        if (!result || !result.success) {
+          console.warn('Failed to load tags - no success result')
+          return
+        }
         if (!mounted) return
         // Check if data has tags property, otherwise use empty array
         const tagsArray = result.tags || []

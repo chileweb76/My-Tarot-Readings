@@ -1,0 +1,52 @@
+"use server"
+
+import { getAuthHeaders } from '@/lib/api'
+
+export async function POST(request) {
+  try {
+    const body = await request.json()
+    
+    const API_BASE_URL = 
+      process.env.VERCEL_ENV === 'production' 
+        ? 'https://mytarotreadingsserver.vercel.app'
+        : process.env.API_BASE_URL || 'https://mytarotreadingsserver.vercel.app'
+
+    const authHeaders = getAuthHeaders()
+    
+    const response = await fetch(`${API_BASE_URL}/api/export/pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Export PDF API Error:', errorText)
+      return new Response(errorText, { 
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // For PDF responses, we need to handle the binary data properly
+    const pdfBuffer = await response.arrayBuffer()
+    
+    return new Response(pdfBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="reading.pdf"',
+      },
+    })
+    
+  } catch (error) {
+    console.error('Export PDF API Error:', error)
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+}
