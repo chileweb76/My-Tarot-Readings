@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { apiFetch } from '../lib/api'
-import { getCardImageUrl as getCardImageUrlService, IMAGE_TYPES } from '../lib/imageService'
+import { getCardImageUrl as getCardImageUrlService, IMAGE_TYPES } from '../lib/imageServiceV3'
 import ConfirmModal from './ConfirmModal'
 import { notify } from '../lib/toast'
+import { exportReadingPDFAction } from '../lib/actions'
 
 export default function Card({
   className = '',
@@ -490,18 +490,24 @@ export default function Card({
                           image: currentImage || null,
                           exportedAt: new Date().toLocaleString()
                         }
-                        const res = await apiFetch('/export/pdf', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ reading: readingPayload, fileName: `tarot-card-${(selectedCard||title||'card').replace(/\s+/g,'-').toLowerCase()}.pdf` })
+                        const result = await exportReadingPDFAction({ 
+                          reading: readingPayload, 
+                          fileName: `tarot-card-${(selectedCard||title||'card').replace(/\s+/g,'-').toLowerCase()}.pdf` 
                         })
-                        if (!res.ok) {
-                          const text = await res.text().catch(() => '')
-                          console.error('Server PDF failed', res.status, res.statusText, text)
+                        
+                        if (!result.success) {
+                          console.error('Server PDF failed', result.error)
                           notify({ type: 'error', text: 'Failed to generate PDF for sharing.' })
                           return
                         }
-                        const blob = await res.blob()
+                        
+                        // Convert base64 back to blob
+                        const binaryString = atob(result.data.blob)
+                        const bytes = new Uint8Array(binaryString.length)
+                        for (let i = 0; i < binaryString.length; i++) {
+                          bytes[i] = binaryString.charCodeAt(i)
+                        }
+                        const blob = new Blob([bytes], { type: result.data.contentType })
                         const filename = `tarot-card-${(selectedCard||title||'card').replace(/\s+/g,'-').toLowerCase()}.pdf`
                         try {
                           const file = new File([blob], filename, { type: 'application/pdf' })

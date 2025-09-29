@@ -10,12 +10,24 @@ import PushNotificationsUniversal from '../../components/PushNotificationsUniver
 import NotificationTester from '../../components/NotificationTester'
 import { notify } from '../../lib/toast'
 import SmartImage from '../../components/SmartImage'
+
 import { 
   changeUsernameAction, 
   changePasswordAction, 
   uploadProfilePictureAction, 
   removeProfilePictureAction,
-  signOutAction
+  signOutAction,
+  getCurrentUserAction,
+  getQuerentsAction,
+  getTagsAction,
+  getDecksAction,
+  getSpreadsAction,
+  deleteQuerentAction,
+  deleteDeckAction,
+  deleteSpreadAction,
+  deleteTagAction,
+  requestAccountDeletionAction,
+  cancelAccountDeletionAction
 } from '../../lib/actions'
 
 export default function SettingsPage() {
@@ -279,12 +291,10 @@ export default function SettingsPage() {
   // load querents for this user
   ;(async () => {
         try {
-          const res = await apiFetch('/querents')
-          if (!res.ok) return
-          const data = await res.json()
-          if (data.querents) {
-            setQuerents(data.querents)
-            if (data.querents.length) setSelectedQuerentId(data.querents[0]._id)
+          const result = await getQuerentsAction()
+          if (result.success && result.querents) {
+            setQuerents(result.querents)
+            if (result.querents.length) setSelectedQuerentId(result.querents[0]._id)
           }
         } catch (err) {
           console.warn('Failed to load querents', err)
@@ -293,14 +303,13 @@ export default function SettingsPage() {
   // load tags for this user (only user-created tags)
   ;(async () => {
         try {
-          const res = await apiFetch('/api/tags')
-          if (!res.ok) return
-          const data = await res.json()
-          // Check if data has tags property, otherwise use empty array
-          const allTags = data.tags || (Array.isArray(data) ? data : [])
-          const userTags = allTags.filter(tag => !tag.isGlobal)
-          setTags(userTags)
-          if (userTags.length) setSelectedTagId(userTags[0]._id)
+          const result = await getTagsAction()
+          if (result.success && result.tags) {
+            // Filter user-created tags (non-global)
+            const userTags = result.tags.filter(tag => !tag.isGlobal)
+            setTags(userTags)
+            if (userTags.length) setSelectedTagId(userTags[0]._id)
+          }
         } catch (err) {
           console.warn('Failed to load tags', err)
         }
@@ -308,30 +317,28 @@ export default function SettingsPage() {
   // load decks for this user (only user-owned decks)
   ;(async () => {
           try {
-            const res = await apiFetch('/api/decks')
-            if (!res.ok) return
-            const data = await res.json()
-            const list = Array.isArray(data) ? data : (data.decks || [])
-            
-            // Filter to only show decks owned by the current user
-            const userId = user && (user._id || user.id) ? String(user._id || user.id) : null
-            const userOwnedDecks = list.filter(deck => {
-              // Explicitly exclude Rider-Waite Tarot deck
-              if (deck.deckName === 'Rider-Waite Tarot Deck') {
+            const result = await getDecksAction()
+            if (result.success && result.decks) {
+              // Filter to only show decks owned by the current user
+              const userId = user && (user._id || user.id) ? String(user._id || user.id) : null
+              const userOwnedDecks = result.decks.filter(deck => {
+                // Explicitly exclude Rider-Waite Tarot deck
+                if (deck.deckName === 'Rider-Waite Tarot Deck') {
+                  return false
+                }
+                
+                // If deck has an owner field, check if it matches current user
+                if (deck.owner) {
+                  return String(deck.owner) === userId
+                }
+                
+                // Exclude system decks (owner: null) and other decks without owner
                 return false
-              }
+              })
               
-              // If deck has an owner field, check if it matches current user
-              if (deck.owner) {
-                return String(deck.owner) === userId
-              }
-              
-              // Exclude system decks (owner: null) and other decks without owner
-              return false
-            })
-            
-            setDecks(userOwnedDecks)
-            if (userOwnedDecks.length) setSelectedDeckId(userOwnedDecks[0]._id)
+              setDecks(userOwnedDecks)
+              if (userOwnedDecks.length) setSelectedDeckId(userOwnedDecks[0]._id)
+            }
           } catch (err) {
             console.warn('Failed to load decks', err)
           }
@@ -339,14 +346,14 @@ export default function SettingsPage() {
   // load spreads and pick user's custom spreads
   ;(async () => {
           try {
-            const res = await apiFetch('/spreads')
-            if (!res.ok) return
-            const data = await res.json()
-            // filter custom spreads owned by this user
-            const meId = user && (user._id || user.id) ? String(user._id || user.id) : null
-            const mySpreads = Array.isArray(data) ? data.filter(s => s.isCustom && s.owner && String(s.owner) === meId) : []
-            setSpreads(mySpreads)
-            if (mySpreads.length) setSelectedSpreadId(mySpreads[0]._id)
+            const result = await getSpreadsAction()
+            if (result.success && result.spreads) {
+              // filter custom spreads owned by this user
+              const meId = user && (user._id || user.id) ? String(user._id || user.id) : null
+              const mySpreads = result.spreads.filter(s => s.isCustom && s.owner && String(s.owner) === meId)
+              setSpreads(mySpreads)
+              if (mySpreads.length) setSelectedSpreadId(mySpreads[0]._id)
+            }
           } catch (err) {
             console.warn('Failed to load spreads', err)
           }
@@ -387,30 +394,25 @@ export default function SettingsPage() {
         const url = new URL(href)
         // detect the success page
         if (url.pathname === '/auth/success' || url.pathname.endsWith('/auth/success')) {
-            const token = url.searchParams.get('token')
-          if (token) {
-            // store token and fetch user data
-            localStorage.setItem('token', token)
-            try {
-              const res = await apiFetch('/auth/me')
-                if (res.ok) {
-                const data = await res.json()
-                localStorage.setItem('user', JSON.stringify(data.user))
-                setUser(data.user)
-                try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: data.user })) } catch (e) {}
-                notify({ type: 'success', text: 'Google account linked.' })
-              } else {
-                notify({ type: 'error', text: 'Linked but failed to fetch user data.' })
-              }
-            } catch (err) {
-              notify({ type: 'error', text: 'Error fetching user after link.' })
+          // With Server Actions + HTTP-only cookies, we just need to refresh user data
+          try {
+            const result = await getCurrentUserAction()
+            if (result.success && result.user) {
+              localStorage.setItem('user', JSON.stringify(result.user))
+              setUser(result.user)
+              try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: result.user })) } catch (e) {}
+              notify({ type: 'success', text: 'Google account linked.' })
+            } else {
+              notify({ type: 'error', text: 'Linked but failed to fetch user data.' })
             }
-
-            popup.close()
-            clearInterval(pollInterval)
-            setLinking(false)
-            return
+          } catch (err) {
+            notify({ type: 'error', text: 'Error fetching user after link.' })
           }
+
+          popup.close()
+          clearInterval(pollInterval)
+          setLinking(false)
+          return
         }
       } catch (err) {
         // Cross-origin access to popup.location will throw until it's redirected to our origin - ignore
@@ -428,33 +430,29 @@ export default function SettingsPage() {
 
   // fetch latest user info (including deletion fields)
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) return
     let mounted = true
-  apiFetch('/auth/me')
-      .then(async (r) => {
-        // Handle 401 unauthorized by clearing tokens and redirecting
-        if (r.status === 401) {
-          localStorage.removeItem('token')
-          localStorage.removeItem('refreshToken')
-          localStorage.removeItem('user')
+    
+    const fetchUser = async () => {
+      try {
+        const result = await getCurrentUserAction()
+        if (mounted) {
+          if (result.success && result.user) {
+            setUser(result.user)
+          } else {
+            // Authentication failed - redirect to auth page
+            window.location.href = '/auth'
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user:', err)
+        if (mounted) {
+          notify({ type: 'error', text: 'Failed to refresh session. Please log in again.' })
           window.location.href = '/auth'
-          return
         }
-        const ct = r.headers.get('content-type') || ''
-        if (ct.includes('application/json')) return r.json()
-        const text = await r.text()
-        throw new Error(`Unexpected non-JSON response (${r.status}): ${text.slice(0,200)}`)
-      })
-      .then(data => {
-        if (mounted && data && data.user) {
-          setUser(data.user)
-        }
-      }).catch((err) => {
-        console.error('Failed to fetch /api/auth/me:', err)
-        // show a simple message but don't block the UI
-        notify({ type: 'error', text: 'Failed to refresh session. Please log in again.' })
-      })
+      }
+    }
+    
+    fetchUser()
     return () => { mounted = false }
   }, [])
 
@@ -490,41 +488,20 @@ export default function SettingsPage() {
   }
 
   const handleMarkForDeletion = async () => {
-  // legacy message cleared
     setLoading(true)
     try {
-      const token = localStorage.getItem('token')
-      if (!token) throw new Error('Not authenticated')
-
-      const res = await apiFetch('/auth/delete-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-
-      // defensive parse: server may return HTML (error page) instead of JSON
-      let data
-      const ct = res.headers.get('content-type') || ''
-      if (ct.includes('application/json')) {
-        data = await res.json()
-      } else {
-        const text = await res.text()
-        data = { error: `Unexpected response (${res.status})`, raw: text }
+      const result = await requestAccountDeletionAction()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to mark for deletion')
       }
 
-      if (!res.ok) throw new Error(data.error || data.message || 'Failed to mark for deletion')
-
-      // refresh user (defensive)
+      // Refresh user data
       try {
-  const meRes = await apiFetch('/auth/me')
-        const meCt = meRes.headers.get('content-type') || ''
-        if (meCt.includes('application/json')) {
-          const meData = await meRes.json()
-          if (meRes.ok && meData.user) {
-            setUser(meData.user)
-            localStorage.setItem('user', JSON.stringify(meData.user))
-          }
-        } else {
-          console.warn('Non-JSON response when refreshing /api/auth/me')
+        const userResult = await getCurrentUserAction()
+        if (userResult.success && userResult.user) {
+          setUser(userResult.user)
+          localStorage.setItem('user', JSON.stringify(userResult.user))
         }
       } catch (err) {
         console.error('Error refreshing user after delete-request:', err)
@@ -560,37 +537,26 @@ export default function SettingsPage() {
   }
 
   const handleUploadPicture = async () => {
-  // legacy message cleared
     setLoading(true)
     try {
-      const token = localStorage.getItem('token')
-      if (!token) throw new Error('Not authenticated')
       if (!pictureFile) throw new Error('No picture selected')
 
-      const form = new FormData()
-      form.append('picture', pictureFile)
+      const formData = new FormData()
+      formData.append('picture', pictureFile)
 
-      const res = await apiFetch('/auth/profile-picture', {
-        method: 'PUT',
-        body: form
-      })
+      const result = await uploadProfilePictureAction(formData)
+      if (!result.success) throw new Error(result.error)
 
-      const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : Promise.resolve({ error: 'Unexpected response' }))
-      if (!res.ok) throw new Error(data.error || 'Upload failed')
-
-      // update user with new picture urls (variants)
-      const stored = JSON.parse(localStorage.getItem('user') || '{}')
+      // update user state
       const updatedUser = {
-        ...stored,
-        profilePicture: data.profilePicture || stored.profilePicture,
-        profilePictureSmall: data.profilePictureSmall || stored.profilePictureSmall,
-        profilePictureThumb: data.profilePictureThumb || stored.profilePictureThumb
+        ...user,
+        profilePicture: result.profilePicture
       }
-      localStorage.setItem('user', JSON.stringify(updatedUser))
       setUser(updatedUser)
-  // notify other components (Header) in the same tab
-  try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser })) } catch (e) {}
-  notify({ type: 'success', text: 'Profile picture updated' })
+      
+      // notify other components (Header) in the same tab
+      try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser })) } catch (e) {}
+      notify({ type: 'success', text: result.message || 'Profile picture updated' })
     } catch (err) {
       notify({ type: 'error', text: err.message })
     } finally {
@@ -599,21 +565,16 @@ export default function SettingsPage() {
   }
 
   const handleRemovePicture = async () => {
-  // legacy message cleared
     setLoading(true)
     try {
-      const token = localStorage.getItem('token')
-      if (!token) throw new Error('Not authenticated')
-  const res = await apiFetch('/auth/profile-picture', { method: 'DELETE' })
-      const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : Promise.resolve({}))
-      if (!res.ok) throw new Error(data.error || 'Failed to remove avatar')
+      const result = await removeProfilePictureAction()
+      if (!result.success) throw new Error(result.error)
 
-      const stored = JSON.parse(localStorage.getItem('user') || '{}')
-      const updatedUser = { ...stored, profilePicture: null, profilePictureSmall: null, profilePictureThumb: null }
-      localStorage.setItem('user', JSON.stringify(updatedUser))
+      const updatedUser = { ...user, profilePicture: null }
       setUser(updatedUser)
-  // notify other components (Header) in the same tab
-  try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser })) } catch (e) {}
+      
+      // notify other components (Header) in the same tab
+      try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser })) } catch (e) {}
       setPictureFile(null)
       if (typeof setPicturePreview === 'function') {
         setPicturePreview(null)
@@ -621,7 +582,7 @@ export default function SettingsPage() {
         // eslint-disable-next-line no-console
         console.warn('setPicturePreview is not a function in handleRemovePicture', setPicturePreview)
       }
-  notify({ type: 'success', text: data.message || 'Profile picture removed' })
+      notify({ type: 'success', text: result.message || 'Profile picture removed' })
     } catch (err) {
       notify({ type: 'error', text: err.message })
     } finally {
@@ -632,27 +593,25 @@ export default function SettingsPage() {
 
   const handleChangeUsername = async (e) => {
     e.preventDefault()
-  // legacy message cleared
     if (!usernameForm.username || usernameForm.username.length < 2) {
-  notify({ type: 'error', text: 'Username must be at least 2 characters' })
+      notify({ type: 'error', text: 'Username must be at least 2 characters' })
       return
     }
-    const token = localStorage.getItem('token')
+    
     setLoading(true)
     try {
-  const res = await apiFetch('/auth/username', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: usernameForm.username })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed')
-      const updatedUser = { ...(JSON.parse(localStorage.getItem('user') || '{}')), username: usernameForm.username }
-      localStorage.setItem('user', JSON.stringify(updatedUser))
+      const formData = new FormData()
+      formData.append('username', usernameForm.username)
+      
+      const result = await changeUsernameAction(formData)
+      if (!result.success) throw new Error(result.error)
+      
+      const updatedUser = { ...user, username: usernameForm.username }
       setUser(updatedUser)
-  // notify other components (Header) in the same tab
-  try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser })) } catch (e) {}
-  notify({ type: 'success', text: 'Username updated' })
+      
+      // notify other components (Header) in the same tab
+      try { window.dispatchEvent(new CustomEvent('userUpdated', { detail: updatedUser })) } catch (e) {}
+      notify({ type: 'success', text: result.message || 'Username updated' })
     } catch (err) {
       notify({ type: 'error', text: err.message })
     } finally {
@@ -662,31 +621,31 @@ export default function SettingsPage() {
 
   const handleChangePassword = async (e) => {
     e.preventDefault()
-  // legacy message cleared
     if (!passwordForm.currentPassword) {
-  notify({ type: 'error', text: 'Current password is required' })
+      notify({ type: 'error', text: 'Current password is required' })
       return
     }
     if (!passwordForm.newPassword || passwordForm.newPassword.length < 6) {
-  notify({ type: 'error', text: 'New password must be at least 6 characters' })
+      notify({ type: 'error', text: 'New password must be at least 6 characters' })
       return
     }
     if (passwordForm.newPassword !== passwordForm.verifyPassword) {
-  notify({ type: 'error', text: 'New passwords do not match' })
+      notify({ type: 'error', text: 'New passwords do not match' })
       return
     }
-    const token = localStorage.getItem('token')
+    
     setLoading(true)
     try {
-  const res = await apiFetch('/auth/password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(passwordForm)
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed')
+      const formData = new FormData()
+      formData.append('currentPassword', passwordForm.currentPassword)
+      formData.append('newPassword', passwordForm.newPassword)
+      formData.append('verifyPassword', passwordForm.verifyPassword)
+      
+      const result = await changePasswordAction(formData)
+      if (!result.success) throw new Error(result.error)
+      
       setPasswordForm({ currentPassword: '', newPassword: '', verifyPassword: '' })
-  notify({ type: 'success', text: 'Password updated' })
+      notify({ type: 'success', text: result.message || 'Password updated' })
     } catch (err) {
       notify({ type: 'error', text: err.message })
     } finally {
@@ -696,21 +655,20 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     setLoading(true)
-  // legacy message cleared
-    const token = localStorage.getItem('token')
     try {
-  const res = await apiFetch('/auth/delete', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ currentPassword: deleteConfirmPassword })
-        })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Delete failed')
+      const formData = new FormData()
+      formData.append('currentPassword', deleteConfirmPassword)
+      
+      const result = await requestAccountDeletionAction(formData)
+      if (!result.success) throw new Error(result.error)
 
-      // clear client state and redirect
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/auth'
+      // Update user state to show deletion status
+      const currentUser = await getCurrentUserAction()
+      if (currentUser.success) {
+        setUser(currentUser.user)
+      }
+      
+      notify({ type: 'success', text: result.message || 'Account marked for deletion' })
     } catch (err) {
       notify({ type: 'error', text: err.message })
     } finally {
@@ -846,10 +804,13 @@ export default function SettingsPage() {
                       <div className="text-muted">Permanent deletion in: {countdown || 'calculating...'}</div>
                     </div>
                     <button className="btn btn-outline-primary" onClick={async () => {
-                      await apiFetch('/auth/cancel-delete', { method: 'POST' })
-                      const res = await apiFetch('/auth/me')
-                      const data = await res.json()
-                      setUser(data.user)
+                      const result = await cancelAccountDeletionAction()
+                      if (result.success) {
+                        const currentUser = await getCurrentUserAction()
+                        if (currentUser.success) {
+                          setUser(currentUser.user)
+                        }
+                      }
                     }}>Cancel deletion</button>
                   </div>
                 )}
@@ -1027,24 +988,20 @@ export default function SettingsPage() {
                   confirmText={loadingDeleteQuerent ? 'Deleting...' : 'Delete querent'}
               onConfirm={async () => {
                 setLoadingDeleteQuerent(true)
-                // legacy message cleared
                 try {
-                  const token = localStorage.getItem('token')
-                  if (!token) throw new Error('Not authenticated')
                   if (!selectedQuerentId) throw new Error('No querent selected')
-                  const res = await apiFetch(`/querents/${selectedQuerentId}`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ verifyName: deleteQuerentVerifyName })
-                  })
-                  const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : Promise.resolve({ error: 'Unexpected response' }))
-                  if (!res.ok) throw new Error(data.error || data.message || 'Failed to delete querent')
+                  
+                  const formData = new FormData()
+                  formData.append('querentId', selectedQuerentId)
+                  
+                  const result = await deleteQuerentAction(formData)
+                  if (!result.success) throw new Error(result.error || 'Failed to delete querent')
 
                   // remove from local state
                   const updated = querents.filter(q => q._id !== selectedQuerentId)
                   setQuerents(updated)
                   setSelectedQuerentId(updated.length ? updated[0]._id : '')
-                  notify({ type: 'success', text: data.message || 'Querent deleted' })
+                  notify({ type: 'success', text: result.message || 'Querent deleted' })
                 } catch (err) {
                   notify({ type: 'error', text: err.message })
                 } finally {
@@ -1076,22 +1033,20 @@ export default function SettingsPage() {
               confirmText={loadingDeleteDeck ? 'Deleting...' : 'Delete deck'}
               onConfirm={async () => {
                 setLoadingDeleteDeck(true)
-                // legacy message cleared
                 try {
-                  const token = localStorage.getItem('token')
-                  if (!token) throw new Error('Not authenticated')
                   if (!selectedDeckId) throw new Error('No deck selected')
-                  const res = await apiFetch(`/api/decks/${selectedDeckId}`, {
-                    method: 'DELETE'
-                  })
-                  const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : Promise.resolve({ error: 'Unexpected response' }))
-                  if (!res.ok) throw new Error(data.error || data.message || 'Failed to delete deck')
+                  
+                  const formData = new FormData()
+                  formData.append('deckId', selectedDeckId)
+                  
+                  const result = await deleteDeckAction(formData)
+                  if (!result.success) throw new Error(result.error)
 
                   // remove from local state
                   const updated = decks.filter(d => d._id !== selectedDeckId)
                   setDecks(updated)
                   setSelectedDeckId(updated.length ? updated[0]._id : '')
-                  notify({ type: 'success', text: data.message || 'Deck deleted' })
+                  notify({ type: 'success', text: result.message || 'Deck deleted' })
                 } catch (err) {
                   notify({ type: 'error', text: err.message })
                 } finally {
@@ -1123,20 +1078,20 @@ export default function SettingsPage() {
               confirmText={loadingDeleteSpread ? 'Deleting...' : 'Delete spread'}
               onConfirm={async () => {
                 setLoadingDeleteSpread(true)
-                // legacy message cleared
                 try {
-                  const token = localStorage.getItem('token')
-                  if (!token) throw new Error('Not authenticated')
                   if (!selectedSpreadId) throw new Error('No spread selected')
-                  const res = await apiFetch(`/spreads/${selectedSpreadId}`, { method: 'DELETE' })
-                  const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : Promise.resolve({ error: 'Unexpected response' }))
-                  if (!res.ok) throw new Error(data.error || data.message || 'Failed to delete spread')
+                  
+                  const formData = new FormData()
+                  formData.append('spreadId', selectedSpreadId)
+                  
+                  const result = await deleteSpreadAction(formData)
+                  if (!result.success) throw new Error(result.error)
 
                   // remove from local state
                   const updated = spreads.filter(s => s._id !== selectedSpreadId)
                   setSpreads(updated)
                   setSelectedSpreadId(updated.length ? updated[0]._id : '')
-                  notify({ type: 'success', text: data.message || 'Spread deleted' })
+                  notify({ type: 'success', text: result.message || 'Spread deleted' })
                 } catch (err) {
                   notify({ type: 'error', text: err.message })
                 } finally {
@@ -1169,21 +1124,19 @@ export default function SettingsPage() {
               onConfirm={async () => {
                 setLoadingDeleteTag(true)
                 try {
-                  const token = localStorage.getItem('token')
-                  if (!token) throw new Error('Not authenticated')
                   if (!selectedTagId) throw new Error('No tag selected')
-                  const res = await apiFetch(`/api/tags/${selectedTagId}`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' }
-                  })
-                  const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : Promise.resolve({ error: 'Unexpected response' }))
-                  if (!res.ok) throw new Error(data.error || data.message || 'Failed to delete tag')
+                  
+                  const formData = new FormData()
+                  formData.append('tagId', selectedTagId)
+                  
+                  const result = await deleteTagAction(formData)
+                  if (!result.success) throw new Error(result.error)
 
                   // remove from local state
                   const updated = tags.filter(tag => tag._id !== selectedTagId)
                   setTags(updated)
                   setSelectedTagId(updated.length ? updated[0]._id : '')
-                  notify({ type: 'success', text: data.message || 'Tag deleted' })
+                  notify({ type: 'success', text: result.message || 'Tag deleted' })
                 } catch (err) {
                   notify({ type: 'error', text: err.message })
                 } finally {
@@ -1229,10 +1182,13 @@ export default function SettingsPage() {
                     <div className="text-muted">Permanent deletion in: {countdown || 'calculating...'}</div>
                   </div>
                   <button className="btn btn-outline-primary" onClick={async () => {
-                    await apiFetch('/auth/cancel-delete', { method: 'POST' })
-                    const res = await apiFetch('/auth/me')
-                    const data = await res.json()
-                    setUser(data.user)
+                    const result = await cancelAccountDeletionAction()
+                    if (result.success) {
+                      const currentUser = await getCurrentUserAction()
+                      if (currentUser.success) {
+                        setUser(currentUser.user)
+                      }
+                    }
                   }}>Cancel deletion</button>
                 </div>
               )}

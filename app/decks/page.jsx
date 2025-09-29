@@ -5,8 +5,14 @@ import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
 import CameraModal from '../../components/CameraModal'
 import SmartImageV2 from '../../components/SmartImageV2'
-import { apiFetch } from '../../lib/api'
-import { IMAGE_TYPES, getDeckImageUrl, getCardImageUrl } from '../../lib/imageService'
+import { IMAGE_TYPES, getDeckImageUrl, getCardImageUrl } from '../../lib/imageServiceV3'
+import {
+  getDecksAction,
+  getSingleDeckAction,
+  createDeckAction,
+  uploadDeckBlobAction,
+  uploadCardBlobAction
+} from '../../lib/actions'
 
 // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
@@ -71,23 +77,17 @@ export default function DecksPage() {
 
   async function loadDecks() {
       try {
-    console.log('Frontend: Attempting to fetch /api/decks...');
-    const res = await apiFetch('/api/decks')
-    console.log('Frontend: API response status:', res.status);
-        if (!res.ok) {
-          const text = await res.text().catch(() => '')
-          console.error('Failed to fetch /api/decks:', res.status, text)
+        console.log('Frontend: Attempting to fetch decks via Server Action...');
+        const result = await getDecksAction()
+        
+        if (!result.success) {
+          console.error('Failed to fetch decks:', result.error)
           setDecks([])
           return
         }
 
-        const data = await res.json().catch(err => {
-          console.error('Failed to parse JSON from /api/decks', err)
-          return null
-        })
-
         // Ensure we have an array to map over
-        const arr = Array.isArray(data) ? data : (data && Array.isArray(data.decks) ? data.decks : [])
+        const arr = Array.isArray(result.decks) ? result.decks : []
 
         const normalized = arr.map(d => ({
           _id: d._id || d.id || '',
@@ -131,15 +131,16 @@ export default function DecksPage() {
     async function loadDeck() {
       setLoadingDeck(true)
       try {
-        const apiBase = getApiBase()
-  const res = await apiFetch(`/api/decks/${selectedDeck}`)
-        if (!res.ok) {
-          console.error('Failed to fetch deck', res.status)
+        const result = await getSingleDeckAction(selectedDeck)
+        
+        if (!result.success) {
+          console.error('Failed to fetch deck:', result.error)
           setDeckDetails(null)
           setLoadingDeck(false)
           return
         }
-        const data = await res.json()
+        
+        const data = result.deck
         if (!cancelled) {
           // Workaround: Fix incorrect deck cover URL for Rider-Waite deck
           if (data && data.image === 'https://emfobsnlxploca6s.public.blob.vercel-storage.com/decks/Rider_Waite_Tarot_Deck_cover.jpg') {
@@ -200,18 +201,15 @@ export default function DecksPage() {
         return { ...prev, cards }
       })
 
-      const res = await apiFetch(`/api/decks/${selectedDeck}/card/${encodeURIComponent(cardName)}/blob/upload`, {
-        method: 'POST',
-        body: fd,
-        headers: {
-          'X-Vercel-Blob-Store': 'true',
-        }
-      })
-      if (!res.ok) {
-        const txt = await res.text().catch(() => '')
-        throw new Error(`Upload failed: ${res.status} ${txt}`)
+      // Add deckId and cardName to formData for Server Action
+      fd.append('deckId', selectedDeck)
+      fd.append('cardName', cardName)
+      
+      const result = await uploadCardBlobAction(fd)
+      if (!result.success) {
+        throw new Error(`Upload failed: ${result.error}`)
       }
-      const updated = await res.json()
+      const updated = result
       
       // Handle Vercel Blob response format using utility
       const cardImageUrl = extractBlobUrl(updated)
@@ -337,21 +335,16 @@ export default function DecksPage() {
         setDeckDetails(prev => ({ ...prev, image: previewUrl, uploading: true }))
       }
 
-      const res = await apiFetch(`/api/decks/${selectedDeck}/blob/upload`, {
-        method: 'POST',
-        body: fd,
-        headers: {
-          'X-Vercel-Blob-Store': 'true',
-          // Let browser set Content-Type for multipart/form-data
-        }
-      })
+      // Add deckId to formData for Server Action
+      fd.append('deckId', selectedDeck)
       
-      if (!res.ok) {
-        const txt = await res.text().catch(() => '')
-        throw new Error(`Upload failed: ${res.status} ${txt}`)
+      const result = await uploadDeckBlobAction(fd)
+      
+      if (!result.success) {
+        throw new Error(`Upload failed: ${result.error}`)
       }
       
-      const updated = await res.json()
+      const updated = result
       
       // Handle Vercel Blob response format using utility
       const imageUrl = extractBlobUrl(updated)
@@ -453,20 +446,15 @@ export default function DecksPage() {
       const formData = new FormData()
       formData.append('image', file)
       formData.append('cardName', cardName)
+      formData.append('deckId', selectedDeck)
 
-      const res = await apiFetch(`/api/decks/${selectedDeck}/card/${encodeURIComponent(cardName)}/blob/upload`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Vercel-Blob-Store': 'true',
-        }
-      })
+      const result = await uploadCardBlobAction(formData)
 
-      if (!res.ok) {
-        throw new Error(`Upload failed: ${res.statusText}`)
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed')
       }
 
-      const updated = await res.json()
+      const updated = result.data
 
       // Update with server response
       setDeckDetails(prev => {
@@ -590,19 +578,17 @@ export default function DecksPage() {
     if (!name) return
     setCreatingDeck(true)
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        alert('You must be signed in to create a deck')
-        setCreatingDeck(false)
-        return
-      }
-      const res = await apiFetch('/api/decks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deckName: name, description: newDeckDescription || '', cards: [] })
+      const result = await createDeckAction({
+        deckName: name,
+        description: newDeckDescription || '',
+        cards: []
       })
-      if (!res.ok) throw new Error('Failed to create deck')
-      const created = await res.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create deck')
+      }
+      
+      const created = result.data
       setDecks(prev => [created, ...prev])
       setSelectedDeck(created._id)
       setShowNewDeckModal(false)

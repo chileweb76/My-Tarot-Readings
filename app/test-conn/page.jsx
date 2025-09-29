@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { apiFetch, parseJsonSafe } from '../../lib/api'
+import { testConnectionAction } from '../../lib/actions'
 
 export default function TestConnPage() {
   const [loading, setLoading] = useState(false)
@@ -13,9 +13,12 @@ export default function TestConnPage() {
     setError(null)
     setResult(null)
     try {
-      const res = await apiFetch('/test-conn', { method: 'GET' })
-      const data = await parseJsonSafe(res)
-      setResult({ status: res.status, ok: res.ok, data })
+      const result = await testConnectionAction()
+      if (result.success) {
+        setResult(result.data)
+      } else {
+        setError(result.error)
+      }
     } catch (err) {
       setError(err.message || String(err))
     } finally {

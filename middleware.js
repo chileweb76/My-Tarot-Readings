@@ -40,6 +40,10 @@ export async function middleware(request) {
   }
 
   // Enhanced Content Security Policy for PWA
+  // Allow localhost API server in development
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'
+  const apiOrigin = new URL(apiUrl).origin
+  
   const csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Next.js requires unsafe-inline, unsafe-eval for dev
@@ -47,7 +51,7 @@ export async function middleware(request) {
     "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:",
     "img-src 'self' data: blob: https://*.vercel-storage.com https://vercel-storage.com",
     "media-src 'self' blob: https://*.vercel-storage.com",
-    "connect-src 'self' https://*.vercel-storage.com https://vercel-storage.com ws: wss:",
+    `connect-src 'self' ${apiOrigin} https://*.vercel-storage.com https://vercel-storage.com ws: wss:`,
     "worker-src 'self'", // Service worker
     "manifest-src 'self'", // PWA manifest
     "frame-src 'none'",
@@ -71,7 +75,7 @@ export async function middleware(request) {
   // Service Worker specific headers
   if (request.nextUrl.pathname === '/service-worker.js') {
     response.headers.set('Service-Worker-Allowed', '/')
-    response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; connect-src 'self' https://*.vercel-storage.com")
+    response.headers.set('Content-Security-Policy', `default-src 'self'; script-src 'self'; connect-src 'self' ${apiOrigin} https://*.vercel-storage.com`)
   }
 
   // PWA manifest headers

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { transformImageUrl, IMAGE_TYPES } from '../lib/imageService'
+import { transformImageUrl, IMAGE_TYPES } from '../lib/imageServiceV3'
 
 // SmartImage wraps Next.js Image and provides automatic image URL transformation
 // via backend APIs, with fallback behavior for failed loads

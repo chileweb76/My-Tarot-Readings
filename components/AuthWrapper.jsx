@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { getCurrentUserAction } from '../lib/actions'
 
 export default function AuthWrapper({ children }) {
   const router = useRouter()
@@ -9,17 +10,32 @@ export default function AuthWrapper({ children }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-    
-    if (!token) {
-      // No token found - redirect to auth page
-      router.replace('/auth')
-      return
+    const checkAuth = async () => {
+      try {
+        const result = await getCurrentUserAction()
+        if (result.success && result.user) {
+          setIsAuthenticated(true)
+          // Store user in localStorage for components that still need it
+          localStorage.setItem('user', JSON.stringify(result.user))
+        } else {
+          setIsAuthenticated(false)
+          // Clear any stale user data
+          localStorage.removeItem('user')
+          localStorage.removeItem('token')
+          router.replace('/auth')
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        setIsAuthenticated(false)
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+        router.replace('/auth')
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    // Token exists - user is authenticated
-    setIsAuthenticated(true)
-    setIsLoading(false)
+    checkAuth()
   }, [router])
 
   // Show loading spinner while checking authentication

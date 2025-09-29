@@ -3,9 +3,23 @@
 import { useEffect, useState, useActionState } from 'react'
 import Image from 'next/image'
 import AuthWrapper from '../components/AuthWrapper'
-import { apiFetch } from '../lib/api'
-import { getSpreadImageUrl } from '../lib/imageService'
-import { saveReadingAction, createTagAction } from '../lib/actions'
+
+import { getSpreadImageUrl } from '../lib/imageServiceV3'
+import { 
+  saveReadingAction, 
+  createTagAction,
+  exportPdfAction,
+  getReadingAction,
+  deleteReadingAction,
+  createReadingAction,
+  updateReadingAction,
+  uploadBlobAction,
+  getQuerentsAction,
+  getDecksAction,
+  getTagsAction,
+  getSpreadsAction,
+  createQuerentAction
+} from '../lib/actions'
 
   // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
@@ -359,36 +373,36 @@ export default function HomePage() {
       return
     }
     try {
-      const rawApi = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-      const apiBase = rawApi.replace(/\/$|\/api$/i, '')
-      const debugUrl = `${apiBase}/api/export/pdf`
-      console.debug('Export will POST to', debugUrl)
-      const res = await apiFetch('/export/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reading: readingPayload, fileName: `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf` })
-      })
-
-      if (!res.ok) {
-        let bodyText = ''
-        try { bodyText = await res.text() } catch (e) { bodyText = '' }
-        const snippet = bodyText ? (bodyText.length > 200 ? bodyText.slice(0,200) + '...' : bodyText) : ''
-        const msg = `Server export failed: ${res.status} ${res.statusText} ${res.url ? '(' + res.url + ')' : ''} ${snippet}`
-        console.error(msg)
-        pushToast({ type: 'error', text: `Export failed: ${res.status} ${res.statusText}` })
+      const fileName = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf`
+      
+      const formData = new FormData()
+      formData.append('reading', JSON.stringify(readingPayload))
+      formData.append('fileName', fileName)
+      
+      const result = await exportPdfAction(formData)
+      
+      if (!result.success) {
+        console.error('Server export failed:', result.error)
+        pushToast({ type: 'error', text: `Export failed: ${result.error}` })
         throw new Error('Server export failed')
       }
 
-      const blob = await res.blob()
+      // Convert base64 to blob and download
+      const binaryString = atob(result.pdf)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'application/pdf' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf`
+      link.download = result.fileName
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
-  pushToast({ type: 'success', text: 'Exported PDF downloaded.' })
+      pushToast({ type: 'success', text: 'Exported PDF downloaded.' })
       setExporting(false)
       return
     } catch (err) {
@@ -673,21 +687,27 @@ export default function HomePage() {
       }
 
       const fileName = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf`
-      const res = await apiFetch('/export/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reading: readingPayload, fileName })
-      })
+      
+      const formData = new FormData()
+      formData.append('reading', JSON.stringify(readingPayload))
+      formData.append('fileName', fileName)
+      
+      const result = await exportPdfAction(formData)
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => '')
-        console.error('Server share PDF failed', res.status, res.statusText, text)
+      if (!result.success) {
+        console.error('Server share PDF failed:', result.error)
         pushToast({ type: 'error', text: 'Server failed to generate PDF for sharing.' })
         setExporting(false)
         return
       }
 
-      const blob = await res.blob()
+      // Convert base64 to blob
+      const binaryString = atob(result.pdf)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'application/pdf' })
       const filename = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf`
 
       // Try to share as a file using Web Share API
@@ -805,25 +825,21 @@ export default function HomePage() {
 
       // If we don't have an id yet, create a new reading
       if (!readingId) {
-        const res = await apiFetch('/readings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(readingData)
-        })
+        const formData = new FormData()
+        formData.append('readingData', JSON.stringify(readingData))
+        const createResult = await createReadingAction(formData)
 
-        if (!res.ok) {
-          const error = await res.json().catch(() => ({}))
-          throw new Error(error.error || 'Failed to save reading')
+        if (!createResult.success) {
+          throw new Error(createResult.error || 'Failed to save reading')
         }
 
-        const result = await res.json()
-        if (result && result.reading && result.reading._id) {
-          setReadingId(result.reading._id)
+        if (createResult.reading && createResult.reading._id) {
+          setReadingId(createResult.reading._id)
           
           // Trigger notification for new reading (non-blocking)
           import('../lib/notificationTriggers.js').then(({ NotificationTriggers }) => {
             NotificationTriggers.onReadingCreated({
-              _id: result.reading._id,
+              _id: createResult.reading._id,
               spread: selectedSpread,
               querent: selectedQuerent
             })
@@ -833,10 +849,11 @@ export default function HomePage() {
         if (uploadedFile) {
           try {
             setUploadingImage(true)
-            const idToUse = (result && result.reading && result.reading._id) || result && result._id
+            const idToUse = (createResult && createResult.reading && createResult.reading._id) || createResult && createResult._id
             if (idToUse) {
               const form = new FormData()
               form.append('image', uploadedFile)
+              form.append('readingId', idToUse)
               
               // Add Vercel Blob metadata for reading image
               prepareBlobUpload(form, {
@@ -844,17 +861,10 @@ export default function HomePage() {
                 contentType: uploadedFile.type
               })
               
-              const uploadRes = await apiFetch(`/blob-upload?id=${idToUse}`, { 
-                method: 'POST', 
-                body: form,
-                headers: {
-                  'X-Vercel-Blob-Store': 'true',
-                }
-              })
-              if (uploadRes.ok) {
-                const ures = await uploadRes.json().catch(() => ({}))
+              const uploadResult = await uploadBlobAction(form)
+              if (uploadResult.success) {
                 // Handle Vercel Blob response format using utility
-                const blobImageUrl = extractBlobUrl(ures)
+                const blobImageUrl = extractBlobUrl(uploadResult)
                 if (blobImageUrl) {
                   setUploadedImage(blobImageUrl)
                   // Update readingData.image so callers receive the final URL
@@ -864,11 +874,12 @@ export default function HomePage() {
                   setUploadedFile(null)
                 }
               } else {
-                const err = await uploadRes.json().catch(() => ({}))
-                console.warn('Image upload during save failed', err)
+                console.warn('Image upload during save failed', uploadResult.error)
                 // Roll back the created reading to avoid orphaned reading without image
                 try {
-                  await apiFetch(`/readings/${idToUse}`, { method: 'DELETE' })
+                  const deleteFormData = new FormData()
+                  deleteFormData.append('readingId', idToUse)
+                  await deleteReadingAction(deleteFormData)
                   setReadingId(null)
                   pushToast({ type: 'error', text: 'Image upload failed during save — reading was rolled back.' })
                 } catch (delErr) {
@@ -882,9 +893,11 @@ export default function HomePage() {
             console.error('Failed to upload pending image during save', err)
             // Attempt rollback if we have a created reading id
             try {
-              const idToUse = (result && result.reading && result.reading._id) || result && result._id
+              const idToUse = (createResult && createResult.reading && createResult.reading._id) || createResult && createResult._id
               if (idToUse) {
-                await apiFetch(`/readings/${idToUse}`, { method: 'DELETE' })
+                const deleteFormData = new FormData()
+                deleteFormData.append('readingId', idToUse)
+                await deleteReadingAction(deleteFormData)
                 setReadingId(null)
                 pushToast({ type: 'error', text: 'Failed to upload image during save — reading rolled back.' })
               }
@@ -912,24 +925,20 @@ export default function HomePage() {
       // missing, recreate it via POST and continue.
       try {
         if (readingId) {
-          const checkRes = await apiFetch(`/readings/${readingId}`, { method: 'GET' })
-          if (!checkRes.ok) {
+          const checkResult = await getReadingAction(readingId)
+          if (!checkResult.success) {
             // If server says not found, clear readingId and fall back to create a new reading
-            if (checkRes.status === 404) {
+            if (checkResult.error === 'Reading not found') {
               setReadingId(null)
               pushToast({ type: 'info', text: 'Previous reading was missing on server — recreating.' })
-              const createRes = await apiFetch('/readings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(readingData)
-              })
-              if (!createRes.ok) {
-                const err = await createRes.json().catch(() => ({}))
-                throw new Error(err.error || 'Failed to recreate reading on server')
+              const createFormData = new FormData()
+              createFormData.append('readingData', JSON.stringify(readingData))
+              const recreateResult = await createReadingAction(createFormData)
+              if (!recreateResult.success) {
+                throw new Error(recreateResult.error || 'Failed to recreate reading on server')
               }
-              const created = await createRes.json()
-              if (created && created.reading && created.reading._id) {
-                setReadingId(created.reading._id)
+              if (recreateResult.reading && recreateResult.reading._id) {
+                setReadingId(recreateResult.reading._id)
               }
             }
           }
@@ -941,8 +950,10 @@ export default function HomePage() {
       if (uploadedFile) {
         try {
           setUploadingImage(true)
+          const idForUpload = readingId
           const form = new FormData()
           form.append('image', uploadedFile)
+          form.append('readingId', idForUpload)
           
           // Add Vercel Blob metadata for reading image update
           prepareBlobUpload(form, {
@@ -950,18 +961,10 @@ export default function HomePage() {
             contentType: uploadedFile.type
           })
           
-          const idForUpload = readingId
-          const uploadRes = await apiFetch(`/blob-upload?id=${idForUpload}`, { 
-            method: 'POST', 
-            body: form,
-            headers: {
-              'X-Vercel-Blob-Store': 'true',
-            }
-          })
-          if (uploadRes.ok) {
-            const ures = await uploadRes.json().catch(() => ({}))
+          const updateUploadResult = await uploadBlobAction(form)
+          if (updateUploadResult.success) {
             // Handle Vercel Blob response format using utility
-            const blobImageUrl = extractBlobUrl(ures)
+            const blobImageUrl = extractBlobUrl(updateUploadResult)
             if (blobImageUrl) {
               setUploadedImage(blobImageUrl)
               readingData.image = blobImageUrl
@@ -969,8 +972,7 @@ export default function HomePage() {
               pushToast({ type: 'success', text: 'Image uploaded to Vercel Blob and attached to reading.' })
             }
           } else {
-            const err = await uploadRes.json().catch(() => ({}))
-            console.warn('Image upload during save failed', err)
+            console.warn('Image upload during save failed', updateUploadResult.error)
             pushToast({ type: 'error', text: 'Image upload failed during save.' })
           }
         } catch (err) {
@@ -981,22 +983,21 @@ export default function HomePage() {
         }
       }
 
-      const res = await apiFetch(`/readings/${readingId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(readingData)
-      })
+      const updateFormData = new FormData()
+      updateFormData.append('readingId', readingId)
+      updateFormData.append('readingData', JSON.stringify(readingData))
+      
+      const updateResult = await updateReadingAction(updateFormData)
 
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}))
-        throw new Error(error.error || 'Failed to update reading')
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || 'Failed to update reading')
       }
 
       if (explicit) {
         pushToast({ type: 'success', text: 'Reading updated.' })
         resetReadingToOriginalState()
       }
-      return await res.json()
+      return updateResult.reading
     } catch (err) {
       console.error('Error saving/updating reading:', err)
       if (explicit) pushToast({ type: 'error', text: err.message || 'Failed to save reading' })
@@ -1028,14 +1029,11 @@ export default function HomePage() {
   // fetch querents when user is available
   useEffect(() => {
     const load = async () => {
-      const token = localStorage.getItem('token')
-      if (!token) return
-        try {
-        const res = await apiFetch('/querents')
-        if (!res.ok) return
-        const data = await res.json()
-        if (data.querents) {
-          setQuerents(data.querents)
+      if (!user) return
+      try {
+        const result = await getQuerentsAction()
+        if (result.success && result.querents) {
+          setQuerents(result.querents)
         }
       } catch (err) {
         // ignore load errors silently
@@ -1050,11 +1048,10 @@ export default function HomePage() {
     let mounted = true
     const loadDecks = async () => {
       try {
-        const res = await apiFetch('/decks')
-        if (!res.ok) return
-        const data = await res.json()
+        const result = await getDecksAction()
+        if (!result.success) return
         if (!mounted) return
-        const list = Array.isArray(data) ? data : (data.decks || [])
+        const list = Array.isArray(result.decks) ? result.decks : []
         setDecks(list)
         if (list.length) {
           // Prefer a public Rider-Waite deck (no owner) or a deck explicitly named 'Rider-Waite Tarot'
@@ -1076,12 +1073,11 @@ export default function HomePage() {
     let mounted = true
     const loadTags = async () => {
       try {
-        const res = await apiFetch('/tags')
-        if (!res.ok) return
-        const data = await res.json()
+        const result = await getTagsAction()
+        if (!result.success) return
         if (!mounted) return
         // Check if data has tags property, otherwise use empty array
-        const tagsArray = data.tags || (Array.isArray(data) ? data : [])
+        const tagsArray = result.tags || []
         setTags(tagsArray)
       } catch (err) {
         console.warn('Failed to load tags', err)
@@ -1105,14 +1101,22 @@ export default function HomePage() {
         }
         
         // Get spread data from API for cards and metadata
-        const isId = /^[0-9a-fA-F]{24}$/.test(selectedSpread)
-        const url = isId ? `/spreads/${selectedSpread}` : `/spreads/by-name?name=${encodeURIComponent(selectedSpread)}`
-        const res = await apiFetch(url)
-        if (!res.ok) {
-          console.warn('[Spread load] fetch failed', url, res.status)
+        const result = await getSpreadsAction()
+        if (!result.success) {
+          console.warn('[Spread load] fetch failed')
           return
         }
-        const data = await res.json()
+        
+        // Find the selected spread in the results
+        const isId = /^[0-9a-fA-F]{24}$/.test(selectedSpread)
+        const data = result.spreads?.find(s => 
+          isId ? (s._id === selectedSpread || s.spread === selectedSpread) : s.name === selectedSpread
+        )
+        
+        if (!data) {
+          console.warn('[Spread load] spread not found:', selectedSpread)
+          return
+        }
         
         // If we didn't get a blob URL, use the API image as fallback
         if (!blobImageUrl && data.image) {
@@ -1186,19 +1190,17 @@ export default function HomePage() {
 
     try {
       setAddingTag(true)
-      const res = await apiFetch('/tags', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newTagName.trim() })
-      })
+      const formData = new FormData()
+      formData.append('name', newTagName.trim())
+      
+      const result = await createTagAction(formData)
 
-      if (!res.ok) {
-        throw new Error('Failed to create tag')
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create tag')
       }
 
-      const data = await res.json()
-      setTags(prev => [...prev, data.tag])
-      setSelectedTags(prev => [...prev, data.tag._id])
+      setTags(prev => [...prev, result.tag])
+      setSelectedTags(prev => [...prev, result.tag._id])
       setNewTagName('')
       pushToast({ type: 'success', text: 'Tag created and added to reading' })
     } catch (err) {
@@ -1629,22 +1631,18 @@ export default function HomePage() {
         onSave={async () => {
           const name = (newQuerentName || '').trim()
           if (!name) return alert('Name required')
-          const token = localStorage.getItem('token')
-          if (!token) { alert('Please sign in to save querents'); return }
           try {
             setSavingQuerent(true)
-            const res = await apiFetch('/querents', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name })
-            })
-            if (!res.ok) {
-              const err = await res.json().catch(() => ({}))
-              throw new Error(err.error || 'Failed to save querent')
+            const formData = new FormData()
+            formData.append('name', name)
+            
+            const result = await createQuerentAction(formData)
+            if (!result.success) {
+              throw new Error(result.error || 'Failed to save querent')
             }
-            const data = await res.json()
-            setQuerents(prev => [data.querent, ...prev])
-            setSelectedQuerent(data.querent._id)
+            
+            setQuerents(prev => [result.querent, ...prev])
+            setSelectedQuerent(result.querent._id)
             setAddingQuerent(false)
             setNewQuerentName('')
           } catch (err) {

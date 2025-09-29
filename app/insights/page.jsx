@@ -2,10 +2,18 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
-import { apiFetch } from '../../lib/api'
 import { notify } from '../../lib/toast'
 import { buildSuitDataset } from '../../lib/suitUtils'
 import ExportToolbar from '../../components/ExportToolbar'
+import {
+  getQuerentsAction,
+  getDecksAction,
+  getTagsAction,
+  getInsightsCountAction,
+  getInsightsSuitsAction,
+  getInsightsCardsAction,
+  exportReadingPDFAction
+} from '../../lib/actions'
 
 export default function InsightsPage() {
   const [querents, setQuerents] = useState([])
@@ -258,11 +266,10 @@ export default function InsightsPage() {
     let mounted = true
     ;(async () => {
       try {
-        const res = await apiFetch('/api/querents')
-        if (!res.ok) return
-        const data = await res.json()
+        const result = await getQuerentsAction()
+        if (!result.success) return
         if (!mounted) return
-        setQuerents(data.querents || [])
+        setQuerents(result.data || [])
       } catch (e) {
         console.warn('Failed to load querents', e)
       }
@@ -274,11 +281,10 @@ export default function InsightsPage() {
     let mounted = true
     ;(async () => {
       try {
-        const res = await apiFetch('/api/decks')
-        if (!res.ok) return
-        const data = await res.json()
+        const result = await getDecksAction()
+        if (!result.success) return
         if (!mounted) return
-        setDecks(Array.isArray(data) ? data : (data.decks || []))
+        setDecks(Array.isArray(result.data) ? result.data : (result.data.decks || []))
       } catch (e) {
         console.warn('Failed to load decks', e)
       }
@@ -290,11 +296,10 @@ export default function InsightsPage() {
     let mounted = true
     ;(async () => {
       try {
-        const res = await apiFetch('/api/tags')
-        if (!res.ok) return
-        const data = await res.json()
+        const result = await getTagsAction()
+        if (!result.success) return
         if (!mounted) return
-        setTags(data.tags || [])
+        setTags(result.data.tags || [])
       } catch (e) {
         console.warn('Failed to load tags', e)
       }
@@ -326,24 +331,21 @@ export default function InsightsPage() {
       if (selectedDeck) params.set('deck', selectedDeck)
       if (selectedTag && selectedTag !== 'all') params.set('tags', selectedTag)
 
-      const res = await apiFetch('/api/insights/count?' + params.toString())
-      if (!res.ok) { setTotalCount(null); setLastFetchError('Server returned an error'); return }
-      const data = await res.json()
-      setTotalCount(typeof data.count === 'number' ? data.count : null)
+      const result = await getInsightsCountAction(Object.fromEntries(params))
+      if (!result.success) { setTotalCount(null); setLastFetchError('Server returned an error'); return }
+      setTotalCount(typeof result.data.count === 'number' ? result.data.count : null)
 
       try {
-        const suitsRes = await apiFetch('/api/insights/suits?' + params.toString())
-        if (suitsRes && suitsRes.ok) {
-          const suitsData = await suitsRes.json()
-          setSuitCounts(suitsData.suits || {})
+        const suitsResult = await getInsightsSuitsAction(Object.fromEntries(params))
+        if (suitsResult && suitsResult.success) {
+          setSuitCounts(suitsResult.data.suits || {})
         } else setSuitCounts({})
       } catch (e) { console.warn('Failed to fetch suit frequencies', e); setSuitCounts({}) }
 
       try {
-        const cardsRes = await apiFetch('/api/insights/cards?' + params.toString())
-        if (cardsRes && cardsRes.ok) {
-          const cardsData = await cardsRes.json()
-          setCardCounts(Array.isArray(cardsData.cards) ? cardsData.cards : [])
+        const cardsResult = await getInsightsCardsAction(Object.fromEntries(params))
+        if (cardsResult && cardsResult.success) {
+          setCardCounts(Array.isArray(cardsResult.data.cards) ? cardsResult.data.cards : [])
         } else setCardCounts([])
       } catch (e) { console.warn('Failed to fetch card frequencies', e); setCardCounts([]) }
 
@@ -376,9 +378,17 @@ export default function InsightsPage() {
     const fileName = `insights-${startDate}-${endDate}.pdf`
     try {
       const fullHtml = await captureInsightsHtml()
-      const res = await apiFetch('/export/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ html: fullHtml, fileName }) })
-      if (!res.ok) { notify({ type: 'error', text: 'Server failed to generate PDF for sharing.' }); return }
-      const blob = await res.blob()
+      const result = await exportReadingPDFAction({ html: fullHtml, fileName })
+      if (!result.success) { notify({ type: 'error', text: 'Server failed to generate PDF for sharing.' }); return }
+      
+      // Convert base64 back to blob
+      const binaryString = atob(result.data.blob)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: result.data.contentType })
+      
       try {
         const file = new File([blob], fileName, { type: 'application/pdf' })
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -405,9 +415,16 @@ export default function InsightsPage() {
       // Prefer posting the full captured HTML so the PDF uses the Insights layout
       try {
         const fullHtml = await captureInsightsHtml()
-        const res = await apiFetch('/export/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ html: fullHtml, fileName }) })
-        if (!res.ok) { notify({ type: 'error', text: 'Server export failed.' }); return }
-        const blob = await res.blob()
+        const result = await exportReadingPDFAction({ html: fullHtml, fileName })
+        if (!result.success) { notify({ type: 'error', text: 'Server export failed.' }); return }
+        
+        // Convert base64 back to blob for download
+        const binaryString = atob(result.data.blob)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        const blob = new Blob([bytes], { type: result.data.contentType })
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
@@ -433,9 +450,17 @@ export default function InsightsPage() {
         cards: (cardCounts || []).map(c => ({ title: (c.suit && c.suit.toLowerCase() !== 'major arcana' ? `${c.suit} ${c.card}` : c.card), card: c.card, suit: c.suit })),
         interpretation: ''
       }
-      const res = await apiFetch('/export/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reading: readingPayload, fileName }) })
-      if (!res.ok) { notify({ type: 'error', text: 'Server export failed.' }); return }
-      const blob = await res.blob()
+      const result = await exportReadingPDFAction({ reading: readingPayload, fileName })
+      if (!result.success) { notify({ type: 'error', text: 'Server export failed.' }); return }
+      
+      // Convert base64 back to blob for download
+      const binaryString = atob(result.data.blob)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: result.data.contentType })
+      
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url

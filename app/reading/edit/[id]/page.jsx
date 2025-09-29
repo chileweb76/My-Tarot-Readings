@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import AuthWrapper from '../../../../components/AuthWrapper'
-import { apiFetch } from '../../../../lib/api'
 import SmartImageV2 from '../../../../components/SmartImageV2'
-import { IMAGE_TYPES } from '../../../../lib/imageService'
+import { IMAGE_TYPES } from '../../../../lib/imageServiceV3'
 import { notify } from '../../../../lib/toast'
+import {
+  getSingleReadingAction,
+  updateReadingAction,
+  exportReadingPDFAction
+} from '../../../../lib/actions'
 
 export default function EditReadingPage() {
   const params = useParams()
@@ -28,13 +32,13 @@ export default function EditReadingPage() {
     const fetchReading = async () => {
       try {
         setLoading(true)
-        const response = await apiFetch(`/api/readings/${params.id}`)
-        if (!response.ok) {
-          throw new Error('Failed to fetch reading')
+        const result = await getSingleReadingAction(params.id)
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to fetch reading')
         }
         
-        const data = await response.json()
-        const readingData = data.reading || data
+        const readingData = result.data
         
         setReading(readingData)
         setQuestion(readingData.question || '')
@@ -66,16 +70,10 @@ export default function EditReadingPage() {
         drawnCards
       }
       
-      const response = await apiFetch(`/api/readings/${params.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updateData)
-      })
+      const result = await updateReadingAction(params.id, updateData)
       
-      if (!response.ok) {
-        throw new Error('Failed to save reading')
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save reading')
       }
       // show toast and flash Save button briefly, then redirect
       try { notify({ type: 'success', text: 'Outcome saved.' }) } catch (e) {}
@@ -132,22 +130,23 @@ export default function EditReadingPage() {
         exportedAt: new Date().toLocaleString()
       }
 
-      const response = await apiFetch('/export/pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          reading: formattedReading,
-          fileName: `tarot-reading-${params.id}.pdf`
-        })
+      const result = await exportReadingPDFAction({
+        reading: formattedReading,
+        fileName: `tarot-reading-${params.id}.pdf`
       })
       
-      if (!response.ok) {
-        throw new Error('Failed to export PDF')
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to export PDF')
       }
       
-      const blob = await response.blob()
+      // Convert base64 back to blob for download
+      const binaryString = atob(result.data.blob)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: result.data.contentType })
+      
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url

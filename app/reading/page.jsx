@@ -3,10 +3,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AuthWrapper from '../../components/AuthWrapper'
-import { apiFetch } from '../../lib/api'
 import ExportToolbar from '../../components/ExportToolbar'
 import { notify } from '../../lib/toast'
 import { LargeImageWarningModal, ExportSignInModal } from '../../components/modals'
+import {
+  getQuerentsAction,
+  getUserReadingsAction,
+  exportReadingPDFAction
+} from '../../lib/actions'
 
 export default function ReadingPage() {
   const router = useRouter()
@@ -32,31 +36,21 @@ export default function ReadingPage() {
         // Small delay to ensure authentication state is established
         await new Promise(resolve => setTimeout(resolve, 100))
 
-        // Check if user is authenticated before making API calls
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-        if (!token) {
-          console.warn('No authentication token found')
-          setError('Authentication required')
-          return
+        console.log('Making API calls using Server Actions')
+
+        const querentsResult = await getQuerentsAction()
+        if (querentsResult.success) {
+          setQuerents(querentsResult.data)
+        } else {
+          console.warn('Failed to load querents:', querentsResult.error)
         }
 
-        console.log('Making API calls with token:', token ? 'present' : 'missing')
-
-        const querentsResponse = await apiFetch('/api/querents')
-        if (querentsResponse.ok) {
-          const querentsData = await querentsResponse.json()
-          const querentsList = Array.isArray(querentsData) ? querentsData : (Array.isArray(querentsData?.querents) ? querentsData.querents : [])
-          setQuerents(querentsList)
+        const readingsResult = await getUserReadingsAction()
+        if (!readingsResult.success) {
+          console.error('Readings API error:', readingsResult.error)
+          throw new Error(readingsResult.error || 'Failed to fetch readings')
         }
-
-        const response = await apiFetch('/api/readings/user')
-        console.log('Readings response status:', response.status)
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Readings API error:', errorText)
-          throw new Error(`Failed to fetch readings: ${response.status}`)
-        }
-        const data = await response.json()
+        const data = readingsResult.data
         console.log('Readings data received:', data)
 
         let readingsList = []
@@ -279,12 +273,26 @@ export default function ReadingPage() {
         }
       } catch (e) { console.warn('Failed preparing images for export', e); alert('Failed to prepare images for export.'); setExportingFor(rid, false); return }
 
-      const res = await apiFetch('/export/pdf', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reading: payload, fileName: `tarot-reading-${new Date().toISOString().split('T')[0]}.pdf` })
+      const result = await exportReadingPDFAction({ 
+        reading: payload, 
+        fileName: `tarot-reading-${new Date().toISOString().split('T')[0]}.pdf` 
       })
-  if (!res.ok) { const txt = await res.text().catch(()=>''); console.error('Server export failed', res.status, txt); notify({ type: 'error', text: 'Server export failed' }); setExportingFor(rid, false); return }
-      const blob = await res.blob()
+      
+      if (!result.success) { 
+        console.error('Server export failed', result.error); 
+        notify({ type: 'error', text: 'Server export failed' }); 
+        setExportingFor(rid, false); 
+        return 
+      }
+      
+      // Convert base64 back to blob for download
+      const binaryString = atob(result.data.blob)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: result.data.contentType })
+      
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -326,12 +334,25 @@ export default function ReadingPage() {
         }
       } catch (e) { console.warn('Failed preparing images for share', e); alert('Failed to prepare images for sharing.'); setExportingFor(rid, false); return }
 
-      const res = await apiFetch('/export/pdf', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reading: payload, fileName: `tarot-reading-${new Date().toISOString().split('T')[0]}.pdf` })
+      const result = await exportReadingPDFAction({ 
+        reading: payload, 
+        fileName: `tarot-reading-${new Date().toISOString().split('T')[0]}.pdf` 
       })
-  if (!res.ok) { notify({ type: 'error', text: 'Server failed to generate PDF for sharing.' }); setExportingFor(rid, false); return }
-      const blob = await res.blob()
+      
+      if (!result.success) { 
+        notify({ type: 'error', text: 'Server failed to generate PDF for sharing.' }); 
+        setExportingFor(rid, false); 
+        return 
+      }
+      
+      // Convert base64 back to blob
+      const binaryString = atob(result.data.blob)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: result.data.contentType })
+      
       const filename = `tarot-reading-${new Date().toISOString().split('T')[0]}.pdf`
       try {
         const file = new File([blob], filename, { type: 'application/pdf' })

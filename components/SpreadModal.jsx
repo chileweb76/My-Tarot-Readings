@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { apiFetch } from '../lib/api'
+import { createSpreadAction, uploadSpreadBlobAction } from '../lib/actions'
 
 // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
@@ -82,22 +82,19 @@ export default function SpreadModal({ show, onClose, onCreated }) {
         numberofCards: number, 
         image: imageFile ? '/images/spreads/custom.png' : '/images/spreads/custom.png' // Will be updated after upload
       }
-      const res = await apiFetch('/spreads', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(payload) 
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Failed to create spread')
+      
+      const result = await createSpreadAction(payload)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create spread')
       }
-      const data = await res.json()
+      const data = result.data
 
       // Upload image if provided
       if (imageFile && data._id) {
         setUploading(true)
         const formData = new FormData()
         formData.append('image', imageFile)
+        formData.append('spreadId', data._id)
         
         // Add Vercel Blob metadata for spread image
         prepareBlobUpload(formData, {
@@ -105,18 +102,11 @@ export default function SpreadModal({ show, onClose, onCreated }) {
           contentType: imageFile.type
         })
         
-        const uploadRes = await apiFetch(`/api/spreads/${data._id}/blob/upload`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-Vercel-Blob-Store': 'true',
-          }
-        })
+        const uploadResult = await uploadSpreadBlobAction(formData)
         
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json()
+        if (uploadResult.success) {
           // Handle Vercel Blob response format using utility
-          const blobUrl = extractBlobUrl(uploadData)
+          const blobUrl = extractBlobUrl(uploadResult.data)
           data.image = blobUrl
         }
       }

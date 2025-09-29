@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheckCircle, faExclamationTriangle } from '../../../lib/icons'
-import { apiFetch } from '../../../lib/api'
+import { getCurrentUserAction } from '../../../lib/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,12 +12,12 @@ export default function AuthSuccessPage() {
   const [status, setStatus] = useState('processing')
 
   useEffect(() => {
-      const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('')
-      const token = sp.get('token')
-      const verified = sp.get('verified')
+    const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('')
+    const provider = sp.get('provider')
+    const verified = sp.get('verified')
 
-    // If verification flow (no token) — show verified message and redirect to sign-in
-    if (!token && verified === 'true') {
+    // If verification flow (no provider) — show verified message and redirect to sign-in
+    if (!provider && verified === 'true') {
       setStatus('verified')
       setTimeout(() => {
         // send user back to sign-in so they can log in
@@ -26,52 +26,35 @@ export default function AuthSuccessPage() {
       return
     }
 
-    if (token) {
-      // Store the token
-      localStorage.setItem('token', token)
-
-      // Fetch user data with the token
-      fetchUserData(token)
+    // For authentication success (Google OAuth or other providers)
+    if (provider || window.location.pathname.includes('success')) {
+      // Fetch user data using Server Action (cookies are handled automatically)
+      fetchUserData()
     } else {
       setStatus('error')
     }
   }, [])
 
-  const fetchUserData = async (token) => {
+  const fetchUserData = async () => {
     try {
-      // prefer NEXT_PUBLIC_API_URL (contains trailing /api in our env), normalize to no trailing slash
-      const fetchMe = async () => {
-        const res = await apiFetch('/auth/me')
-        if (!res.ok) throw new Error(`Failed to fetch /auth/me (${res.status})`)
-        return res.json()
-      }
+      // Use Server Action to get current user (uses HTTP-only cookies)
+      const result = await getCurrentUserAction()
 
-      // Try once, then retry once if profilePicture missing (some timing edge cases)
-      let data = await fetchMe()
-      if (!data?.user?.profilePicture) {
-        console.debug('auth/success: profilePicture missing on first fetch, retrying')
-        // small delay then retry
-        await new Promise((r) => setTimeout(r, 400))
+      if (result.success && result.user) {
+        // Store user data in localStorage for client components that need it
+        localStorage.setItem('user', JSON.stringify(result.user))
+        
         try {
-          data = await fetchMe()
-        } catch (e) {
-          console.warn('Second attempt to fetch /auth/me failed', e)
-        }
-      }
-
-        if (data?.user) {
-      localStorage.setItem('user', JSON.stringify(data.user))
-      if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken)
-        try {
-          window.dispatchEvent(new CustomEvent('userUpdated', { detail: data.user }))
+          window.dispatchEvent(new CustomEvent('userUpdated', { detail: result.user }))
         } catch (e) {}
+        
         setStatus('success')
         // Redirect to home page after a short delay
         setTimeout(() => (window.location.href = '/'), 1200)
         return
       }
 
-      console.error('auth/success: no user returned from /auth/me')
+      console.error('auth/success: getCurrentUserAction failed:', result.error)
       setStatus('error')
     } catch (error) {
       console.error('Error fetching user data:', error)
@@ -101,7 +84,7 @@ export default function AuthSuccessPage() {
                     <FontAwesomeIcon icon={faCheckCircle} size="3x" />
                   </div>
                   <h4 className="text-success">Welcome to My Tarot Readings!</h4>
-                  <p className="text-muted">You have been successfully signed in with Google.</p>
+                  <p className="text-muted">You have been successfully signed in.</p>
                   <p className="text-muted small">Redirecting you to the home page...</p>
                 </div>
               )}

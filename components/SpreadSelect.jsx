@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { apiFetch } from '../lib/api'
+import { getSpreadsAction } from '../lib/actions'
 
 export default function SpreadSelect({ value, onChange, className, style }) {
   const [spreads, setSpreads] = useState([])
@@ -12,10 +12,12 @@ export default function SpreadSelect({ value, onChange, className, style }) {
     let mounted = true
     const load = async () => {
       try {
-        const res = await apiFetch('/spreads')
-        if (!res.ok) throw new Error('Failed to fetch spreads')
-        const data = await res.json()
-        if (mounted) setSpreads(data)
+        const result = await getSpreadsAction()
+        if (result.success) {
+          if (mounted) setSpreads(result.spreads)
+        } else {
+          throw new Error(result.error)
+        }
       } catch (e) {
         if (mounted) setError(e.message || 'Error')
       } finally {
