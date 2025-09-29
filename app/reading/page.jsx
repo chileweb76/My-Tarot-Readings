@@ -471,7 +471,7 @@ export default function ReadingPage() {
             <select style={{width:180}} className="form-select" value={selectedQuerent} onChange={(e) => setSelectedQuerent(e.target.value)}>
               <option value="self">Self</option>
               <option value="all">All querents</option>
-              {querents.map(q => (<option key={q._id || q.id} value={q._id || q.id}>{q.name || q.title}</option>))}
+              {(querents || []).map(q => (<option key={q._id || q.id} value={q._id || q.id}>{q.name || q.title}</option>))}
             </select>
           </div>
 
@@ -604,7 +604,7 @@ export default function ReadingPage() {
                       )}
 
                       {(reading.selectedTags && reading.selectedTags.length > 0) && (
-                        <div className="mb-2"><strong>Tags:</strong> {reading.selectedTags.map(tag => typeof tag === 'object' ? tag.name : tag).join(', ')}</div>
+                        <div className="mb-2"><strong>Tags:</strong> {(reading.selectedTags || []).map(tag => typeof tag === 'object' ? tag.name : tag).join(', ')}</div>
                       )}
 
                     </div>
