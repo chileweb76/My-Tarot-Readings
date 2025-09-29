@@ -20,10 +20,14 @@ export async function GET(request) {
     
     console.log('Proxying spreads request to:', url)
     
+    // Get authorization header from the request
+    const authHeader = request.headers.get('authorization')
+    
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': authHeader || '',
         'User-Agent': 'MyTarotReadings-Frontend/1.0'
       }
     })

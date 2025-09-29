@@ -11,13 +11,18 @@ export default function SpreadsDropdown() {
   useEffect(() => {
     async function fetchSpreads() {
       try {
+        console.log('SpreadsDropdown: fetching spreads...')
         const result = await getSpreadsAction()
+        console.log('SpreadsDropdown: result', result)
         if (result.success) {
           setSpreads(result.data || [])
+          console.log('SpreadsDropdown: loaded', result.data?.length || 0, 'spreads')
         } else {
+          console.error('SpreadsDropdown: error from action', result.error)
           throw new Error(result.error || 'Failed to fetch spreads')
         }
       } catch (e) {
+        console.error('SpreadsDropdown: catch error', e)
         setError(e.message || 'Error fetching spreads')
       } finally {
         setLoading(false)

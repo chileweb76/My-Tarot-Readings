@@ -23,9 +23,24 @@ export default function Header() {
     const token = localStorage.getItem('token')
     const userData = localStorage.getItem('user')
     
+    console.log('Header: token exists?', !!token)
+    console.log('Header: user data exists?', !!userData)
+    
     if (token && userData) {
-      setIsAuthenticated(true)
-      setUser(JSON.parse(userData))
+      try {
+        const parsedUser = JSON.parse(userData)
+        setIsAuthenticated(true)
+        setUser(parsedUser)
+        console.log('Header: authenticated as', parsedUser.username)
+      } catch (e) {
+        console.error('Header: failed to parse user data', e)
+        setIsAuthenticated(false)
+        setUser(null)
+      }
+    } else {
+      console.log('Header: not authenticated')
+      setIsAuthenticated(false)
+      setUser(null)
     }
     // update user when storage changes (other tabs) or when same-tab components dispatch userUpdated
     const handleStorage = (e) => {
