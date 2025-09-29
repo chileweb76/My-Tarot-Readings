@@ -21,11 +21,11 @@ export default function OfflinePage() {
           <div className="card-body p-4">
             <h2 className="card-title text-center mb-3">
               <i className="fas fa-wifi-slash text-warning me-2"></i>
-              You're Offline
+              You&apos;re Offline
             </h2>
             
             <p className="card-text text-center mb-4">
-              It looks like you're not connected to the internet. Don't worry - you can still:
+              It looks like you&apos;re not connected to the internet. Don&apos;t worry - you can still:
             </p>
             
             <ul className="list-unstyled mb-4">
@@ -67,7 +67,7 @@ export default function OfflinePage() {
         <div className="mt-4">
           <small className="text-muted">
             <i className="fas fa-info-circle me-1"></i>
-            Your data will sync automatically when you're back online
+            Your data will sync automatically when you&apos;re back online
           </small>
         </div>
       </div>

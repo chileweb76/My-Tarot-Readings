@@ -185,8 +185,8 @@ export default function PushNotificationsIOS() {
       <p>To receive push notifications on iOS, please:</p>
       <ol>
         <li>Tap the <strong>Share</strong> button in Safari</li>
-        <li>Select <strong>"Add to Home Screen"</strong></li>
-        <li>Tap <strong>"Add"</strong> to install the app</li>
+        <li>Select <strong>&quot;Add to Home Screen&quot;</strong></li>
+        <li>Tap <strong>&quot;Add&quot;</strong> to install the app</li>
         <li>Open the app from your home screen</li>
         <li>Return here to enable notifications</li>
       </ol>
@@ -205,7 +205,7 @@ export default function PushNotificationsIOS() {
       <div className="alert alert-warning">
         <strong>Push notifications are not supported</strong>
         <br />
-        Your browser doesn't support push notifications.
+        Your browser doesn&apos;t support push notifications.
       </div>
     )
   }

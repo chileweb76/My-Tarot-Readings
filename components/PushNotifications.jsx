@@ -136,7 +136,7 @@ export default function PushNotifications() {
       <div className="alert alert-warning">
         <strong>Push notifications are not supported</strong>
         <br />
-        Your browser doesn't support push notifications.
+        Your browser doesn&apos;t support push notifications.
       </div>
     )
   }
