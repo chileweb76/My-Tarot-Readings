@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
+import { verifyJWT } from './lib/jwt-edge'
 
 export async function middleware(request) {
   // Clone the request headers
@@ -22,8 +22,8 @@ export async function middleware(request) {
     
     if (token) {
       try {
-        // Verify JWT token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        // Verify JWT token using Web Crypto API
+        const decoded = await verifyJWT(token, process.env.JWT_SECRET)
         
         // Add user info to headers for Server Actions
         response.headers.set('x-user-id', decoded.userId)
