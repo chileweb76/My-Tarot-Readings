@@ -14,7 +14,7 @@ export default function SpreadSelect({ value, onChange, className, style }) {
       try {
         const result = await getSpreadsAction()
         if (result.success) {
-          if (mounted) setSpreads(result.spreads)
+          if (mounted) setSpreads(result.data)
         } else {
           throw new Error(result.error)
         }

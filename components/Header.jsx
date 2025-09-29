@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import SmartImage from './SmartImage'
 import Link from 'next/link'
+import SpreadsDropdown from './SpreadsDropdown'
 
 
 export default function Header() {
@@ -110,9 +111,8 @@ export default function Header() {
 
           {/* Navigation Links */}
           <div className={`collapse navbar-collapse ${isMenuOpen ? 'show' : ''}`} id="navbarNav">
-            {isAuthenticated && (
+            {isAuthenticated ? (
               <>
-
                 <ul className="navbar-nav ms-auto">
                   {navLinks.map((link) => (
                     <li key={link.href} className="nav-item">
@@ -126,6 +126,9 @@ export default function Header() {
                       </Link>
                     </li>
                   ))}
+                  
+                  {/* Spreads Dropdown */}
+                  <SpreadsDropdown />
                 </ul>
 
                 {/* User avatar on the right (clickable to settings) */}
@@ -180,6 +183,15 @@ export default function Header() {
                   </Link>
                 </div>
               </>
+            ) : (
+              // Show sign in link when not authenticated
+              <ul className="navbar-nav ms-auto">
+                <li className="nav-item">
+                  <Link className="nav-link" href="/auth" onClick={closeMenu}>
+                    Sign In
+                  </Link>
+                </li>
+              </ul>
             )}
           </div>
         </div>
