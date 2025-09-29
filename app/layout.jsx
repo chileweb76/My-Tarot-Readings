@@ -6,7 +6,7 @@ import BootstrapJsLoader from '../components/BootstrapJsLoader'
 
 export const metadata = {
   title: 'My Tarot Readings',
-  description: 'Discover your spiritual path through tarot',
+  description: 'Journal your way to better understanding of your tarot readings.',
   icons: {
     icon: '/favicon.ico',
   },
