@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheckCircle, faExclamationTriangle } from '../../../lib/icons'
-import { getCurrentUserAction, debugAuthStatusAction } from '../../../lib/actions'
+import { getCurrentUserAction, debugAuthStatusAction, exchangeOAuthTokenAction } from '../../../lib/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +16,7 @@ export default function AuthSuccessPage() {
     const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('')
     const provider = sp.get('provider')
     const verified = sp.get('verified')
+    const token = sp.get('token') // OAuth token from cross-domain callback
 
     // If verification flow (no provider) — show verified message and redirect to sign-in
     if (!provider && verified === 'true') {
@@ -27,6 +28,13 @@ export default function AuthSuccessPage() {
       return
     }
 
+    // For OAuth with token relay (cross-domain)
+    if (provider && token) {
+      console.log('OAuth token relay detected, exchanging token...')
+      handleOAuthTokenRelay(token)
+      return
+    }
+
     // For authentication success (Google OAuth or other providers)
     if (provider || window.location.pathname.includes('success')) {
       // Fetch user data using Server Action (cookies are handled automatically)
@@ -34,7 +42,39 @@ export default function AuthSuccessPage() {
     } else {
       setStatus('error')
     }
-  }, [])
+  }, []) // fetchUserData is stable, but including it would cause infinite loops
+
+  const handleOAuthTokenRelay = async (token) => {
+    try {
+      // Clear the token from URL immediately for security
+      const newUrl = window.location.origin + window.location.pathname + '?provider=google'
+      window.history.replaceState({}, document.title, newUrl)
+      
+      // Exchange the token for a proper cookie
+      const result = await exchangeOAuthTokenAction(token)
+      console.log('Token exchange result:', result)
+      
+      if (result.success && result.user) {
+        // Store user data in localStorage for client components that need it
+        localStorage.setItem('user', JSON.stringify(result.user))
+        
+        try {
+          window.dispatchEvent(new CustomEvent('userUpdated', { detail: result.user }))
+        } catch (e) {}
+        
+        setStatus('success')
+        // Redirect to home page after a short delay
+        setTimeout(() => (window.location.href = '/'), 1200)
+        return
+      }
+      
+      console.error('OAuth token exchange failed:', result.error)
+      setStatus('error')
+    } catch (error) {
+      console.error('Error in OAuth token relay:', error)
+      setStatus('error')
+    }
+  }
 
   const fetchUserData = async (retryCount = 0) => {
     try {
