@@ -88,14 +88,24 @@ export default function DecksPage() {
 
         // Ensure we have an array to map over
         const arr = Array.isArray(result.decks) ? result.decks : []
+        
+        console.log('Raw decks data:', arr)
+        console.log('First deck object:', arr[0])
 
-        const normalized = arr.map(d => ({
-          _id: d._id || d.id || '',
-          deckName: d.deckName || d.name || d.deck_name || 'Untitled'
-        }))
+        const normalized = arr.map(d => {
+          console.log('Normalizing deck:', d)
+          return {
+            _id: d._id || d.id || '',
+            deckName: d.deckName || d.name || d.deck_name || 'Untitled'
+          }
+        })
 
+        console.log('Normalized decks:', normalized)
         setDecks(normalized)
-        if (normalized.length) setSelectedDeck(normalized[0]._id)
+        if (normalized.length) {
+          console.log('Setting selected deck to:', normalized[0]._id)
+          setSelectedDeck(normalized[0]._id)
+        }
       } catch (err) {
         console.error('Failed to load decks', err)
         setDecks([])
