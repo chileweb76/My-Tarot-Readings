@@ -46,9 +46,14 @@ export default function SmartImage({
         return
       }
 
-      // If src is already a full HTTP URL (including blob URLs), use it directly
+      // If src is already a full HTTP URL, handle appropriately
       if (typeof src === 'string' && (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:'))) {
-        setCurrentSrc(src)
+        // Use proxy for Vercel blob URLs to handle authentication
+        if (src.includes('blob.vercel-storage.com')) {
+          setCurrentSrc(`/api/image-proxy?url=${encodeURIComponent(src)}`)
+        } else {
+          setCurrentSrc(src)
+        }
         return
       }
 

@@ -98,11 +98,15 @@ export default function PWAEnhancements() {
       installFormAction(form)
     }
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    if ('beforeinstallprompt' in window) {
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
     window.addEventListener('appinstalled', handleAppInstalled)
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      if ('beforeinstallprompt' in window) {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      }
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
   }, [installFormAction])

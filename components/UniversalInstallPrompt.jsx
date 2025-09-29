@@ -88,10 +88,15 @@ export default function UniversalInstallPrompt() {
       }
     }
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    // Only add event listener if beforeinstallprompt is supported
+    if ('beforeinstallprompt' in window) {
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      if ('beforeinstallprompt' in window) {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      }
     }
   }, [])
 
