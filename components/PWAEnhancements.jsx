@@ -9,6 +9,7 @@ export default function PWAEnhancements() {
   const [isStandalone, setIsStandalone] = useState(false)
   const [onlineStatus, setOnlineStatus] = useState(true)
   const [offlineData, setOfflineData] = useState({ readings: [], tags: [] })
+  const [browserInfo, setBrowserInfo] = useState({ name: 'Unknown', canInstall: false })
 
   // Server Action states
   const [installState, installFormAction, installPending] = useActionState(async (prevState, formData) => {
@@ -44,6 +45,33 @@ export default function PWAEnhancements() {
 
   // PWA installation detection
   useEffect(() => {
+    // Detect browser type
+    const detectBrowser = () => {
+      const userAgent = navigator.userAgent.toLowerCase()
+      
+      if (/chrome|chromium|crios/.test(userAgent) && !/edg/.test(userAgent)) {
+        return { name: 'Chrome', canInstall: true, instructions: 'Look for the install icon in the address bar' }
+      }
+      if (/edg/.test(userAgent)) {
+        return { name: 'Edge', canInstall: true, instructions: 'Click the + icon in the address bar' }
+      }
+      if (/firefox|fxios/.test(userAgent)) {
+        return { name: 'Firefox', canInstall: true, instructions: 'Use menu → Install this site as an app' }
+      }
+      if (/safari/.test(userAgent) && !/chrome|crios/.test(userAgent)) {
+        const isIOS = /ipad|iphone|ipod/.test(userAgent)
+        if (isIOS) {
+          return { name: 'iOS Safari', canInstall: true, instructions: 'Use Share → Add to Home Screen' }
+        } else {
+          return { name: 'Safari', canInstall: false, instructions: 'Limited PWA support - use Chrome or Edge' }
+        }
+      }
+      
+      return { name: 'Unknown', canInstall: 'beforeinstallprompt' in window, instructions: 'Check browser menu for install option' }
+    }
+    
+    setBrowserInfo(detectBrowser())
+
     // Check if app is installed
     if (window.matchMedia('(display-mode: standalone)').matches || 
         window.navigator.standalone === true) {
@@ -137,15 +165,24 @@ export default function PWAEnhancements() {
           {isStandalone && <span className="badge bg-info">Standalone Mode</span>}
         </div>
 
-        {!isInstalled && deferredPrompt && (
+        {!isInstalled && (
           <div className="mb-3">
-            <button 
-              className="btn btn-primary btn-sm"
-              onClick={handleInstallClick}
-            >
-              <i className="fas fa-plus me-1"></i>
-              Install App
-            </button>
+            {deferredPrompt ? (
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={handleInstallClick}
+              >
+                <i className="fas fa-plus me-1"></i>
+                Install App
+              </button>
+            ) : (
+              <div className="text-muted">
+                <small>
+                  <i className="fas fa-info-circle me-1"></i>
+                  <strong>{browserInfo.name}</strong>: {browserInfo.instructions}
+                </small>
+              </div>
+            )}
             <div className="form-text">Add this app to your home screen for a better experience</div>
           </div>
         )}

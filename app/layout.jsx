@@ -4,7 +4,7 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import BootstrapJsLoader from '../components/BootstrapJsLoader'
 import ServiceWorkerRegister from '../components/ServiceWorkerRegister'
-import IOSInstallPrompt from '../components/IOSInstallPrompt'
+import UniversalInstallPrompt from '../components/UniversalInstallPrompt'
 
 export const metadata = {
   title: 'My Tarot Readings',
@@ -39,8 +39,8 @@ export default function RootLayout({ children }) {
           <BootstrapJsLoader />
           {/* Register a lightweight service worker for basic caching/offline support */}
           <ServiceWorkerRegister />
-          {/* iOS PWA install prompt */}
-          <IOSInstallPrompt />
+          {/* Universal PWA install prompt for all browsers */}
+          <UniversalInstallPrompt />
           <Footer />
         </div>
       </body>
