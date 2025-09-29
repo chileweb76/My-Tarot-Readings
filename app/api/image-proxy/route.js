@@ -18,13 +18,21 @@ export async function GET(request) {
     
     console.log('🖼️ Image proxy: Fetching blob URL:', imageUrl)
     
-    // Get auth token from cookies
+    // Get auth token from cookies and add Vercel blob token
     const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL_BLOB_TOKEN
     
-    const headers = {}
+    const headers = {
+      'User-Agent': 'MyTarotReadings/1.0'
+    }
+    
     if (token) {
       headers.Authorization = `Bearer ${token}`
+    }
+    
+    if (blobToken) {
+      headers['Authorization'] = `Bearer ${blobToken}`
     }
     
     // Fetch the image with proper auth

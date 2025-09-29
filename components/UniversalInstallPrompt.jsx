@@ -65,14 +65,32 @@ export default function UniversalInstallPrompt() {
 
     setBrowserInfo(detectBrowser())
 
-    // Detect if PWA is already installed
+    // Detect if PWA is already installed (enhanced iOS detection)
     const pwaInstalled = window.matchMedia('(display-mode: standalone)').matches ||
-                        window.navigator.standalone === true
+                        window.navigator.standalone === true ||
+                        // Additional iOS detection
+                        (window.navigator.standalone !== undefined && window.navigator.standalone) ||
+                        // Check if launched from home screen on iOS
+                        (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches)
+    
+    console.log('PWA Installation Status:', {
+      displayMode: window.matchMedia('(display-mode: standalone)').matches,
+      navigatorStandalone: window.navigator.standalone,
+      detected: pwaInstalled,
+      userAgent: navigator.userAgent
+    })
+    
     setIsPWAInstalled(pwaInstalled)
 
     // Check if user previously dismissed this prompt
     const dismissed = localStorage.getItem('universal-install-prompt-dismissed') === 'true'
     setIsDismissed(dismissed)
+    
+    // For iOS, also check if user manually marked as installed
+    const manuallyMarkedInstalled = localStorage.getItem('pwa-manually-installed') === 'true'
+    if (manuallyMarkedInstalled && !pwaInstalled) {
+      setIsPWAInstalled(true)
+    }
 
     // Listen for beforeinstallprompt event (Chrome, Edge, etc.)
     const handleBeforeInstallPrompt = (e) => {
@@ -173,6 +191,18 @@ export default function UniversalInstallPrompt() {
               <li>Tap <strong>&quot;Add&quot;</strong></li>
               <li>The app icon will appear on your home screen</li>
             </ol>
+            <div className="mt-3">
+              <button 
+                className="btn btn-success btn-sm"
+                onClick={() => {
+                  localStorage.setItem('pwa-manually-installed', 'true')
+                  setIsPWAInstalled(true)
+                  setShowPrompt(false)
+                }}
+              >
+                ✓ I've completed installation
+              </button>
+            </div>
           </div>
         )
       

@@ -48,12 +48,8 @@ export default function SmartImage({
 
       // If src is already a full HTTP URL, handle appropriately
       if (typeof src === 'string' && (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:'))) {
-        // Use proxy for Vercel blob URLs to handle authentication
-        if (src.includes('blob.vercel-storage.com')) {
-          setCurrentSrc(`/api/image-proxy?url=${encodeURIComponent(src)}`)
-        } else {
-          setCurrentSrc(src)
-        }
+        // For Vercel blob URLs, try direct access first (they should be public)
+        setCurrentSrc(src)
         return
       }
 
@@ -78,6 +74,14 @@ export default function SmartImage({
   const handleError = () => {
     try {
       const url = currentSrc || ''
+      
+      // If it's a blob URL that failed, try the proxy first
+      if (url.includes('blob.vercel-storage.com') && !url.includes('/api/image-proxy')) {
+        setCurrentSrc(`/api/image-proxy?url=${encodeURIComponent(url)}`)
+        setError(false) // Reset error state to try proxy
+        return
+      }
+      
       // If the URL contains an /images/ path, use it directly
       const idx = url.indexOf('/images/')
       let fallback = ''
