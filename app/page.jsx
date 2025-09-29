@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useActionState } from 'react'
 import Image from 'next/image'
 import AuthWrapper from '../components/AuthWrapper'
 import { apiFetch } from '../lib/api'
 import { getSpreadImageUrl } from '../lib/imageService'
+import { saveReadingAction, createTagAction } from '../lib/actions'
 
   // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
@@ -68,6 +69,48 @@ export default function HomePage() {
   const [selectedTags, setSelectedTags] = useState([])
   const [newTagName, setNewTagName] = useState('')
   const [addingTag, setAddingTag] = useState(false)
+
+  // Server Action states
+  const [readingState, readingFormAction, readingPending] = useActionState(async (prevState, formData) => {
+    // Prepare reading data for server action
+    const cards = cardStates.map(cs => ({
+      title: cs.title || '',
+      suit: cs.selectedSuit || '',
+      card: cs.selectedCard || (cs.title || ''),
+      reversed: !!cs.reversed,
+      interpretation: cs.interpretation || '',
+      image: cs.image || null
+    }))
+    
+    // Add cards and tags to form data as JSON
+    formData.append('cards', JSON.stringify(cards))
+    formData.append('tags', JSON.stringify(selectedTags))
+    formData.append('readingId', readingId || '')
+    
+    const result = await saveReadingAction(formData)
+    if (result.success) {
+      setReadingId(result.readingId)
+      pushToast({ type: 'success', text: result.message })
+      return { success: true, readingId: result.readingId }
+    } else {
+      pushToast({ type: 'error', text: result.error })
+      return { error: result.error }
+    }
+  }, { success: false, error: null })
+
+  const [tagState, tagFormAction, tagPending] = useActionState(async (prevState, formData) => {
+    const result = await createTagAction(formData)
+    if (result.success) {
+      setTags(prev => [...prev, result.tag])
+      setSelectedTags(prev => [...prev, result.tag._id])
+      setNewTagName('')
+      pushToast({ type: 'success', text: result.message })
+      return { success: true, tag: result.tag }
+    } else {
+      pushToast({ type: 'error', text: result.error })
+      return { error: result.error }
+    }
+  }, { success: false, error: null })
 
   // push a toast into the stack
   const pushToast = (t) => {
@@ -776,6 +819,15 @@ export default function HomePage() {
         const result = await res.json()
         if (result && result.reading && result.reading._id) {
           setReadingId(result.reading._id)
+          
+          // Trigger notification for new reading (non-blocking)
+          import('../lib/notificationTriggers.js').then(({ NotificationTriggers }) => {
+            NotificationTriggers.onReadingCreated({
+              _id: result.reading._id,
+              spread: selectedSpread,
+              querent: selectedQuerent
+            })
+          }).catch(err => console.log('Notification trigger error:', err))
         }
         // If there's a pending file to upload, do it now and patch the reading image
         if (uploadedFile) {
@@ -1168,10 +1220,12 @@ export default function HomePage() {
 
   return (
     <AuthWrapper>
-      <form id="reading" className="reading" onSubmit={handleSaveReading}>
-  <ExportSignInModal show={showExportSignInModal} onClose={() => setShowExportSignInModal(false)} />
-  <LargeImageWarningModal info={largeImagePending} getImageSizeLimitBytes={getImageSizeLimitBytes} onClose={() => setLargeImagePending(null)} />
-  <Toasts toasts={toasts} onRemove={removeToast} />
+      <>
+        <ExportSignInModal show={showExportSignInModal} onClose={() => setShowExportSignInModal(false)} />
+        <LargeImageWarningModal info={largeImagePending} getImageSizeLimitBytes={getImageSizeLimitBytes} onClose={() => setLargeImagePending(null)} />
+        <Toasts toasts={toasts} onRemove={removeToast} />
+        
+        <form id="reading" className="reading" action={readingFormAction}>
         <p>Reading by: {user?.username || 'Guest'}</p>
         <h2>Reading</h2>
 
@@ -1179,6 +1233,7 @@ export default function HomePage() {
           <label htmlFor="querentSelect" className="form-label mb-0">Querent</label>
           <select
             id="querentSelect"
+            name="querent"
             className="form-select"
             style={{ width: 220 }}
             value={selectedQuerent}
@@ -1349,14 +1404,28 @@ export default function HomePage() {
       {/* Question input (matches Spread label styling) */}
       <div className="mt-3">
         <label htmlFor="readingQuestion" className="form-label mb-0">Question</label>
-        <input id="readingQuestion" className="form-control" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Enter your question for the reading" />
+        <input 
+          id="readingQuestion" 
+          name="question"
+          className="form-control" 
+          defaultValue={question}
+          onChange={(e) => setQuestion(e.target.value)} 
+          placeholder="Enter your question for the reading" 
+        />
       </div>
 
       {/* Deck select populated from API (label inline, centered, matching Spread label) */}
       <div className="mt-3 d-flex justify-content-center">
         <div className="d-flex align-items-center" style={{ gap: 12 }}>
           <label htmlFor="deckSelect" className="form-label mb-0 text-white me-2" style={{ fontSize: '20px', fontWeight: 400 }}>Deck</label>
-          <select id="deckSelect" className="form-select" value={selectedDeck} onChange={(e) => setSelectedDeck(e.target.value)} style={{ width: 320 }}>
+          <select 
+            id="deckSelect" 
+            name="deck"
+            className="form-select" 
+            value={selectedDeck} 
+            onChange={(e) => setSelectedDeck(e.target.value)} 
+            style={{ width: 320 }}
+          >
             <option value="">-- Select deck --</option>
             {decks.map(d => (
               <option key={d._id} value={d._id}>{d.deckName}</option>
@@ -1418,10 +1487,11 @@ export default function HomePage() {
         <label htmlFor="myInterpretation" className="form-label mb-1">My Interpretation</label>
         <textarea
           id="myInterpretation"
+          name="interpretation"
           className="form-control"
           rows={6}
           placeholder="Write your interpretation for this reading here..."
-          value={interpretation}
+          defaultValue={interpretation}
           onChange={(e) => setInterpretation(e.target.value)}
         />
       </div>
@@ -1519,9 +1589,9 @@ export default function HomePage() {
           <button 
             type="submit" 
             className="btn btn-tarot-primary btn-lg"
-            disabled={savingReading}
+            disabled={readingPending}
           >
-            {savingReading ? (
+            {readingPending ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Saving Reading...
@@ -1545,7 +1615,11 @@ export default function HomePage() {
           busy={exporting}
         />
       </div>
+        {/* Hidden inputs for form data */}
+        <input type="hidden" name="spread" value={selectedSpread} />
+        <input type="hidden" name="spreadName" value={spreadName} />
       </form>
+
       <QuerentModal
         show={addingQuerent}
         value={newQuerentName}
@@ -1581,7 +1655,8 @@ export default function HomePage() {
         }}
       />
 
-  <CameraModal show={showCameraModal} onClose={() => setShowCameraModal(false)} onCaptured={(dataUrl) => { setShowCameraModal(false); handleCapturedImageUpload(dataUrl) }} />
+        <CameraModal show={showCameraModal} onClose={() => setShowCameraModal(false)} onCaptured={(dataUrl) => { setShowCameraModal(false); handleCapturedImageUpload(dataUrl) }} />
+      </>
     </AuthWrapper>
   )
 }

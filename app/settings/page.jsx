@@ -1,14 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useActionState } from 'react'
 import Image from 'next/image'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCog, faUserCircle, faSignOutAlt, faFileExport, faDatabase, faSave } from '../../lib/icons'
 import AuthWrapper from '../../components/AuthWrapper'
 import ConfirmModal from '../../components/ConfirmModal'
+import PushNotificationsUniversal from '../../components/PushNotificationsUniversal'
+import NotificationTester from '../../components/NotificationTester'
 import { notify } from '../../lib/toast'
-import { apiFetch } from '../../lib/api'
 import SmartImage from '../../components/SmartImage'
+import { 
+  changeUsernameAction, 
+  changePasswordAction, 
+  uploadProfilePictureAction, 
+  removeProfilePictureAction,
+  signOutAction
+} from '../../lib/actions'
 
 export default function SettingsPage() {
   const [user, setUser] = useState(null)
@@ -19,6 +27,49 @@ export default function SettingsPage() {
     theme: 'dark',
     language: 'en'
   })
+
+  // Server Action states
+  const [usernameState, usernameFormAction, usernamePending] = useActionState(async (prevState, formData) => {
+    const result = await changeUsernameAction(formData)
+    if (result.success) {
+      // Update user state
+      const updatedUser = { ...user, username: formData.get('username') }
+      setUser(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      notify({ type: 'success', text: result.message })
+      return { success: true }
+    } else {
+      notify({ type: 'error', text: result.error })
+      return { error: result.error }
+    }
+  }, { success: false, error: null })
+
+  const [passwordState, passwordFormAction, passwordPending] = useActionState(async (prevState, formData) => {
+    const result = await changePasswordAction(formData)
+    if (result.success) {
+      notify({ type: 'success', text: result.message })
+      // Reset form by returning success state
+      return { success: true, reset: true }
+    } else {
+      notify({ type: 'error', text: result.error })
+      return { error: result.error }
+    }
+  }, { success: false, error: null })
+
+  const [profilePictureState, profilePictureFormAction, profilePicturePending] = useActionState(async (prevState, formData) => {
+    const result = await uploadProfilePictureAction(formData)
+    if (result.success) {
+      const updatedUser = { ...user, profilePicture: result.profilePicture }
+      setUser(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      setPicturePreview(result.profilePicture)
+      notify({ type: 'success', text: result.message })
+      return { success: true }
+    } else {
+      notify({ type: 'error', text: result.error })
+      return { error: result.error }
+    }
+  }, { success: false, error: null })
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -702,26 +753,57 @@ export default function SettingsPage() {
                     <div style={{ width: 96, height: 96, borderRadius: '50%', background: '#eee', display: 'inline-block' }} />
                   )}
                 </div>
-                <div className="mb-3">
-                  <input type="file" accept="image/*" onChange={handlePictureChange} />
-                </div>
-                <div className="mb-3 d-flex gap-2">
-                  <button className="btn btn-primary me-2" onClick={handleUploadPicture} disabled={loading}>Upload</button>
-                  <button className="btn btn-outline-secondary" onClick={handleRemovePicture} disabled={loading}>Remove avatar</button>
-                </div>
+                <form action={profilePictureFormAction} className="mb-3">
+                  <div className="mb-3">
+                    <input 
+                      type="file" 
+                      name="picture"
+                      accept="image/*" 
+                      required
+                    />
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button className="btn btn-primary" type="submit" disabled={profilePicturePending}>
+                      {profilePicturePending ? 'Uploading...' : 'Upload'}
+                    </button>
+                    <button 
+                      className="btn btn-outline-secondary" 
+                      type="button" 
+                      onClick={async () => {
+                        const result = await removeProfilePictureAction()
+                        if (result.success) {
+                          const updatedUser = { ...user, profilePicture: null }
+                          setUser(updatedUser)
+                          localStorage.setItem('user', JSON.stringify(updatedUser))
+                          setPicturePreview(null)
+                          notify({ type: 'success', text: result.message })
+                        } else {
+                          notify({ type: 'error', text: result.error })
+                        }
+                      }}
+                      disabled={profilePicturePending}
+                    >
+                      Remove avatar
+                    </button>
+                  </div>
+                </form>
               </div>
               <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label">Username</label>
-                  <form onSubmit={handleChangeUsername}>
+                  <form action={usernameFormAction}>
                     <div className="input-group">
                       <input
                         type="text"
                         className="form-control"
-                        value={usernameForm.username}
-                        onChange={(e) => setUsernameForm({ username: e.target.value })}
+                        name="username"
+                        defaultValue={user?.username || ''}
+                        minLength="2"
+                        required
                       />
-                      <button className="btn btn-outline-primary" type="submit">Save</button>
+                      <button className="btn btn-outline-primary" type="submit" disabled={usernamePending}>
+                        {usernamePending ? 'Saving...' : 'Save'}
+                      </button>
                     </div>
                   </form>
                 </div>
@@ -854,21 +936,40 @@ export default function SettingsPage() {
               
               <div className="mb-3">
                 <h5>Change Password</h5>
-                <form onSubmit={handleChangePassword}>
+                <form action={passwordFormAction}>
                   <div className="mb-2">
                     <label className="form-label">Current Password</label>
-                    <input type="password" className="form-control" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))} />
+                    <input 
+                      type="password" 
+                      className="form-control" 
+                      name="currentPassword"
+                      required 
+                    />
                   </div>
                   <div className="mb-2">
                     <label className="form-label">New Password</label>
-                    <input type="password" className="form-control" value={passwordForm.newPassword} onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))} />
+                    <input 
+                      type="password" 
+                      className="form-control" 
+                      name="newPassword"
+                      minLength="6"
+                      required 
+                    />
                   </div>
                   <div className="mb-2">
                     <label className="form-label">Verify New Password</label>
-                    <input type="password" className="form-control" value={passwordForm.verifyPassword} onChange={(e) => setPasswordForm(prev => ({ ...prev, verifyPassword: e.target.value }))} />
+                    <input 
+                      type="password" 
+                      className="form-control" 
+                      name="verifyPassword"
+                      minLength="6"
+                      required 
+                    />
                   </div>
                   <div className="d-flex gap-2">
-                    <button className="btn btn-outline-primary" type="submit">Update Password</button>
+                    <button className="btn btn-outline-primary" type="submit" disabled={passwordPending}>
+                      {passwordPending ? 'Updating...' : 'Update Password'}
+                    </button>
                   </div>
                 </form>
               </div>
@@ -884,6 +985,10 @@ export default function SettingsPage() {
 
             {/* Export image settings (moved below Data & Security) */}
             <ImageLimitSection />
+
+            {/* Push Notifications Section */}
+            <PushNotificationsUniversal />
+            <NotificationTester />
 
             <ConfirmModal
               show={showDeleteModal}

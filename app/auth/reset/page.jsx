@@ -1,42 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useActionState } from 'react'
 import AuthWrapper from '../../../components/AuthWrapper'
-import { apiFetch } from '../../../lib/api'
 import { notify } from '../../../lib/toast'
+import { resetPasswordAction } from '../../../lib/actions'
 
 export default function ResetPage() {
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      const res = await apiFetch('/auth/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      })
-      const data = await res.json()
-      notify({ type: 'success', text: data.message || 'If that email exists, a reset link has been sent.' })
-    } catch (err) {
-      notify({ type: 'error', text: err.message || 'Failed to request reset' })
-    } finally {
-      setLoading(false)
+  const [resetState, resetFormAction, resetPending] = useActionState(async (prevState, formData) => {
+    const result = await resetPasswordAction(formData)
+    if (result.success) {
+      notify({ type: 'success', text: result.message })
+      return { success: true }
+    } else {
+      notify({ type: 'error', text: result.error })
+      return { error: result.error }
     }
-  }
+  }, { success: false, error: null })
 
   return (
     <AuthWrapper>
-      <form onSubmit={handleSubmit} className="p-3">
+      <form action={resetFormAction} className="p-3">
         <h3>Reset password</h3>
         <div className="mb-2">
           <label className="form-label">Email</label>
-          <input className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input 
+            className="form-control" 
+            name="email"
+            type="email"
+            required
+          />
         </div>
         <div>
-          <button className="btn btn-tarot-primary" disabled={loading}>{loading ? 'Sending...' : 'Send reset'}</button>
+          <button className="btn btn-tarot-primary" type="submit" disabled={resetPending}>
+            {resetPending ? 'Sending...' : 'Send reset'}
+          </button>
         </div>
       </form>
     </AuthWrapper>

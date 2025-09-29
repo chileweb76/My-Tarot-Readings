@@ -1,0 +1,46 @@
+{
+  "name": "My Tarot Readings",
+  "short_name": "MyTarot",
+  "description": "Journal your way to better understanding of your tarot readings.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2b0f2f",
+  "scope": "/",
+  "orientation": "portrait-primary",
+  "categories": ["lifestyle", "spirituality"],
+  "lang": "en",
+  "icons": [
+    { 
+      "src": "/icons/icon-192.png", 
+      "sizes": "192x192", 
+      "type": "image/png",
+      "purpose": "any"
+    },
+    { 
+      "src": "/icons/icon-192.png", 
+      "sizes": "192x192", 
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    { 
+      "src": "/icons/icon-512.png", 
+      "sizes": "512x512", 
+      "type": "image/png",
+      "purpose": "any"
+    },
+    { 
+      "src": "/icons/icon-512.png", 
+      "sizes": "512x512", 
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
