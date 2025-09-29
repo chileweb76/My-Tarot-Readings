@@ -16,8 +16,9 @@ export async function GET(request, { params }) {
     }
     
     const url = `${API_BASE_URL}/api/decks/${id}`
-    console.log('Proxying deck request to:', url)
-    console.log('Deck ID being requested:', id)
+    console.log('🌐 FRONTEND API: Proxying deck request to:', url)
+    console.log('🌐 FRONTEND API: Deck ID being requested:', id)
+    console.log('🌐 FRONTEND API: API_BASE_URL is:', API_BASE_URL)
     
     // Use cookie-based authentication like other routes
     const cookieStore = await cookies()
@@ -39,9 +40,10 @@ export async function GET(request, { params }) {
     
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Backend deck API error:', response.status, response.statusText)
-      console.error('Backend error response:', errorText)
-      console.error('Request URL was:', url)
+      console.error('🚨 FRONTEND API: Backend deck API error:', response.status, response.statusText)
+      console.error('🚨 FRONTEND API: Backend error response:', errorText)
+      console.error('🚨 FRONTEND API: Request URL was:', url)
+      console.error('🚨 FRONTEND API: Original deck ID requested:', id)
       return NextResponse.json(
         { error: `Backend API error: ${response.statusText}`, details: errorText, requestedId: id },
         { status: response.status }
