@@ -1109,7 +1109,8 @@ export default function HomePage() {
         
         // Find the selected spread in the results
         const isId = /^[0-9a-fA-F]{24}$/.test(selectedSpread)
-        const data = result.spreads?.find(s => 
+        const spreads = result.data || []
+        const data = spreads.find(s => 
           isId ? (s._id === selectedSpread || s.spread === selectedSpread) : s.name === selectedSpread
         )
         

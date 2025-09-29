@@ -14,9 +14,12 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [avatarLoaded, setAvatarLoaded] = useState(true)
   const [avatarError, setAvatarError] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
+    setMounted(true)
+    
     const token = localStorage.getItem('token')
     const userData = localStorage.getItem('user')
     
@@ -111,7 +114,7 @@ export default function Header() {
 
           {/* Navigation Links */}
           <div className={`collapse navbar-collapse ${isMenuOpen ? 'show' : ''}`} id="navbarNav">
-            {isAuthenticated ? (
+            {mounted && isAuthenticated ? (
               <>
                 <ul className="navbar-nav ms-auto">
                   {navLinks.map((link) => (
@@ -183,8 +186,8 @@ export default function Header() {
                   </Link>
                 </div>
               </>
-            ) : (
-              // Show sign in link when not authenticated
+            ) : mounted ? (
+              // Show sign in link when not authenticated (only after mount)
               <ul className="navbar-nav ms-auto">
                 <li className="nav-item">
                   <Link className="nav-link" href="/auth" onClick={closeMenu}>
@@ -192,7 +195,7 @@ export default function Header() {
                   </Link>
                 </li>
               </ul>
-            )}
+            ) : null}
           </div>
         </div>
       </nav>

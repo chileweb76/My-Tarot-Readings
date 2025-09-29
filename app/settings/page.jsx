@@ -347,10 +347,10 @@ export default function SettingsPage() {
   ;(async () => {
           try {
             const result = await getSpreadsAction()
-            if (result.success && result.spreads) {
+            if (result.success && result.data) {
               // filter custom spreads owned by this user
               const meId = user && (user._id || user.id) ? String(user._id || user.id) : null
-              const mySpreads = result.spreads.filter(s => s.isCustom && s.owner && String(s.owner) === meId)
+              const mySpreads = result.data.filter(s => s.isCustom && s.owner && String(s.owner) === meId)
               setSpreads(mySpreads)
               if (mySpreads.length) setSelectedSpreadId(mySpreads[0]._id)
             }
