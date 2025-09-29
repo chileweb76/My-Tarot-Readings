@@ -133,6 +133,13 @@ export default function DecksPage() {
       return
     }
 
+    // Validate that selectedDeck looks like a valid MongoDB ObjectId
+    if (typeof selectedDeck !== 'string' || selectedDeck.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(selectedDeck)) {
+      console.warn('Invalid deck ID format:', selectedDeck)
+      setDeckDetails(null)
+      return
+    }
+
     // Clear any uploading states when switching decks
     setUploadingCardIndex(null)
     setUploadingDeckImage(false)
@@ -591,11 +598,11 @@ export default function DecksPage() {
     if (!name) return
     setCreatingDeck(true)
     try {
-      const result = await createDeckAction({
-        deckName: name,
-        description: newDeckDescription || '',
-        cards: []
-      })
+      const formData = new FormData()
+      formData.append('deckName', name)
+      formData.append('description', newDeckDescription || '')
+      
+      const result = await createDeckAction(formData)
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to create deck')
