@@ -1,6 +1,6 @@
 "use server"
 
-import { getAuthHeaders } from '@/lib/api'
+import { cookies } from 'next/headers'
 
 export async function POST(request) {
   try {
@@ -11,7 +11,20 @@ export async function POST(request) {
         ? 'https://mytarotreadingsserver.vercel.app'
         : process.env.API_BASE_URL || 'https://mytarotreadingsserver.vercel.app'
 
-    const authHeaders = getAuthHeaders()
+    const cookieStore = await cookies()
+    const token = cookieStore.get('token')?.value
+    
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Not authenticated' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    const authHeaders = {
+      'Authorization': `Bearer ${token}`,
+      'Cookie': `token=${token}`
+    }
     
     const response = await fetch(`${API_BASE_URL}/api/export/pdf`, {
       method: 'POST',
