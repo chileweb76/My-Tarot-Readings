@@ -144,8 +144,11 @@ export default function DecksPage() {
 
     // Validate that selectedDeck looks like a valid MongoDB ObjectId
     if (typeof selectedDeck !== 'string' || selectedDeck.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(selectedDeck)) {
-      console.warn('Invalid deck ID format:', selectedDeck, 'Skipping load.')
+      console.warn('🚫 Invalid deck ID format:', selectedDeck, 'Skipping load.')
+      console.warn('🚫 Expected 24-character MongoDB ObjectId, got:', typeof selectedDeck, selectedDeck?.length)
       setDeckDetails(null)
+      // Reset to empty string to prevent invalid IDs from persisting
+      setSelectedDeck('')
       return
     }
 
