@@ -9,26 +9,43 @@ import UniversalInstallPrompt from '../components/UniversalInstallPrompt'
 export const metadata = {
   title: 'My Tarot Readings',
   description: 'Journal your way to better understanding of your tarot readings.',
+  keywords: ['tarot', 'readings', 'journal', 'cards', 'divination', 'spiritual'],
+  authors: [{ name: 'My Tarot Readings' }],
+  manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'My Tarot Readings',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'application-name': 'My Tarot Readings',
+  },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#2b0f2f',
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-  <head>
-      <link rel="icon" href="/favicon.ico" />
-      <link rel="manifest" href="/manifest.json" />
-      <meta name="theme-color" content="#2b0f2f" />
-      
-      {/* iOS-specific meta tags */}
-      <meta name="apple-mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      <meta name="apple-mobile-web-app-title" content="My Tarot Readings" />
-      <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-      <link rel="apple-touch-startup-image" href="/icons/icon-512.png" />
-  </head>
+      <head>
+        {/* All metadata is now handled by the metadata export above */}
+      </head>
       <body>
         <div className="app-shell d-flex flex-column min-vh-100">
           <Header />
