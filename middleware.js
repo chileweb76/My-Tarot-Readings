@@ -52,7 +52,7 @@ export async function middleware(request) {
     "img-src 'self' data: blob: https://*.vercel-storage.com https://vercel-storage.com",
     "media-src 'self' blob: https://*.vercel-storage.com",
     `connect-src 'self' ${apiOrigin} https://*.vercel-storage.com https://vercel-storage.com ws: wss:`,
-    "worker-src 'self'", // Service worker
+    "worker-src 'self' blob:", // Allow blob URLs for workers (needed for HEIC conversion)
     "manifest-src 'self'", // PWA manifest
     "frame-src 'none'",
     "object-src 'none'",

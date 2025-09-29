@@ -357,12 +357,29 @@ export default function DecksPage() {
     
     try {
       setUploadingDeckImage(true)
+      
+      // Handle HEIC conversion if needed
+      let processedFile = file
+      let previewUrl = null
+      
+      try {
+        const { ensurePreviewableImage } = await import('../../lib/heicConverter')
+        const { file: maybeFile, previewUrl: maybePreviewUrl } = await ensurePreviewableImage(file)
+        processedFile = maybeFile
+        previewUrl = maybePreviewUrl
+      } catch (heicError) {
+        console.warn('HEIC conversion failed, using original file:', heicError)
+        previewUrl = URL.createObjectURL(file)
+      }
+      
       const apiBase = getApiBase()
       const fd = new FormData()
-      fd.append('deckImage', file)
+      fd.append('deckImage', processedFile)
 
-      // Create preview URL immediately for instant display
-      const previewUrl = URL.createObjectURL(file)
+      // Use the preview URL from HEIC conversion or create new one
+      if (!previewUrl) {
+        previewUrl = URL.createObjectURL(processedFile)
+      }
 
       // Update deck image in decks list immediately
       setDecks(prev => prev.map(deck => 
