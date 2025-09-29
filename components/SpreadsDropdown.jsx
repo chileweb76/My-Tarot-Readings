@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getSpreadsAction } from '../lib/actions/spreads'
 
 export default function SpreadsDropdown() {
   const [spreads, setSpreads] = useState([])
@@ -10,10 +11,12 @@ export default function SpreadsDropdown() {
   useEffect(() => {
     async function fetchSpreads() {
       try {
-        const res = await fetch('/api/spreads')
-        if (!res.ok) throw new Error('Failed to fetch spreads')
-        const data = await res.json()
-        setSpreads(data)
+        const result = await getSpreadsAction()
+        if (result.success) {
+          setSpreads(result.data || [])
+        } else {
+          throw new Error(result.error || 'Failed to fetch spreads')
+        }
       } catch (e) {
         setError(e.message || 'Error fetching spreads')
       } finally {
