@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import SmartImage from './SmartImage'
 import Link from 'next/link'
-import SpreadsDropdown from './SpreadsDropdown'
+
 
 
 export default function Header() {
@@ -171,9 +171,6 @@ export default function Header() {
                       </Link>
                     </li>
                   ))}
-                  
-                  {/* Spreads Dropdown */}
-                  <SpreadsDropdown />
                 </ul>
 
                 {/* User avatar on the right (clickable to settings) */}

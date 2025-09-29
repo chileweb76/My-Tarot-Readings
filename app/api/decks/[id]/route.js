@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
 const API_BASE_URL = process.env.API_BASE_URL || process.env.SERVER_URL || process.env.NEXT_PUBLIC_API_URL || 'https://mytarotreadingsserver.vercel.app'
 
@@ -16,23 +17,33 @@ export async function GET(request, { params }) {
     
     const url = `${API_BASE_URL}/api/decks/${id}`
     console.log('Proxying deck request to:', url)
+    console.log('Deck ID being requested:', id)
     
-    // Get authorization header from the request
-    const authHeader = request.headers.get('authorization')
+    // Use cookie-based authentication like other routes
+    const cookieStore = await cookies()
+    const token = cookieStore.get('token')?.value
+    
+    const authHeaders = token ? {
+      'Authorization': `Bearer ${token}`,
+      'Cookie': `token=${token}`
+    } : {}
     
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader || '',
-        'User-Agent': 'MyTarotReadings-Frontend/1.0'
+        'User-Agent': 'MyTarotReadings-Frontend/1.0',
+        ...authHeaders
       }
     })
     
     if (!response.ok) {
+      const errorText = await response.text()
       console.error('Backend deck API error:', response.status, response.statusText)
+      console.error('Backend error response:', errorText)
+      console.error('Request URL was:', url)
       return NextResponse.json(
-        { error: `Backend API error: ${response.statusText}` },
+        { error: `Backend API error: ${response.statusText}`, details: errorText, requestedId: id },
         { status: response.status }
       )
     }
