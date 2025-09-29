@@ -137,8 +137,7 @@ export default function DecksPage() {
         if (!result.success) {
           console.error('Failed to fetch deck:', result.error)
           console.error('Full result object:', result)
-          setToastMessage(`Failed to load deck: ${result.error}`)
-          setToastType('error')
+          setToast({ message: `Failed to load deck: ${result.error}`, type: 'error' })
           setDeckDetails(null)
           setLoadingDeck(false)
           return

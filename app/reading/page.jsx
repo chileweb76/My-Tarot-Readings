@@ -50,15 +50,15 @@ export default function ReadingPage() {
           console.error('Readings API error:', readingsResult.error)
           throw new Error(readingsResult.error || 'Failed to fetch readings')
         }
-        const data = readingsResult.data
+        const data = readingsResult.data || []
         console.log('Readings data received:', data)
 
         let readingsList = []
         if (Array.isArray(data)) readingsList = data
-        else if (data.readings && Array.isArray(data.readings)) readingsList = data.readings
-        else if (data.data && Array.isArray(data.data)) readingsList = data.data
+        else if (data && data.readings && Array.isArray(data.readings)) readingsList = data.readings
+        else if (data && data.data && Array.isArray(data.data)) readingsList = data.data
 
-        setReadings(readingsList)
+        setReadings(readingsList || [])
       } catch (err) {
         console.error('Error fetching data:', err)
         setError(err.message)
