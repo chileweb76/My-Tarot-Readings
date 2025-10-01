@@ -14,13 +14,13 @@ import {
   createReadingAction,
   updateReadingAction,
   uploadBlobAction,
-  uploadBlobToServer,
   getQuerentsAction,
   getDecksAction,
   getTagsAction,
   getSpreadsAction,
   createQuerentAction
 } from '../lib/actions'
+import { uploadImageToBlob } from '../lib/blobUpload'
 
   // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
@@ -142,7 +142,7 @@ export default function HomePage() {
       if (uploadedFile && uploadedFile.size > 0 && savedReadingId) {
         try {
           console.log('🔵 useActionState: Uploading image separately after reading saved')
-          const uploadResult = await uploadBlobAction(savedReadingId, uploadedFile)
+          const uploadResult = await uploadImageToBlob(savedReadingId, uploadedFile)
           if (uploadResult.success) {
             console.log('🟢 useActionState: Image uploaded successfully')
             pushToast({ type: 'success', text: 'Reading saved with image!' })
@@ -924,8 +924,8 @@ export default function HomePage() {
             setUploadingImage(true)
             const idToUse = (createResult && createResult.reading && createResult.reading._id) || createResult && createResult._id
             if (idToUse) {
-              console.log('🔵 Calling uploadBlobAction with readingId:', idToUse)
-              const uploadResult = await uploadBlobAction(idToUse, uploadedFile)
+              console.log('🔵 Calling uploadImageToBlob with readingId:', idToUse)
+              const uploadResult = await uploadImageToBlob(idToUse, uploadedFile)
               console.log('🔵 Upload result:', uploadResult)
               
               if (uploadResult.success) {
@@ -1028,7 +1028,7 @@ export default function HomePage() {
             contentType: uploadedFile.type
           })
           
-          const updateUploadResult = await uploadBlobAction(readingId, uploadedFile)
+          const updateUploadResult = await uploadImageToBlob(readingId, uploadedFile)
           if (updateUploadResult.success) {
             // Handle Vercel Blob response format using utility
             const blobImageUrl = extractBlobUrl(updateUploadResult)
