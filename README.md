@@ -4,7 +4,7 @@ A modern MERN stack application built with Next.js 15 App Router, Bootstrap, Sas
 
 ## Features
 
-- **Frontend**: Next.js 14 with App Router
+- **Frontend**: Next.js 15 with App Router
 - **Styling**: Bootstrap 5 + Custom Sass
 - **Backend**: Express.js API
 - **Database**: MongoDB (optional)
@@ -24,7 +24,7 @@ A modern MERN stack application built with Next.js 15 App Router, Bootstrap, Sas
 
 3. **Access the application:**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
+   - Backend API: http://localhost:5001
 
 ## Development
 
@@ -49,20 +49,18 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 
 **Server (.env):**
 ```
-PORT=5000
+PORT=5001
 MONGODB_URI=mongodb://localhost:27017/mytarotreadings
 ```
 
 ## API Endpoints
 
-- `GET /api/readings` - Get sample tarot reading
-- `GET /api/health` - Health check
 
 ## Project Structure
 
 ```
 mytarotreadings/
-├── client/          # Next.js 14 App Router
+├── client/          # Next.js 15 App Router
 │   ├── app/         # App Router pages
 │   ├── components/  # React components
 │   └── styles/      # Sass files
