@@ -27,10 +27,13 @@ export async function POST(request) {
     const token = cookieStore.get('token')?.value
     
     // Make token optional for blob uploads to avoid JWT verification issues
-    const authHeaders = token ? {
-      'Authorization': `Bearer ${token}`,
-      'Cookie': `token=${token}`
-    } : {}
+    const authHeaders = {}
+    if (token && token.length > 10) { // Basic validation
+      authHeaders['Authorization'] = `Bearer ${token}`
+      authHeaders['Cookie'] = `token=${token}`
+    } else {
+      console.log('🟡 Frontend API: No valid token found, proceeding without authentication')
+    }
     
     console.log(`🔵 Frontend API: Forwarding blob upload to ${API_BASE_URL}/api/blob-upload?id=${readingId}`)
     
