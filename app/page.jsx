@@ -118,9 +118,24 @@ export default function HomePage() {
     
     const result = await saveReadingAction(formData)
     
+    console.log('🔵 useActionState: saveReadingAction result', {
+      success: result.success,
+      readingId: result.readingId,
+      error: result.error,
+      hasUploadedFile: !!uploadedFile,
+      uploadedFileSize: uploadedFile?.size
+    })
+    
     if (result.success) {
       const savedReadingId = result.readingId
       setReadingId(savedReadingId)
+      
+      console.log('🔵 useActionState: Checking image upload conditions', {
+        hasUploadedFile: !!uploadedFile,
+        fileSize: uploadedFile?.size,
+        hasSavedReadingId: !!savedReadingId,
+        savedReadingId: savedReadingId
+      })
       
       // Handle image upload separately after reading is saved
       if (uploadedFile && uploadedFile.size > 0 && savedReadingId) {
