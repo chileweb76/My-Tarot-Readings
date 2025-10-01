@@ -1,6 +1,6 @@
 # My Tarot Readings
 
-A modern MERN stack application built with Next.js 14 App Router, Bootstrap, Sass, and Express.
+A modern MERN stack application built with Next.js 15 App Router, Bootstrap, Sass, and Express.
 
 ## Features
 
