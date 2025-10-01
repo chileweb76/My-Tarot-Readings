@@ -846,6 +846,11 @@ export default function HomePage() {
           }).catch(err => console.log('Notification trigger error:', err))
         }
         // If there's a pending file to upload, do it now and patch the reading image
+        console.log('🔵 Checking for pending file upload:', {
+          hasUploadedFile: !!uploadedFile,
+          fileName: uploadedFile?.name,
+          fileSize: uploadedFile?.size
+        })
         if (uploadedFile) {
           try {
             console.log('🔵 Starting blob upload for reading image...', {
