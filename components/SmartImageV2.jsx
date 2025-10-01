@@ -24,7 +24,7 @@ export default function SmartImage({
   imageContext = {},
   enableTransform = true
 }) {
-  const [currentSrc, setCurrentSrc] = useState(src)
+  const [currentSrc, setCurrentSrc] = useState(src || '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
 
@@ -35,8 +35,14 @@ export default function SmartImage({
 
   useEffect(() => {
     async function updateImageSrc() {
-      if (!src) {
-        setCurrentSrc(src)
+      // Handle null, undefined, or empty src
+      if (!src || src === '' || src === null || src === undefined) {
+        console.log('🟡 SmartImageV2: No valid src provided, using fallback')
+        const fallbackSvg = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450"><rect width="100%" height="100%" fill="#f8f9fa"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="16">No image</text></svg>`
+        )
+        setCurrentSrc(fallbackSvg)
+        setError(true)
         return
       }
 
@@ -75,32 +81,61 @@ export default function SmartImage({
     try {
       const url = currentSrc || ''
       
-      // If it's a blob URL that failed, try the proxy first
-      if (url.includes('blob.vercel-storage.com') && !url.includes('/api/image-proxy')) {
+      // Prevent infinite loops by checking if we've already tried fallbacks
+      if (error || url.startsWith('data:image/svg+xml') || url.includes('/api/image-proxy')) {
+        console.log('🔴 SmartImageV2: Image failed permanently, using fallback SVG:', url)
+        // Already in error state or tried proxy, use final fallback
+        const fallbackSvg = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450"><rect width="100%" height="100%" fill="#f8f9fa"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="16">Image unavailable</text></svg>`
+        )
+        setCurrentSrc(fallbackSvg)
+        setError(true)
+        if (onError) onError()
+        return
+      }
+      
+      // If it's a blob URL that failed, try the proxy first (only once)
+      if (url.includes('blob.vercel-storage.com')) {
+        console.log('🟡 SmartImageV2: Blob URL failed, trying proxy:', url)
         setCurrentSrc(`/api/image-proxy?url=${encodeURIComponent(url)}`)
         setError(false) // Reset error state to try proxy
         return
       }
       
+      // Try to extract a valid filename from the URL
+      const parts = url.split('/')
+      const file = parts[parts.length - 1] || ''
+      
+      let fallback = ''
+      
       // If the URL contains an /images/ path, use it directly
       const idx = url.indexOf('/images/')
-      let fallback = ''
       if (idx !== -1) {
         fallback = url.slice(idx)
-      } else {
-        const parts = url.split('/')
-        const file = parts[parts.length - 1] || ''
-        if (file) fallback = '/images/rider-waite-tarot/' + file
+      } else if (file && file !== '/' && file.length > 0 && !file.includes('?')) {
+        // Only create fallback if we have a valid filename
+        fallback = '/images/rider-waite-tarot/' + file
       }
-      if (!fallback) {
+      
+      // Validate the fallback URL is reasonable
+      if (!fallback || fallback === '/images/rider-waite-tarot/' || fallback.endsWith('/')) {
+        console.log('🔴 SmartImageV2: No valid fallback URL, using SVG for:', url)
         fallback = 'data:image/svg+xml;utf8,' + encodeURIComponent(
           `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450"><rect width="100%" height="100%" fill="#f8f9fa"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="16">Image unavailable</text></svg>`
         )
       }
+      
+      console.log('🟡 SmartImageV2: Using fallback URL:', fallback)
       setCurrentSrc(fallback)
       setError(true)
     } catch (err) {
-      // ignore and keep currentSrc unchanged
+      console.error('🔴 SmartImageV2: Error in handleError:', err)
+      // Use final fallback SVG
+      const fallbackSvg = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450"><rect width="100%" height="100%" fill="#f8f9fa"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="16">Image unavailable</text></svg>`
+      )
+      setCurrentSrc(fallbackSvg)
+      setError(true)
     }
     if (onError) onError()
   }
