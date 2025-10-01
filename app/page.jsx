@@ -14,6 +14,7 @@ import {
   createReadingAction,
   updateReadingAction,
   uploadBlobAction,
+  uploadBlobToServer,
   getQuerentsAction,
   getDecksAction,
   getTagsAction,
@@ -141,11 +142,7 @@ export default function HomePage() {
       if (uploadedFile && uploadedFile.size > 0 && savedReadingId) {
         try {
           console.log('🔵 useActionState: Uploading image separately after reading saved')
-          const imageFormData = new FormData()
-          imageFormData.append('image', uploadedFile)
-          imageFormData.append('readingId', savedReadingId)
-          
-          const uploadResult = await uploadBlobAction(imageFormData)
+          const uploadResult = await uploadBlobAction(savedReadingId, uploadedFile)
           if (uploadResult.success) {
             console.log('🟢 useActionState: Image uploaded successfully')
             pushToast({ type: 'success', text: 'Reading saved with image!' })
@@ -927,18 +924,8 @@ export default function HomePage() {
             setUploadingImage(true)
             const idToUse = (createResult && createResult.reading && createResult.reading._id) || createResult && createResult._id
             if (idToUse) {
-              const form = new FormData()
-              form.append('image', uploadedFile)
-              form.append('readingId', idToUse)
-              
-              // Add Vercel Blob metadata for reading image
-              prepareBlobUpload(form, {
-                filename: `reading-${idToUse}-${Date.now()}.${uploadedFile.type.split('/')[1] || 'jpg'}`,
-                contentType: uploadedFile.type
-              })
-              
               console.log('🔵 Calling uploadBlobAction with readingId:', idToUse)
-              const uploadResult = await uploadBlobAction(form)
+              const uploadResult = await uploadBlobAction(idToUse, uploadedFile)
               console.log('🔵 Upload result:', uploadResult)
               
               if (uploadResult.success) {
@@ -1041,7 +1028,7 @@ export default function HomePage() {
             contentType: uploadedFile.type
           })
           
-          const updateUploadResult = await uploadBlobAction(form)
+          const updateUploadResult = await uploadBlobAction(readingId, uploadedFile)
           if (updateUploadResult.success) {
             // Handle Vercel Blob response format using utility
             const blobImageUrl = extractBlobUrl(updateUploadResult)
