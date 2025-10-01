@@ -807,7 +807,8 @@ export default function HomePage() {
       const readingData = {
         querent: selectedQuerent,
         spread: selectedSpread,
-        image: uploadedImage,
+        // Don't include image in initial creation - will be added after blob upload
+        image: null,
         question: question,
         deck: selectedDeck,
         // Ensure we send an explicit ISO timestamp (includes timezone) so server
@@ -822,6 +823,13 @@ export default function HomePage() {
         selectedTags: selectedTags,
         userId: user?._id || (typeof window !== 'undefined' ? (() => { try { const u = localStorage.getItem('user'); return u ? JSON.parse(u).id || JSON.parse(u)._id : null } catch (e) { return null } })() : null)
       }
+
+      console.log('🔵 Creating reading with data:', {
+        hasImage: !!uploadedImage,
+        hasUploadedFile: !!uploadedFile,
+        imageType: uploadedFile?.type,
+        imageSize: uploadedFile?.size
+      })
 
       // If we don't have an id yet, create a new reading
       if (!readingId) {
@@ -849,9 +857,11 @@ export default function HomePage() {
         console.log('🔵 Checking for pending file upload:', {
           hasUploadedFile: !!uploadedFile,
           fileName: uploadedFile?.name,
-          fileSize: uploadedFile?.size
+          fileSize: uploadedFile?.size,
+          uploadedFileType: typeof uploadedFile,
+          readingId: createResult.reading?._id
         })
-        if (uploadedFile) {
+        if (uploadedFile && uploadedFile.size > 0) {
           try {
             console.log('🔵 Starting blob upload for reading image...', {
               fileName: uploadedFile.name,
