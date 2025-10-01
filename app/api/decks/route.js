@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
 const API_BASE_URL = process.env.API_BASE_URL || process.env.SERVER_URL || process.env.NEXT_PUBLIC_API_URL || 'https://mytarotreadingsserver.vercel.app'
 
 // GET /api/decks - Fetch all decks
 export async function GET(request) {
   try {
+    console.log('🔵 Frontend Decks Proxy: Starting request')
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     
@@ -15,18 +18,34 @@ export async function GET(request) {
       url = `${API_BASE_URL}/api/decks/${id}`
     }
     
-    console.log('Proxying decks request to:', url)
+    console.log('🔵 Frontend Decks Proxy: Proxying request to:', url)
     
-    // Get authorization header from the request
+    // Get authorization from header OR cookies
     const authHeader = request.headers.get('authorization')
+    const cookieStore = await cookies()
+    const token = cookieStore.get('token')?.value
+    
+    // Prepare headers with authentication
+    const headers = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'MyTarotReadings-Frontend/1.0'
+    }
+    
+    // Add authentication - prefer Bearer token, fallback to cookie
+    if (authHeader) {
+      headers['Authorization'] = authHeader
+      console.log('🔵 Frontend Decks Proxy: Using Authorization header')
+    } else if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+      headers['Cookie'] = `token=${token}`
+      console.log('🔵 Frontend Decks Proxy: Using token from cookies')
+    } else {
+      console.log('🔵 Frontend Decks Proxy: No authentication found, proceeding without auth')
+    }
     
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authHeader || '',
-        'User-Agent': 'MyTarotReadings-Frontend/1.0'
-      }
+      headers
     })
     
     if (!response.ok) {

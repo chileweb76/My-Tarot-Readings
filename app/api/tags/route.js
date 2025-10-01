@@ -1,22 +1,40 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
 const API_BASE_URL = process.env.API_BASE_URL || process.env.SERVER_URL || process.env.NEXT_PUBLIC_API_URL || 'https://mytarotreadingsserver.vercel.app'
 
 // GET /api/tags - Fetch all tags
 export async function GET(request) {
   try {
-    console.log('Proxying tags request to:', `${API_BASE_URL}/api/tags`)
+    console.log('🔵 Frontend Tags Proxy: Starting request')
+    console.log('🔵 Frontend Tags Proxy: Proxying request to:', `${API_BASE_URL}/api/tags`)
     
-    // Get authorization header from the request
+    // Get authorization from header OR cookies
     const authHeader = request.headers.get('authorization')
+    const cookieStore = await cookies()
+    const token = cookieStore.get('token')?.value
+    
+    // Prepare headers with authentication
+    const headers = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'MyTarotReadings-Frontend/1.0'
+    }
+    
+    // Add authentication - prefer Bearer token, fallback to cookie
+    if (authHeader) {
+      headers['Authorization'] = authHeader
+      console.log('🔵 Frontend Tags Proxy: Using Authorization header')
+    } else if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+      headers['Cookie'] = `token=${token}`
+      console.log('🔵 Frontend Tags Proxy: Using token from cookies')
+    } else {
+      console.log('🔵 Frontend Tags Proxy: No authentication found, proceeding without auth')
+    }
     
     const response = await fetch(`${API_BASE_URL}/api/tags`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authHeader || '',
-        'User-Agent': 'MyTarotReadings-Frontend/1.0'
-      }
+      headers
     })
     
     if (!response.ok) {
