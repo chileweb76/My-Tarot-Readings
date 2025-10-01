@@ -109,26 +109,44 @@ export default function HomePage() {
     formData.append('tags', JSON.stringify(selectedTags))
     formData.append('readingId', readingId || '')
     
-    // Add image file if present
-    if (uploadedFile && uploadedFile.size > 0) {
-      console.log('🔵 useActionState: Adding image file to FormData', {
-        fileName: uploadedFile.name,
-        fileSize: uploadedFile.size,
-        fileType: uploadedFile.type
-      })
-      formData.append('image', uploadedFile)
-    } else {
-      console.log('🟡 useActionState: No image file to add', {
-        hasUploadedFile: !!uploadedFile,
-        fileSize: uploadedFile?.size
-      })
-    }
+    // Note: Image file will be handled separately after reading is saved to avoid Server Action size limits
+    console.log('🔵 useActionState: Image will be uploaded separately', {
+      hasUploadedFile: !!uploadedFile,
+      fileName: uploadedFile?.name,
+      fileSize: uploadedFile?.size
+    })
     
     const result = await saveReadingAction(formData)
+    
     if (result.success) {
-      setReadingId(result.readingId)
-      pushToast({ type: 'success', text: result.message })
-      return { success: true, readingId: result.readingId }
+      const savedReadingId = result.readingId
+      setReadingId(savedReadingId)
+      
+      // Handle image upload separately after reading is saved
+      if (uploadedFile && uploadedFile.size > 0 && savedReadingId) {
+        try {
+          console.log('🔵 useActionState: Uploading image separately after reading saved')
+          const imageFormData = new FormData()
+          imageFormData.append('image', uploadedFile)
+          imageFormData.append('readingId', savedReadingId)
+          
+          const uploadResult = await uploadBlobAction(imageFormData)
+          if (uploadResult.success) {
+            console.log('🟢 useActionState: Image uploaded successfully')
+            pushToast({ type: 'success', text: 'Reading saved with image!' })
+          } else {
+            console.warn('🟡 useActionState: Image upload failed, but reading saved')
+            pushToast({ type: 'warning', text: 'Reading saved, but image upload failed' })
+          }
+        } catch (imageError) {
+          console.error('🔴 useActionState: Image upload error:', imageError)
+          pushToast({ type: 'warning', text: 'Reading saved, but image upload failed' })
+        }
+      } else {
+        pushToast({ type: 'success', text: result.message })
+      }
+      
+      return { success: true, readingId: savedReadingId }
     } else {
       pushToast({ type: 'error', text: result.error })
       return { error: result.error }
