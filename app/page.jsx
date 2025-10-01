@@ -848,6 +848,11 @@ export default function HomePage() {
         // If there's a pending file to upload, do it now and patch the reading image
         if (uploadedFile) {
           try {
+            console.log('🔵 Starting blob upload for reading image...', {
+              fileName: uploadedFile.name,
+              fileSize: uploadedFile.size,
+              fileType: uploadedFile.type
+            })
             setUploadingImage(true)
             const idToUse = (createResult && createResult.reading && createResult.reading._id) || createResult && createResult._id
             if (idToUse) {
@@ -861,10 +866,14 @@ export default function HomePage() {
                 contentType: uploadedFile.type
               })
               
+              console.log('🔵 Calling uploadBlobAction with readingId:', idToUse)
               const uploadResult = await uploadBlobAction(form)
+              console.log('🔵 Upload result:', uploadResult)
+              
               if (uploadResult.success) {
                 // Handle Vercel Blob response format using utility
                 const blobImageUrl = extractBlobUrl(uploadResult)
+                console.log('🟢 Extracted blob URL:', blobImageUrl)
                 if (blobImageUrl) {
                   setUploadedImage(blobImageUrl)
                   // Update readingData.image so callers receive the final URL
@@ -874,7 +883,7 @@ export default function HomePage() {
                   setUploadedFile(null)
                 }
               } else {
-                console.warn('Image upload during save failed', uploadResult.error)
+                console.error('🔴 Image upload during save failed:', uploadResult.error)
                 // Roll back the created reading to avoid orphaned reading without image
                 try {
                   const deleteFormData = new FormData()
