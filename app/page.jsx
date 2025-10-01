@@ -138,25 +138,8 @@ export default function HomePage() {
         savedReadingId: savedReadingId
       })
       
-      // Handle image upload separately after reading is saved
-      if (uploadedFile && uploadedFile.size > 0 && savedReadingId) {
-        try {
-          console.log('🔵 useActionState: Uploading image separately after reading saved')
-          const uploadResult = await uploadImageToBlob(savedReadingId, uploadedFile)
-          if (uploadResult.success) {
-            console.log('🟢 useActionState: Image uploaded successfully')
-            pushToast({ type: 'success', text: 'Reading saved with image!' })
-          } else {
-            console.warn('🟡 useActionState: Image upload failed, but reading saved')
-            pushToast({ type: 'warning', text: 'Reading saved, but image upload failed' })
-          }
-        } catch (imageError) {
-          console.error('🔴 useActionState: Image upload error:', imageError)
-          pushToast({ type: 'warning', text: 'Reading saved, but image upload failed' })
-        }
-      } else {
-        pushToast({ type: 'success', text: result.message })
-      }
+      // Don't upload image here - will be handled by useEffect after Server Action completes
+      pushToast({ type: 'success', text: result.message })
       
       return { success: true, readingId: savedReadingId }
     } else {
@@ -201,6 +184,41 @@ export default function HomePage() {
       if (v) setRuntimeLimitMb(parseFloat(v))
     } catch (e) { /* ignore */ }
   }, [])
+
+  // Handle image upload after reading is saved (client-side only)
+  useEffect(() => {
+    const handleImageUpload = async () => {
+      if (readingState.success && readingState.readingId && uploadedFile && uploadedFile.size > 0) {
+        try {
+          console.log('🔵 useEffect: Uploading image after reading saved', {
+            readingId: readingState.readingId,
+            fileName: uploadedFile.name,
+            fileSize: uploadedFile.size
+          })
+          
+          const uploadResult = await uploadImageToBlob(readingState.readingId, uploadedFile)
+          
+          if (uploadResult.success) {
+            console.log('🟢 useEffect: Image uploaded successfully')
+            setUploadedImage(uploadResult.url)
+            setUploadedFile(null) // Clear the pending file
+            pushToast({ type: 'success', text: 'Image uploaded and attached to reading!' })
+          } else {
+            console.error('🔴 useEffect: Image upload failed:', uploadResult.error)
+            pushToast({ type: 'warning', text: 'Reading saved, but image upload failed' })
+          }
+        } catch (error) {
+          console.error('🔴 useEffect: Image upload error:', error)
+          pushToast({ type: 'warning', text: 'Reading saved, but image upload failed' })
+        }
+      }
+    }
+
+    // Only run if we have a successful reading save and a pending image
+    if (readingState.success && readingState.readingId && uploadedFile) {
+      handleImageUpload()
+    }
+  }, [readingState.success, readingState.readingId, uploadedFile])
 
   // Print reading: open a print window (same content as export fallback)
   const handlePrintReading = async () => {
