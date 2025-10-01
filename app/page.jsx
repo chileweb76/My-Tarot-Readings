@@ -86,6 +86,14 @@ export default function HomePage() {
 
   // Server Action states
   const [readingState, readingFormAction, readingPending] = useActionState(async (prevState, formData) => {
+    console.log('🔵 useActionState: Save action triggered', {
+      hasUploadedFile: !!uploadedFile,
+      hasUploadedImage: !!uploadedImage,
+      uploadedFileName: uploadedFile?.name,
+      uploadedFileSize: uploadedFile?.size,
+      readingId: readingId
+    })
+    
     // Prepare reading data for server action
     const cards = cardStates.map(cs => ({
       title: cs.title || '',
@@ -100,6 +108,21 @@ export default function HomePage() {
     formData.append('cards', JSON.stringify(cards))
     formData.append('tags', JSON.stringify(selectedTags))
     formData.append('readingId', readingId || '')
+    
+    // Add image file if present
+    if (uploadedFile && uploadedFile.size > 0) {
+      console.log('🔵 useActionState: Adding image file to FormData', {
+        fileName: uploadedFile.name,
+        fileSize: uploadedFile.size,
+        fileType: uploadedFile.type
+      })
+      formData.append('image', uploadedFile)
+    } else {
+      console.log('🟡 useActionState: No image file to add', {
+        hasUploadedFile: !!uploadedFile,
+        fileSize: uploadedFile?.size
+      })
+    }
     
     const result = await saveReadingAction(formData)
     if (result.success) {
