@@ -87,23 +87,6 @@ export default function HomePage() {
   const [addingTag, setAddingTag] = useState(false)
 
   // Server Action states
-  // Test function to debug file state
-  const debugFileState = () => {
-    console.log('🔍 DEBUG FILE STATE:', {
-      uploadedFile: uploadedFile,
-      uploadedFileName: uploadedFile?.name,
-      uploadedImage: uploadedImage,
-      previewImage: previewImage,
-      hasUploadedFile: !!uploadedFile,
-      hasUploadedImage: !!uploadedImage,
-      hasPreviewImage: !!previewImage
-    })
-    pushToast({ 
-      type: 'info', 
-      text: `File: ${uploadedFile?.name || 'none'}, Image: ${uploadedImage ? 'yes' : 'no'}, Preview: ${previewImage ? 'yes' : 'no'}` 
-    })
-  }
-
   // Upload image handler (separate from Server Action)
   const handleImageUpload = async () => {
     if (!uploadedFile || uploadedFile.size === 0) {
@@ -1657,23 +1640,6 @@ export default function HomePage() {
 
                     <button type="button" className="btn btn-outline-secondary mb-0" onClick={() => setShowCameraModal(true)}>
                       Camera
-                    </button>
-
-                    <button 
-                      type="button" 
-                      className="btn btn-outline-primary mb-0" 
-                      disabled={!uploadedFile || uploadingImage} 
-                      onClick={handleImageUpload}
-                    >
-                      {uploadingImage ? 'Uploading...' : 'Upload Image'}
-                    </button>
-
-                    <button 
-                      type="button" 
-                      className="btn btn-outline-info mb-0" 
-                      onClick={debugFileState}
-                    >
-                      Debug
                     </button>
 
                     <button 
