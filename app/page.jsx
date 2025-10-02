@@ -1383,7 +1383,7 @@ export default function HomePage() {
             id="querentSelect"
             name="querent"
             className="form-select"
-            style={{ width: 220 }}
+            style={{ width: '100%', minWidth: '200px', maxWidth: '220px' }}
             value={selectedQuerent}
             onChange={(e) => setSelectedQuerent(e.target.value)}
           >
@@ -1603,7 +1603,7 @@ export default function HomePage() {
 
       {/* Deck select populated from API (label inline, centered, matching Spread label) */}
       <div className="mt-3 d-flex justify-content-center">
-        <div className="d-flex align-items-center" style={{ gap: 12 }}>
+        <div className="deck-row d-flex align-items-center flex-column flex-md-row" style={{ gap: 12, width: '100%', maxWidth: '600px' }}>
           <label htmlFor="deckSelect" className="form-label mb-0 text-white me-2" style={{ fontSize: '20px', fontWeight: 400 }}>Deck</label>
           <select 
             id="deckSelect" 
@@ -1611,7 +1611,7 @@ export default function HomePage() {
             className="form-select" 
             value={selectedDeck} 
             onChange={(e) => setSelectedDeck(e.target.value)} 
-            style={{ width: 320 }}
+            style={{ width: '100%', minWidth: '280px', maxWidth: '320px' }}
           >
             <option value="">-- Select deck --</option>
             {decks.map(d => (

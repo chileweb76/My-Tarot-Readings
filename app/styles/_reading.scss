@@ -92,6 +92,14 @@
   display: inline-block;
 }
 
+.deck-row .form-select {
+  display: inline-block;
+}
+
+.deck-row .form-label {
+  white-space: nowrap;
+}
+
 .querent-input {
   width: 160px;
 }
@@ -136,6 +144,16 @@
 
   .querent-row .form-select {
     width: 160px !important;
+  }
+
+  .deck-row .form-select {
+    width: 100% !important;
+    min-width: 250px !important;
+    max-width: none !important;
+  }
+
+  .deck-row {
+    padding: 0 16px;
   }
 
   .querent-input {
