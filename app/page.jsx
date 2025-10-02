@@ -938,7 +938,9 @@ export default function HomePage() {
           fileName: uploadedFile?.name,
           fileSize: uploadedFile?.size,
           uploadedFileType: typeof uploadedFile,
-          readingId: createResult.reading?._id
+          readingId: createResult.reading?._id,
+          uploadedFileExists: uploadedFile !== null,
+          uploadedFileInstanceof: uploadedFile instanceof File
         })
         if (uploadedFile && uploadedFile.size > 0) {
           try {
@@ -1465,7 +1467,12 @@ export default function HomePage() {
                           const finalUrl = previewUrl || URL.createObjectURL(maybeFile || f)
                           setUploadedImage(finalUrl)
                           setUploadedFile(maybeFile || f)
-                          console.log('Set uploadedImage to:', finalUrl)
+                          console.log('🟢 File selected and set:', {
+                            fileName: (maybeFile || f)?.name,
+                            fileSize: (maybeFile || f)?.size,
+                            fileType: (maybeFile || f)?.type,
+                            previewUrl: finalUrl
+                          })
                           
                           if (isHeic) {
                             setConvertingImage(false)
