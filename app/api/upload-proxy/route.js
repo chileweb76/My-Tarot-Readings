@@ -47,8 +47,17 @@ export async function POST(request) {
       type: file.type
     })
 
+    // Check environment variables
+    console.log('🔵 [Upload Proxy] Environment check:', {
+      hasVercelBlobToken: !!process.env.VERCEL_BLOB_TOKEN,
+      hasBlobReadWriteToken: !!process.env.BLOB_READ_WRITE_TOKEN,
+      nodeEnv: process.env.NODE_ENV
+    })
+
     // Upload to Vercel Blob
     const filename = `reading-${readingId}-${Date.now()}.${file.name.split('.').pop()}`
+    console.log('🔵 [Upload Proxy] Attempting blob upload with filename:', filename)
+    
     const blob = await put(filename, file, {
       access: 'public',
       contentType: file.type,
