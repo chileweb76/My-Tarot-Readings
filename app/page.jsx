@@ -194,82 +194,11 @@ export default function HomePage() {
 
   const [readingState, readingFormAction, readingPending] = useActionState(async (prevState, formData) => {
     try {
-      // CLIENT-SIDE DEBUG (visible in browser console)
-      console.log('🔵 CLIENT: Server Action started with state:', {
-        hasUploadedFile: !!uploadedFile,
-        uploadedFileName: uploadedFile?.name,
-        uploadedFileSize: uploadedFile?.size,
-        hasUploadedImage: !!uploadedImage,
-        uploadedImageValue: uploadedImage,
-        hasPreviewImage: !!previewImage,
-        previewImageValue: previewImage
-      })
+      console.log('🔵 Simplified Server Action: Starting save process')
       
-      // Show toast to confirm Server Action is being called
       pushToast({ type: 'info', text: 'Saving reading...' })
-      
-      console.log('🔵 readingFormAction: Starting save process with detailed debug:', {
-        hasUploadedFile: !!uploadedFile,
-        uploadedFileName: uploadedFile?.name,
-        uploadedFileSize: uploadedFile?.size,
-        hasUploadedImage: !!uploadedImage,
-        uploadedImageValue: uploadedImage,
-        hasPreviewImage: !!previewImage,
-        previewImageValue: previewImage
-      })
-      
-      // Check if there's a pending image upload
-      let finalImageUrl = uploadedImage
-      
-      // CLIENT-SIDE condition check (visible in browser)
-      const conditionMet = uploadedFile && !uploadedImage
-      console.log('🔵 CLIENT: Upload condition check:', {
-        hasFile: !!uploadedFile,
-        fileName: uploadedFile?.name,
-        hasUploadedImage: !!uploadedImage,
-        uploadedImageValue: uploadedImage,
-        conditionMet: conditionMet
-      })
-      
-      console.log('🔵 readingFormAction: Checking upload condition:', {
-        condition1_hasUploadedFile: !!uploadedFile,
-        condition2_noUploadedImage: !uploadedImage,
-        overallCondition: uploadedFile && !uploadedImage,
-        currentFinalImageUrl: finalImageUrl
-      })
-      
-      if (uploadedFile && !uploadedImage) {
-        console.log('� readingFormAction: CONDITIONS MET - Uploading pending image first...')
-        setUploadingImage(true)
-        
-        try {
-          const tempReadingId = readingId || `temp-${Date.now()}`
-          const uploadResult = await uploadImageToBlob(tempReadingId, uploadedFile)
-          
-          if (uploadResult.success) {
-            finalImageUrl = uploadResult.url || uploadResult.imageUrl
-            setUploadedImage(finalImageUrl)
-            setUploadedFile(null) // Clear pending file
-            console.log('🟢 readingFormAction: Auto-uploaded image:', finalImageUrl)
-          } else {
-            console.warn('🟡 readingFormAction: Image upload failed:', uploadResult.error)
-            pushToast({ type: 'warning', text: 'Image upload failed, saving without image' })
-          }
-        } catch (uploadError) {
-          console.warn('🟡 readingFormAction: Image upload error:', uploadError)
-          pushToast({ type: 'warning', text: 'Image upload failed, saving without image' })
-        } finally {
-          setUploadingImage(false)
-        }
-      } else {
-        console.log('🟡 readingFormAction: CONDITIONS NOT MET - Skipping upload:', {
-          hasUploadedFile: !!uploadedFile,
-          hasUploadedImage: !!uploadedImage,
-          reason: !uploadedFile ? 'No file selected' : 'Image already uploaded'
-        })
-      }
-      
-      console.log('🔵 readingFormAction: Final image URL before save:', finalImageUrl)
+
+
       
       // Prepare reading data for server action
       const cards = cardStates.map(cs => ({
@@ -285,16 +214,9 @@ export default function HomePage() {
       formData.append('cards', JSON.stringify(cards))
       formData.append('tags', JSON.stringify(selectedTags))
       formData.append('readingId', readingId || '')
-      formData.append('imageUrl', finalImageUrl || '') // Use uploaded or auto-uploaded image
+      formData.append('imageUrl', uploadedImage || '') // Use existing uploaded image
       
-      console.log('🔵 readingFormAction: FINAL FORM DATA CHECK:', {
-        imageUrlValue: finalImageUrl,
-        imageUrlEmpty: !finalImageUrl,
-        formDataImageUrl: formData.get('imageUrl'),
-        allFormDataKeys: Array.from(formData.keys())
-      })
-      
-      console.log('🔵 readingFormAction: Calling saveReadingAction with imageUrl:', finalImageUrl)
+      console.log('🔵 Simplified: Calling saveReadingAction with imageUrl:', uploadedImage)
       
       const result = await saveReadingAction(formData)
       
