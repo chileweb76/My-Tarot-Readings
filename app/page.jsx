@@ -194,7 +194,15 @@ export default function HomePage() {
 
   const [readingState, readingFormAction, readingPending] = useActionState(async (prevState, formData) => {
     try {
-      console.log('🔵 readingFormAction: Starting save process')
+      console.log('🔵 readingFormAction: Starting save process with detailed debug:', {
+        hasUploadedFile: !!uploadedFile,
+        uploadedFileName: uploadedFile?.name,
+        uploadedFileSize: uploadedFile?.size,
+        hasUploadedImage: !!uploadedImage,
+        uploadedImageValue: uploadedImage,
+        hasPreviewImage: !!previewImage,
+        previewImageValue: previewImage
+      })
       
       // Check if there's a pending image upload
       let finalImageUrl = uploadedImage
