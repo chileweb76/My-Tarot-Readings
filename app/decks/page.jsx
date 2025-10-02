@@ -84,38 +84,48 @@ export default function DecksPage() {
 
   async function loadDecks() {
       try {
-        console.log('Frontend: Attempting to fetch decks via Server Action...');
+        console.log('🔵 DeckPage: Attempting to fetch decks via Server Action...');
         const result = await getDecksAction()
+        console.log('🔵 DeckPage: Raw result:', result)
         
         if (!result.success) {
-          console.error('Failed to fetch decks:', result.error)
+          console.error('🔴 DeckPage: Failed to fetch decks:', result.error)
+          setToast('Failed to load decks: ' + result.error)
           setDecks([])
           return
         }
 
         // Ensure we have an array to map over
         const arr = Array.isArray(result.decks) ? result.decks : []
+        console.log('🔵 DeckPage: Raw decks array:', arr.length, 'decks')
         
-        console.log('Raw decks data:', arr)
-        console.log('First deck object:', arr[0])
+        if (arr.length === 0) {
+          console.warn('🟡 DeckPage: No decks returned from API')
+          setToast('No decks available. Please check your connection.')
+          setDecks([])
+          return
+        }
 
         const normalized = arr.map(d => {
-          console.log('Normalizing deck:', d)
+          console.log('🔵 DeckPage: Normalizing deck:', d?.deckName || d?.name)
           return {
+            ...d, // Keep all original properties
             _id: d._id || d.id || '',
             deckName: d.deckName || d.name || d.deck_name || 'Untitled'
           }
         })
 
-        console.log('Normalized decks:', normalized)
+        console.log('🟢 DeckPage: Successfully normalized', normalized.length, 'decks')
+        console.log('🟢 DeckPage: Available decks:', normalized.map(d => ({ id: d._id, name: d.deckName })))
+        
         setDecks(normalized)
         if (normalized.length) {
-          console.log('loadDecks: Setting selected deck to:', normalized[0]._id)
-          console.trace('loadDecks setSelectedDeck stack trace')
+          console.log('🟢 DeckPage: Setting selected deck to:', normalized[0].deckName)
           setSelectedDeck(normalized[0]._id)
         }
       } catch (err) {
-        console.error('Failed to load decks', err)
+        console.error('🔴 DeckPage: Error loading decks:', err)
+        setToast('Failed to load decks: ' + err.message)
         setDecks([])
       }
     }

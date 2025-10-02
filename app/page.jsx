@@ -1195,23 +1195,39 @@ export default function HomePage() {
     let mounted = true
     const loadDecks = async () => {
       try {
+        console.log('🔵 loadDecks: Starting deck fetch...')
         const result = await getDecksAction()
+        console.log('🔵 loadDecks: Raw result:', result)
+        
         if (!result || !result.success) {
-          console.warn('Failed to load decks - no success result')
+          console.warn('🟡 loadDecks: Failed to load decks - no success result:', result)
+          // Still try to show error in UI
+          pushToast({ type: 'error', text: result?.error || 'Failed to load decks' })
           return
         }
+        
         if (!mounted) return
+        
         const list = Array.isArray(result.decks) ? result.decks : []
+        console.log('🟢 loadDecks: Successfully loaded decks:', list.length, 'decks')
+        console.log('🟢 loadDecks: Deck names:', list.map(d => d.deckName))
+        
         setDecks(list)
+        
         if (list.length) {
           // Prefer a public Rider-Waite deck (no owner) or a deck explicitly named 'Rider-Waite Tarot'
           const publicRider = list.find(d => !d.owner && (d.deckName === 'Rider-Waite Tarot' || d.deckName.toLowerCase().includes('rider')))
           const byName = list.find(d => d.deckName === 'Rider-Waite Tarot')
           const defaultDeck = publicRider || byName || list[0]
+          console.log('🟢 loadDecks: Selected default deck:', defaultDeck?.deckName)
           setSelectedDeck(prev => prev || defaultDeck._id)
+        } else {
+          console.warn('🟡 loadDecks: No decks available')
+          pushToast({ type: 'warning', text: 'No decks available. Please create a deck first.' })
         }
       } catch (err) {
-        console.warn('Failed to load decks', err)
+        console.error('🔴 loadDecks: Error loading decks:', err)
+        pushToast({ type: 'error', text: 'Failed to load decks: ' + err.message })
       }
     }
     loadDecks()
