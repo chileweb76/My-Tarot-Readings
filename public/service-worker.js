@@ -1,7 +1,7 @@
-// Service worker for My Tarot Readings PWA with Enhanced Offline Support
-const CACHE_NAME = 'mytarot-v3.0'
-const OFFLINE_CACHE = 'mytarot-offline-v1.0'
-const READING_CACHE = 'mytarot-readings-v1.0'
+// Service worker for My Tarot Readings PWA with Server Action Support
+const CACHE_NAME = 'mytarot-v4.0'
+const OFFLINE_CACHE = 'mytarot-offline-v2.0'  
+const READING_CACHE = 'mytarot-readings-v2.0'
 
 const ASSETS = [
   '/',
@@ -47,61 +47,35 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// Enhanced fetch handler with Server Actions support and offline functionality
+// Enhanced fetch handler with offline support (excludes Server Actions to prevent conflicts)
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return
 
-  // Handle Server Actions (POST requests)
+  // Skip Server Actions entirely - let them be handled natively
+  // This prevents "Request body is already used" errors and queuing failures
   if (event.request.method === 'POST') {
-    // For Server Actions, try network first, queue if offline
+    // Check if this is a Server Action by looking for Next.js action indicators
+    const isServerAction = event.request.headers.has('Next-Action') || 
+                          url.pathname.includes('_next') ||
+                          event.request.headers.get('content-type')?.includes('multipart/form-data')
+    
+    if (isServerAction) {
+      // Let Server Actions pass through without service worker intervention
+      return
+    }
+    
+    // Handle other POST requests (like API calls) normally
     event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // If successful, return response
-          if (response.ok) {
-            return response
-          }
-          throw new Error('Server Action failed')
-        })
-        .catch(async (error) => {
-          // If offline or failed, queue the action for later sync
-          console.log('[SW] Server Action failed, queuing for sync:', error)
-          
-          try {
-            // Store failed Server Actions in IndexedDB for background sync
-            const requestData = {
-              url: event.request.url,
-              method: event.request.method,
-              headers: [...event.request.headers.entries()],
-              body: await event.request.clone().text(),
-              timestamp: Date.now()
-            }
-            
-            // Queue for background sync
-            await queueServerAction(requestData)
-            
-            // Return a synthetic response indicating offline queue
-            return new Response(
-              JSON.stringify({ 
-                queued: true, 
-                message: 'Action queued for sync when online' 
-              }),
-              { 
-                status: 202, 
-                headers: { 'Content-Type': 'application/json' }
-              }
-            )
-          } catch (queueError) {
-            console.error('[SW] Failed to queue Server Action:', queueError)
-            return new Response(
-              JSON.stringify({ error: 'Failed to queue offline action' }),
-              { status: 500, headers: { 'Content-Type': 'application/json' }}
-            )
-          }
-        })
+      fetch(event.request).catch((error) => {
+        console.log('[SW] POST request failed:', error)
+        return new Response(
+          JSON.stringify({ error: 'Network error, please try again when online' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' }}
+        )
+      })
     )
     return
   }
@@ -150,18 +124,7 @@ self.addEventListener('fetch', (event) => {
   }
 })
 
-// Helper function to queue Server Actions for background sync
-async function queueServerAction(requestData) {
-  // In a real implementation, you would use IndexedDB
-  // For now, we'll use a simple approach with postMessage to the client
-  const clients = await self.clients.matchAll()
-  clients.forEach(client => {
-    client.postMessage({
-      type: 'QUEUE_SERVER_ACTION',
-      data: requestData
-    })
-  })
-}
+// Removed queueServerAction function - Server Actions now bypass service worker
 
 // Push notification event handler
 self.addEventListener('push', (event) => {
