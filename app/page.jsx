@@ -86,7 +86,43 @@ export default function HomePage() {
   const [addingTag, setAddingTag] = useState(false)
 
   // Server Action states
-  // Custom save handler that uploads image first, then calls Server Action
+  // Upload image handler (separate from Server Action)
+  const handleImageUpload = async () => {
+    if (!uploadedFile || uploadedFile.size === 0) {
+      console.log('🟡 No image to upload')
+      return
+    }
+    
+    try {
+      console.log('🔵 handleImageUpload: Starting upload...', {
+        fileName: uploadedFile.name,
+        fileSize: uploadedFile.size
+      })
+      setUploadingImage(true)
+      
+      // Use a temporary ID for new readings
+      const tempReadingId = readingId || `temp-${Date.now()}`
+      const uploadResult = await uploadImageToBlob(tempReadingId, uploadedFile)
+      
+      if (uploadResult.success) {
+        const imageUrl = uploadResult.url || uploadResult.imageUrl
+        setUploadedImage(imageUrl)
+        setUploadedFile(null) // Clear pending file
+        console.log('🟢 handleImageUpload: Image uploaded successfully:', imageUrl)
+        pushToast({ type: 'success', text: 'Image uploaded successfully' })
+      } else {
+        console.error('🔴 handleImageUpload: Upload failed:', uploadResult.error)
+        pushToast({ type: 'error', text: 'Image upload failed' })
+      }
+    } catch (error) {
+      console.error('🔴 handleImageUpload: Error:', error)
+      pushToast({ type: 'error', text: 'Image upload failed' })
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  // Old handler (will be removed)
   const handleSaveReadingWithImage = async (formData) => {
     console.log('🔵 handleSaveReading: Starting save process', {
       hasUploadedFile: !!uploadedFile,
@@ -156,7 +192,42 @@ export default function HomePage() {
   }
 
   const [readingState, readingFormAction, readingPending] = useActionState(async (prevState, formData) => {
-    return await handleSaveReadingWithImage(formData)
+    try {
+      console.log('🔵 readingFormAction: Starting save process')
+      
+      // Prepare reading data for server action
+      const cards = cardStates.map(cs => ({
+        title: cs.title || '',
+        suit: cs.selectedSuit || '',
+        card: cs.selectedCard || (cs.title || ''),
+        reversed: !!cs.reversed,
+        interpretation: cs.interpretation || '',
+        image: cs.image || null
+      }))
+      
+      // Add cards and tags to form data
+      formData.append('cards', JSON.stringify(cards))
+      formData.append('tags', JSON.stringify(selectedTags))
+      formData.append('readingId', readingId || '')
+      formData.append('imageUrl', uploadedImage || '') // Use already uploaded image
+      
+      console.log('🔵 readingFormAction: Calling saveReadingAction with imageUrl:', uploadedImage)
+      
+      const result = await saveReadingAction(formData)
+      
+      if (result.success) {
+        setReadingId(result.readingId)
+        pushToast({ type: 'success', text: result.message })
+        return { success: true, readingId: result.readingId }
+      } else {
+        pushToast({ type: 'error', text: result.error })
+        return { error: result.error }
+      }
+    } catch (error) {
+      console.error('🔴 readingFormAction error:', error)
+      pushToast({ type: 'error', text: 'Failed to save reading' })
+      return { error: error.message }
+    }
   }, { success: false, error: null })
 
   const [tagState, tagFormAction, tagPending] = useActionState(async (prevState, formData) => {
@@ -1473,6 +1544,15 @@ export default function HomePage() {
 
                     <button type="button" className="btn btn-outline-secondary mb-0" onClick={() => setShowCameraModal(true)}>
                       Camera
+                    </button>
+
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-primary mb-0" 
+                      disabled={!uploadedFile || uploadingImage} 
+                      onClick={handleImageUpload}
+                    >
+                      {uploadingImage ? 'Uploading...' : 'Upload Image'}
                     </button>
 
                     <button className="btn btn-outline-danger" disabled={!uploadedImage} onClick={() => { setUploadedImage(null); /* legacy message cleared */ }}>Remove</button>
