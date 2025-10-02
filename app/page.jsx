@@ -206,8 +206,16 @@ export default function HomePage() {
       
       // Check if there's a pending image upload
       let finalImageUrl = uploadedImage
+      
+      console.log('🔵 readingFormAction: Checking upload condition:', {
+        condition1_hasUploadedFile: !!uploadedFile,
+        condition2_noUploadedImage: !uploadedImage,
+        overallCondition: uploadedFile && !uploadedImage,
+        currentFinalImageUrl: finalImageUrl
+      })
+      
       if (uploadedFile && !uploadedImage) {
-        console.log('🔵 readingFormAction: Uploading pending image first...')
+        console.log('� readingFormAction: CONDITIONS MET - Uploading pending image first...')
         setUploadingImage(true)
         
         try {
@@ -229,7 +237,15 @@ export default function HomePage() {
         } finally {
           setUploadingImage(false)
         }
+      } else {
+        console.log('🟡 readingFormAction: CONDITIONS NOT MET - Skipping upload:', {
+          hasUploadedFile: !!uploadedFile,
+          hasUploadedImage: !!uploadedImage,
+          reason: !uploadedFile ? 'No file selected' : 'Image already uploaded'
+        })
       }
+      
+      console.log('🔵 readingFormAction: Final image URL before save:', finalImageUrl)
       
       // Prepare reading data for server action
       const cards = cardStates.map(cs => ({
@@ -246,6 +262,13 @@ export default function HomePage() {
       formData.append('tags', JSON.stringify(selectedTags))
       formData.append('readingId', readingId || '')
       formData.append('imageUrl', finalImageUrl || '') // Use uploaded or auto-uploaded image
+      
+      console.log('🔵 readingFormAction: FINAL FORM DATA CHECK:', {
+        imageUrlValue: finalImageUrl,
+        imageUrlEmpty: !finalImageUrl,
+        formDataImageUrl: formData.get('imageUrl'),
+        allFormDataKeys: Array.from(formData.keys())
+      })
       
       console.log('🔵 readingFormAction: Calling saveReadingAction with imageUrl:', finalImageUrl)
       
