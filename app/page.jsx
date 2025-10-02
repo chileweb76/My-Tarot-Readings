@@ -187,6 +187,14 @@ export default function HomePage() {
 
   // Handle image upload after reading is saved (client-side only)
   useEffect(() => {
+    console.log('🔍 Upload effect triggered:', {
+      readingSuccess: readingState.success,
+      readingId: readingState.readingId,
+      hasUploadedFile: !!uploadedFile,
+      uploadedFileName: uploadedFile?.name,
+      uploadedFileSize: uploadedFile?.size
+    })
+    
     const handleImageUpload = async () => {
       if (readingState.success && readingState.readingId && uploadedFile && uploadedFile.size > 0) {
         try {
