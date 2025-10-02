@@ -196,6 +196,33 @@ export default function HomePage() {
     try {
       console.log('🔵 readingFormAction: Starting save process')
       
+      // Check if there's a pending image upload
+      let finalImageUrl = uploadedImage
+      if (uploadedFile && !uploadedImage) {
+        console.log('🔵 readingFormAction: Uploading pending image first...')
+        setUploadingImage(true)
+        
+        try {
+          const tempReadingId = readingId || `temp-${Date.now()}`
+          const uploadResult = await uploadImageToBlob(tempReadingId, uploadedFile)
+          
+          if (uploadResult.success) {
+            finalImageUrl = uploadResult.url || uploadResult.imageUrl
+            setUploadedImage(finalImageUrl)
+            setUploadedFile(null) // Clear pending file
+            console.log('🟢 readingFormAction: Auto-uploaded image:', finalImageUrl)
+          } else {
+            console.warn('🟡 readingFormAction: Image upload failed:', uploadResult.error)
+            pushToast({ type: 'warning', text: 'Image upload failed, saving without image' })
+          }
+        } catch (uploadError) {
+          console.warn('🟡 readingFormAction: Image upload error:', uploadError)
+          pushToast({ type: 'warning', text: 'Image upload failed, saving without image' })
+        } finally {
+          setUploadingImage(false)
+        }
+      }
+      
       // Prepare reading data for server action
       const cards = cardStates.map(cs => ({
         title: cs.title || '',
@@ -210,9 +237,9 @@ export default function HomePage() {
       formData.append('cards', JSON.stringify(cards))
       formData.append('tags', JSON.stringify(selectedTags))
       formData.append('readingId', readingId || '')
-      formData.append('imageUrl', uploadedImage || '') // Use already uploaded image
+      formData.append('imageUrl', finalImageUrl || '') // Use uploaded or auto-uploaded image
       
-      console.log('🔵 readingFormAction: Calling saveReadingAction with imageUrl:', uploadedImage)
+      console.log('🔵 readingFormAction: Calling saveReadingAction with imageUrl:', finalImageUrl)
       
       const result = await saveReadingAction(formData)
       

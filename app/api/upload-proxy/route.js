@@ -58,40 +58,33 @@ export async function POST(request) {
     const filename = `reading-${readingId}-${Date.now()}.${file.name.split('.').pop()}`
     console.log('🔵 [Upload Proxy] Attempting blob upload with filename:', filename)
     
+    // Check if we have the required token
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error('🔴 [Upload Proxy] Missing BLOB_READ_WRITE_TOKEN environment variable')
+      return new Response(JSON.stringify({ 
+        error: 'Server configuration error: Missing blob storage token' 
+      }), {
+        status: 500,
+        headers: { ...headers, 'Content-Type': 'application/json' }
+      })
+    }
+    
     const blob = await put(filename, file, {
       access: 'public',
       contentType: file.type,
+      token: process.env.BLOB_READ_WRITE_TOKEN
     })
 
     console.log('🟢 [Upload Proxy] Blob uploaded:', blob.url)
 
-    // Now update the reading via the backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://mytarotreadingsserver.vercel.app'
-    
-    try {
-      const updateResponse = await fetch(`${backendUrl}/api/readings/${readingId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageUrl: blob.url })
-      })
-
-      if (updateResponse.ok) {
-        console.log('🟢 [Upload Proxy] Reading updated with image URL')
-      } else {
-        console.warn('🟡 [Upload Proxy] Failed to update reading, but blob uploaded successfully')
-      }
-    } catch (updateError) {
-      console.warn('🟡 [Upload Proxy] Update error:', updateError.message)
-      // Continue anyway - the blob was uploaded successfully
-    }
-
+    // Return the blob URL immediately - don't try to update the reading here
+    // The frontend will handle updating the reading with the image URL
     return new Response(JSON.stringify({
       success: true,
+      url: blob.url,
       imageUrl: blob.url,
       readingId: readingId,
-      message: 'Image uploaded successfully via proxy'
+      message: 'Image uploaded successfully to Vercel Blob'
     }), {
       status: 200,
       headers: { ...headers, 'Content-Type': 'application/json' }
