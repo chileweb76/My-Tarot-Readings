@@ -223,6 +223,12 @@ export default function HomePage() {
       if (result.success) {
         setReadingId(result.readingId)
         pushToast({ type: 'success', text: result.message })
+        
+        // Refresh the page after 2 seconds for a new reading
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
+        
         return { success: true, readingId: result.readingId }
       } else {
         pushToast({ type: 'error', text: result.error })

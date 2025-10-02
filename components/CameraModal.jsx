@@ -11,7 +11,20 @@ export default function CameraModal({ show, onClose, onCaptured }) {
     let mounted = true
     const start = async () => {
       try {
-        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+        // Check if camera permissions are available
+        const permissions = await navigator.permissions.query({ name: 'camera' })
+        
+        if (permissions.state === 'denied') {
+          notify({ type: 'error', text: 'Camera permission denied. Please enable camera access in your browser settings.' })
+          if (onClose) onClose()
+          return
+        }
+
+        const s = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' }, 
+          audio: false 
+        })
+        
         if (!mounted) {
           try { s.getTracks().forEach(t => t.stop()) } catch (e) {}
           return
@@ -20,7 +33,15 @@ export default function CameraModal({ show, onClose, onCaptured }) {
         if (videoRef.current) videoRef.current.srcObject = s
       } catch (err) {
         console.warn('Camera start failed', err)
-  notify({ type: 'error', text: 'Unable to access camera.' })
+        
+        if (err.name === 'NotAllowedError') {
+          notify({ type: 'error', text: 'Camera permission denied. Please allow camera access to use this feature.' })
+        } else if (err.name === 'NotFoundError') {
+          notify({ type: 'error', text: 'No camera found on this device.' })
+        } else {
+          notify({ type: 'error', text: 'Unable to access camera. Please check your camera permissions.' })
+        }
+        
         if (onClose) onClose()
       }
     }

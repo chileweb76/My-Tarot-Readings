@@ -1322,6 +1322,29 @@ main.container {
   display: block;
 }
 
+/* Card image responsive constraints for Safari and mobile */
+.card-image,
+.card-image img {
+  max-width: 100%;
+  max-height: 400px; /* Prevent oversized images in Safari */
+  height: auto;
+  -o-object-fit: contain;
+     object-fit: contain;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .card-image,
+  .card-image img {
+    max-height: 300px;
+  }
+}
+@media (max-width: 576px) {
+  .card-image,
+  .card-image img {
+    max-height: 250px;
+  }
+}
 /* My Data block bottom border to match Profile separation */
 .my-data {
   padding-bottom: 18px;
@@ -1338,6 +1361,10 @@ main.container {
   }
   .reading {
     font-size: 0.95rem;
+  }
+  /* Add gap between interpretation and card image on mobile */
+  .card-image-container {
+    margin-top: 1.5rem !important;
   }
   .querent-row {
     gap: 8px;
