@@ -87,6 +87,23 @@ export default function HomePage() {
   const [addingTag, setAddingTag] = useState(false)
 
   // Server Action states
+  // Test function to debug file state
+  const debugFileState = () => {
+    console.log('🔍 DEBUG FILE STATE:', {
+      uploadedFile: uploadedFile,
+      uploadedFileName: uploadedFile?.name,
+      uploadedImage: uploadedImage,
+      previewImage: previewImage,
+      hasUploadedFile: !!uploadedFile,
+      hasUploadedImage: !!uploadedImage,
+      hasPreviewImage: !!previewImage
+    })
+    pushToast({ 
+      type: 'info', 
+      text: `File: ${uploadedFile?.name || 'none'}, Image: ${uploadedImage ? 'yes' : 'no'}, Preview: ${previewImage ? 'yes' : 'no'}` 
+    })
+  }
+
   // Upload image handler (separate from Server Action)
   const handleImageUpload = async () => {
     if (!uploadedFile || uploadedFile.size === 0) {
@@ -194,6 +211,20 @@ export default function HomePage() {
 
   const [readingState, readingFormAction, readingPending] = useActionState(async (prevState, formData) => {
     try {
+      // CLIENT-SIDE DEBUG (visible in browser console)
+      console.log('🔵 CLIENT: Server Action started with state:', {
+        hasUploadedFile: !!uploadedFile,
+        uploadedFileName: uploadedFile?.name,
+        uploadedFileSize: uploadedFile?.size,
+        hasUploadedImage: !!uploadedImage,
+        uploadedImageValue: uploadedImage,
+        hasPreviewImage: !!previewImage,
+        previewImageValue: previewImage
+      })
+      
+      // Show toast to confirm Server Action is being called
+      pushToast({ type: 'info', text: 'Saving reading...' })
+      
       console.log('🔵 readingFormAction: Starting save process with detailed debug:', {
         hasUploadedFile: !!uploadedFile,
         uploadedFileName: uploadedFile?.name,
@@ -206,6 +237,16 @@ export default function HomePage() {
       
       // Check if there's a pending image upload
       let finalImageUrl = uploadedImage
+      
+      // CLIENT-SIDE condition check (visible in browser)
+      const conditionMet = uploadedFile && !uploadedImage
+      console.log('🔵 CLIENT: Upload condition check:', {
+        hasFile: !!uploadedFile,
+        fileName: uploadedFile?.name,
+        hasUploadedImage: !!uploadedImage,
+        uploadedImageValue: uploadedImage,
+        conditionMet: conditionMet
+      })
       
       console.log('🔵 readingFormAction: Checking upload condition:', {
         condition1_hasUploadedFile: !!uploadedFile,
@@ -1625,6 +1666,14 @@ export default function HomePage() {
                       onClick={handleImageUpload}
                     >
                       {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                    </button>
+
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-info mb-0" 
+                      onClick={debugFileState}
+                    >
+                      Debug
                     </button>
 
                     <button 
