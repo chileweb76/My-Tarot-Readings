@@ -1449,9 +1449,13 @@ export default function HomePage() {
                       Choose file
                       <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
                         const f = e.target.files && e.target.files[0]
-                        if (!f) return
+                        console.log('🔵 File input onChange triggered:', { hasFiles: !!e.target.files, fileCount: e.target.files?.length, firstFile: f?.name })
+                        if (!f) {
+                          console.log('❌ No file selected or file is null')
+                          return
+                        }
                         
-                        console.log('File selected:', f.name, f.type, f.size)
+                        console.log('🔵 File selected:', f.name, f.type, f.size)
                         
                         try {
                           // Check if it's a HEIC file and show loading
