@@ -1565,6 +1565,15 @@ export default function HomePage() {
                     </button>
 
                     <button 
+                      type="button" 
+                      className="btn btn-outline-primary mb-0" 
+                      disabled={!uploadedFile || uploadingImage} 
+                      onClick={handleImageUpload}
+                    >
+                      {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                    </button>
+
+                    <button 
                       className="btn btn-outline-danger" 
                       disabled={!uploadedImage && !previewImage} 
                       onClick={() => { 
