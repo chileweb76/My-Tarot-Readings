@@ -86,14 +86,44 @@ export default function HomePage() {
   const [addingTag, setAddingTag] = useState(false)
 
   // Server Action states
-  const [readingState, readingFormAction, readingPending] = useActionState(async (prevState, formData) => {
-    console.log('🔵 useActionState: Save action triggered', {
+  // Custom save handler that uploads image first, then calls Server Action
+  const handleSaveReadingWithImage = async (formData) => {
+    console.log('🔵 handleSaveReading: Starting save process', {
       hasUploadedFile: !!uploadedFile,
       hasUploadedImage: !!uploadedImage,
       uploadedFileName: uploadedFile?.name,
       uploadedFileSize: uploadedFile?.size,
       readingId: readingId
     })
+    
+    let imageUrl = uploadedImage // Use existing image if available
+    
+    // If there's a pending file upload, do it first
+    if (uploadedFile && uploadedFile.size > 0) {
+      try {
+        console.log('🔵 handleSaveReading: Uploading image first...')
+        setUploadingImage(true)
+        
+        // Use a temporary ID for new readings
+        const tempReadingId = readingId || `temp-${Date.now()}`
+        const uploadResult = await uploadImageToBlob(tempReadingId, uploadedFile)
+        
+        if (uploadResult.success) {
+          imageUrl = uploadResult.url || uploadResult.imageUrl
+          setUploadedImage(imageUrl)
+          setUploadedFile(null) // Clear pending file
+          console.log('� handleSaveReading: Image uploaded successfully:', imageUrl)
+        } else {
+          console.error('🔴 handleSaveReading: Image upload failed:', uploadResult.error)
+          pushToast({ type: 'warning', text: 'Image upload failed, saving reading without image' })
+        }
+      } catch (error) {
+        console.error('� handleSaveReading: Image upload error:', error)
+        pushToast({ type: 'warning', text: 'Image upload failed, saving reading without image' })
+      } finally {
+        setUploadingImage(false)
+      }
+    }
     
     // Prepare reading data for server action
     const cards = cardStates.map(cs => ({
@@ -105,47 +135,28 @@ export default function HomePage() {
       image: cs.image || null
     }))
     
-    // Add cards and tags to form data as JSON
+    // Add cards, tags, and image URL to form data
     formData.append('cards', JSON.stringify(cards))
     formData.append('tags', JSON.stringify(selectedTags))
     formData.append('readingId', readingId || '')
+    formData.append('imageUrl', imageUrl || '')
     
-    // Note: Image file will be handled separately after reading is saved to avoid Server Action size limits
-    console.log('🔵 useActionState: Image will be uploaded separately', {
-      hasUploadedFile: !!uploadedFile,
-      fileName: uploadedFile?.name,
-      fileSize: uploadedFile?.size
-    })
+    console.log('🔵 handleSaveReading: Calling saveReadingAction with imageUrl:', imageUrl)
     
     const result = await saveReadingAction(formData)
     
-    console.log('🔵 useActionState: saveReadingAction result', {
-      success: result.success,
-      readingId: result.readingId,
-      error: result.error,
-      hasUploadedFile: !!uploadedFile,
-      uploadedFileSize: uploadedFile?.size
-    })
-    
     if (result.success) {
-      const savedReadingId = result.readingId
-      setReadingId(savedReadingId)
-      
-      console.log('🔵 useActionState: Checking image upload conditions', {
-        hasUploadedFile: !!uploadedFile,
-        fileSize: uploadedFile?.size,
-        hasSavedReadingId: !!savedReadingId,
-        savedReadingId: savedReadingId
-      })
-      
-      // Don't upload image here - will be handled by useEffect after Server Action completes
+      setReadingId(result.readingId)
       pushToast({ type: 'success', text: result.message })
-      
-      return { success: true, readingId: savedReadingId }
+      return { success: true, readingId: result.readingId }
     } else {
       pushToast({ type: 'error', text: result.error })
       return { error: result.error }
     }
+  }
+
+  const [readingState, readingFormAction, readingPending] = useActionState(async (prevState, formData) => {
+    return await handleSaveReadingWithImage(formData)
   }, { success: false, error: null })
 
   const [tagState, tagFormAction, tagPending] = useActionState(async (prevState, formData) => {
@@ -185,48 +196,7 @@ export default function HomePage() {
     } catch (e) { /* ignore */ }
   }, [])
 
-  // Handle image upload after reading is saved (client-side only)
-  useEffect(() => {
-    console.log('🔍 Upload effect triggered:', {
-      readingSuccess: readingState.success,
-      readingId: readingState.readingId,
-      hasUploadedFile: !!uploadedFile,
-      uploadedFileName: uploadedFile?.name,
-      uploadedFileSize: uploadedFile?.size
-    })
-    
-    const handleImageUpload = async () => {
-      if (readingState.success && readingState.readingId && uploadedFile && uploadedFile.size > 0) {
-        try {
-          console.log('🔵 useEffect: Uploading image after reading saved', {
-            readingId: readingState.readingId,
-            fileName: uploadedFile.name,
-            fileSize: uploadedFile.size
-          })
-          
-          const uploadResult = await uploadImageToBlob(readingState.readingId, uploadedFile)
-          
-          if (uploadResult.success) {
-            console.log('🟢 useEffect: Image uploaded successfully')
-            setUploadedImage(uploadResult.url)
-            setUploadedFile(null) // Clear the pending file
-            pushToast({ type: 'success', text: 'Image uploaded and attached to reading!' })
-          } else {
-            console.error('🔴 useEffect: Image upload failed:', uploadResult.error)
-            pushToast({ type: 'warning', text: 'Reading saved, but image upload failed' })
-          }
-        } catch (error) {
-          console.error('🔴 useEffect: Image upload error:', error)
-          pushToast({ type: 'warning', text: 'Reading saved, but image upload failed' })
-        }
-      }
-    }
-
-    // Only run if we have a successful reading save and a pending image
-    if (readingState.success && readingState.readingId && uploadedFile) {
-      handleImageUpload()
-    }
-  }, [readingState.success, readingState.readingId, uploadedFile])
+  // Note: Image upload is now handled before the Server Action in handleSaveReadingWithImage
 
   // Print reading: open a print window (same content as export fallback)
   const handlePrintReading = async () => {
