@@ -67,7 +67,8 @@ export default function HomePage() {
   const [spreadCards, setSpreadCards] = useState([])
   const [spreadName, setSpreadName] = useState('')
   const [cardStates, setCardStates] = useState([])
-  const [uploadedImage, setUploadedImage] = useState(null)
+  const [uploadedImage, setUploadedImage] = useState(null) // Actual Vercel Blob URL
+  const [previewImage, setPreviewImage] = useState(null) // Browser blob URL for preview
   const [uploadedFile, setUploadedFile] = useState(null)
   const [savingReading, setSavingReading] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -414,7 +415,7 @@ export default function HomePage() {
     // so server-side export can fetch a permanent URL. If the user is not signed in,
     // surface a modal prompting them to sign in and retry the export.
     try {
-      const hasLocalImage = uploadedFile || (uploadedImage && (uploadedImage.startsWith('data:') || uploadedImage.startsWith('blob:') || uploadedImage.startsWith('object:')))
+      const hasLocalImage = uploadedFile || previewImage || (uploadedImage && (uploadedImage.startsWith('data:') || uploadedImage.startsWith('blob:') || uploadedImage.startsWith('object:')))
       if (hasLocalImage) {
         const token = localStorage.getItem('token')
         if (!token) {
@@ -726,7 +727,7 @@ export default function HomePage() {
   const handleShareAsPdf = async () => {
     setExporting(true)
     try {
-      const hasLocalImage = uploadedFile || (uploadedImage && (uploadedImage.startsWith('data:') || uploadedImage.startsWith('blob:') || uploadedImage.startsWith('object:')))
+      const hasLocalImage = uploadedFile || previewImage || (uploadedImage && (uploadedImage.startsWith('data:') || uploadedImage.startsWith('blob:') || uploadedImage.startsWith('object:')))
       if (hasLocalImage) {
         const token = localStorage.getItem('token')
         if (!token) {
@@ -1311,10 +1312,12 @@ export default function HomePage() {
       // Show a preview and keep file pending for upload on Save
       try {
         const preview = URL.createObjectURL(fileToStore)
-        setUploadedImage(preview)
+        setPreviewImage(preview)
+        setUploadedImage(null) // Clear any previous upload
       } catch (e) {
         // fallback to dataUrl preview
-        setUploadedImage(dataUrl)
+        setPreviewImage(dataUrl)
+        setUploadedImage(null) // Clear any previous upload
       }
       setUploadedFile(fileToStore)
       pushToast({ type: 'info', text: 'Image ready — it will be attached when you save the reading.' })
@@ -1457,18 +1460,27 @@ export default function HomePage() {
               <div className="card h-100">
                 <div className="card-body">
                   <div className="mb-2">Connect an image to this reading (upload or use camera)</div>
-                  {uploadedImage ? (
+                  {(uploadedImage || previewImage) ? (
                     <div className="mb-2 text-center">
-                      {uploadedImage.startsWith('blob:') ? (
+                      {/* Show upload status */}
+                      {uploadedImage && (
+                        <div className="text-success small mb-1">✓ Uploaded to cloud storage</div>
+                      )}
+                      {previewImage && !uploadedImage && (
+                        <div className="text-warning small mb-1">⚠️ Preview only - not yet uploaded</div>
+                      )}
+                      
+                      {/* Display the image */}
+                      {((uploadedImage || previewImage).startsWith('blob:') || (uploadedImage || previewImage).startsWith('data:')) ? (
                         <img
-                          src={uploadedImage}
-                          alt="Uploaded preview"
+                          src={uploadedImage || previewImage}
+                          alt={uploadedImage ? "Uploaded image" : "Preview"}
                           style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain', maxHeight: '280px' }}
                         />
                       ) : (
                         <Image
-                          src={uploadedImage}
-                          alt="Uploaded preview"
+                          src={uploadedImage || previewImage}
+                          alt={uploadedImage ? "Uploaded image" : "Preview"}
                           width={600}
                           height={280}
                           style={{ maxWidth: '100%', height: 'auto', objectFit: 'contain' }}
@@ -1510,7 +1522,8 @@ export default function HomePage() {
                           
                           console.log('Converted file:', maybeFile?.name, maybeFile?.type, 'Preview URL:', previewUrl)
                           const finalUrl = previewUrl || URL.createObjectURL(maybeFile || f)
-                          setUploadedImage(finalUrl)
+                          setPreviewImage(finalUrl) // Use previewImage for display
+                          setUploadedImage(null) // Clear any previous upload
                           setUploadedFile(maybeFile || f)
                           console.log('🟢 File selected and set:', {
                             fileName: (maybeFile || f)?.name,
@@ -1526,9 +1539,10 @@ export default function HomePage() {
                           console.warn('HEIC conversion failed:', err)
                           setConvertingImage(false)
                           const url = URL.createObjectURL(f)
-                          setUploadedImage(url)
+                          setPreviewImage(url) // Use previewImage for display
+                          setUploadedImage(null) // Clear any previous upload
                           setUploadedFile(f)
-                          console.log('Fallback: set uploadedImage to:', url)
+                          console.log('Fallback: set previewImage to:', url)
                         }
                       }} />
                     </label>
@@ -1555,7 +1569,17 @@ export default function HomePage() {
                       {uploadingImage ? 'Uploading...' : 'Upload Image'}
                     </button>
 
-                    <button className="btn btn-outline-danger" disabled={!uploadedImage} onClick={() => { setUploadedImage(null); /* legacy message cleared */ }}>Remove</button>
+                    <button 
+                      className="btn btn-outline-danger" 
+                      disabled={!uploadedImage && !previewImage} 
+                      onClick={() => { 
+                        setUploadedImage(null); 
+                        setPreviewImage(null);
+                        setUploadedFile(null);
+                      }}
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
                 <div className="card-footer small text-muted">Reading image (upload or camera)</div>
