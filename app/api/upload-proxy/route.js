@@ -54,9 +54,10 @@ export async function POST(request) {
       nodeEnv: process.env.NODE_ENV
     })
 
-    // Upload to Vercel Blob
-    const filename = `reading-${readingId}-${Date.now()}.${file.name.split('.').pop()}`
-    console.log('🔵 [Upload Proxy] Attempting blob upload with filename:', filename)
+    // Upload to Vercel Blob with proper folder structure
+    const fileExtension = file.name.split('.').pop()
+    const filename = `readings/reading-${readingId}-${Date.now()}.${fileExtension}`
+    console.log('🔵 [Upload Proxy] Attempting blob upload with structured path:', filename)
     
     // Check if we have the required token
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
