@@ -69,13 +69,13 @@ export async function POST(request) {
       })
     }
     
+    // Let Vercel Blob automatically use BLOB_READ_WRITE_TOKEN from environment
     const blob = await put(filename, file, {
       access: 'public',
-      contentType: file.type,
-      token: process.env.BLOB_READ_WRITE_TOKEN
+      contentType: file.type
     })
 
-    console.log('🟢 [Upload Proxy] Blob uploaded:', blob.url)
+    console.log('🟢 [Upload Proxy] Blob uploaded successfully:', blob.url)
 
     // Return the blob URL immediately - don't try to update the reading here
     // The frontend will handle updating the reading with the image URL
@@ -91,12 +91,21 @@ export async function POST(request) {
     })
 
   } catch (error) {
-    console.error('❌ [Upload Proxy] Error:', error)
+    console.error('❌ [Upload Proxy] Detailed error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      cause: error.cause
+    })
+    
+    // Return detailed error for debugging
     return new Response(JSON.stringify({ 
-      error: 'Upload failed: ' + error.message 
+      error: 'Upload failed: ' + error.message,
+      details: error.name,
+      timestamp: new Date().toISOString()
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...headers, 'Content-Type': 'application/json' }
     })
   }
 }
