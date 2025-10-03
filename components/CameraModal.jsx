@@ -1,48 +1,60 @@
 "use client"
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { notify } from '../lib/toast'
 
 export default function CameraModal({ show, onClose, onCaptured }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
+  const [cameraError, setCameraError] = useState(null)
 
   useEffect(() => {
     let mounted = true
     const start = async () => {
       try {
-        // Check if camera permissions are available
-        const permissions = await navigator.permissions.query({ name: 'camera' })
-        
-        if (permissions.state === 'denied') {
-          notify({ type: 'error', text: 'Camera permission denied. Please enable camera access in your browser settings.' })
-          if (onClose) onClose()
-          return
+        // Try to query permissions but do not treat it as authoritative in all browsers
+        let permState = null
+        try {
+          if (navigator.permissions && navigator.permissions.query) {
+            const p = await navigator.permissions.query({ name: 'camera' })
+            permState = p.state
+            console.log('Camera permission state:', permState)
+          }
+        } catch (e) {
+          // ignore permission API failures
+          console.warn('Permissions API query failed', e)
         }
 
-        const s = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' }, 
-          audio: false 
-        })
-        
-        if (!mounted) {
-          try { s.getTracks().forEach(t => t.stop()) } catch (e) {}
+        // Try to acquire the camera regardless of Permissions API state because desktop
+        // browsers sometimes misreport. We will handle errors from getUserMedia gracefully
+        try {
+          const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+          if (!mounted) {
+            try { s.getTracks().forEach(t => t.stop()) } catch (e) {}
+            return
+          }
+          streamRef.current = s
+          if (videoRef.current) videoRef.current.srcObject = s
           return
+        } catch (gmErr) {
+          console.warn('getUserMedia failed after permissions check', gmErr)
+          // Fall through to unified error handling below
+          throw gmErr
         }
-        streamRef.current = s
-        if (videoRef.current) videoRef.current.srcObject = s
       } catch (err) {
         console.warn('Camera start failed', err)
-        
-        if (err.name === 'NotAllowedError') {
+        setCameraError(err)
+
+        // Provide clearer guidance but keep the modal open so the user can follow steps
+        if (err && err.name === 'NotAllowedError') {
           notify({ type: 'error', text: 'Camera permission denied. Please allow camera access to use this feature.' })
-        } else if (err.name === 'NotFoundError') {
+        } else if (err && err.name === 'NotFoundError') {
           notify({ type: 'error', text: 'No camera found on this device.' })
         } else {
           notify({ type: 'error', text: 'Unable to access camera. Please check your camera permissions.' })
         }
-        
-        if (onClose) onClose()
+
+        // Don't auto-close modal on desktop - let user take action
       }
     }
     if (show) start()
@@ -70,6 +82,27 @@ export default function CameraModal({ show, onClose, onCaptured }) {
             <div style={{ width: '100%', height: 360, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <video ref={videoRef} autoPlay playsInline style={{ maxWidth: '100%', maxHeight: 360 }} />
             </div>
+
+            {/* When camera failed to start, show inline helpful instructions */}
+            {cameraError && (
+              <div className="mt-3 text-start">
+                <h6>Can't access your camera?</h6>
+                <p className="small text-muted">Desktop browsers sometimes block camera access until you explicitly allow it for this site. Try the steps below:</p>
+                <ol className="small">
+                  <li>Open your browser's site settings for this page (click the padlock in the address bar).</li>
+                  <li>Ensure Camera permission is set to <strong>Allow</strong>.</li>
+                  <li>If you changed settings, reload this page and re-open the camera.</li>
+                </ol>
+                <div className="d-flex gap-2 mt-2">
+                  <button className="btn btn-outline-secondary btn-sm" onClick={() => {
+                    try { navigator.clipboard.writeText(window.location.origin); notify({ type: 'success', text: 'Origin copied to clipboard' }) } catch(e) { notify({ type: 'error', text: 'Failed to copy origin' }) }
+                  }}>Copy site origin</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => {
+                    try { window.open(window.location.origin, '_blank') } catch(e) { notify({ type: 'error', text: 'Failed to open settings tab' }) }
+                  }}>Open site in new tab</button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="px-3 pb-2 text-center text-muted" style={{ fontSize: '0.9rem' }}>
             Note: images larger than <strong>{Number.isFinite(imageLimitMb) ? imageLimitMb.toFixed(1) : '5.0'} MB</strong> will prompt for confirmation when embedding in exports.
