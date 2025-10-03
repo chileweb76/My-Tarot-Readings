@@ -1327,11 +1327,21 @@ export default function HomePage() {
 
   // camera handled by CameraModal component
   // When camera returns a data URL, auto-upload it to the server and attach to reading
-  const handleCapturedImageUpload = async (dataUrl) => {
-    if (!dataUrl) return
+  const handleCapturedImageUpload = async (dataUrlOrUrl) => {
+    if (!dataUrlOrUrl) return
     try {
-      // Convert dataURL to Blob and keep as a File in state so we can upload on Save
-      const res = await fetch(dataUrl)
+      // If CameraModal already uploaded the capture and returned a URL, treat it as final
+      if (typeof dataUrlOrUrl === 'string' && (dataUrlOrUrl.startsWith('http') || dataUrlOrUrl.startsWith('/'))) {
+        // Set the uploadedImage to the returned URL and preview it
+        setUploadedImage(dataUrlOrUrl)
+        setPreviewImage(dataUrlOrUrl)
+        setUploadedFile(null)
+        pushToast({ type: 'success', text: 'Captured image uploaded and attached.' })
+        return
+      }
+
+      // Otherwise assume it's a data URL and convert to Blob/File so it uploads on Save
+      const res = await fetch(dataUrlOrUrl)
       const blob = await res.blob()
       const name = `camera-${Date.now()}.jpg`
       const fileToStore = new File([blob], name, { type: blob.type || 'image/jpeg' })
@@ -1355,7 +1365,7 @@ export default function HomePage() {
         setUploadedImage(null) // Clear any previous upload
       } catch (e) {
         // fallback to dataUrl preview
-        setPreviewImage(dataUrl)
+        setPreviewImage(dataUrlOrUrl)
         setUploadedImage(null) // Clear any previous upload
       }
       setUploadedFile(fileToStore)
