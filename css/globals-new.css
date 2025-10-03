@@ -820,7 +820,7 @@ main.container {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 1050;
+  z-index: 1060; /* Higher than modals (1055) and navbar (1030) */
 }
 
 .app-toast {

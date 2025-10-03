@@ -1623,7 +1623,7 @@ header, header .navbar {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 1050;
+  z-index: 1060; /* Higher than Bootstrap modals (1055) and navbar (1030) */
 }
 
 .app-toast {
@@ -1661,6 +1661,15 @@ header, header .navbar {
   background: linear-gradient(90deg, rgba(220, 53, 69, 0.95), rgba(200, 40, 55, 0.95));
 }
 
+.app-toast--warning {
+  background: linear-gradient(90deg, rgba(255, 193, 7, 0.95), rgba(255, 179, 0, 0.95));
+  color: #000;
+}
+
+.app-toast--info {
+  background: linear-gradient(90deg, rgba(13, 202, 240, 0.95), rgba(13, 172, 240, 0.95));
+}
+
 .app-toast--neutral {
   background: linear-gradient(90deg, rgba(74, 21, 75, 0.9), rgba(58, 16, 58, 0.9));
 }
@@ -1670,7 +1679,7 @@ header, header .navbar {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 1050;
+  z-index: 1060; /* Higher than Bootstrap modals (1055) and navbar (1030) */
   display: flex;
   flex-direction: column;
   gap: 12px;
