@@ -1197,24 +1197,59 @@ export default function HomePage() {
     let mounted = true
     const loadDecks = async () => {
       try {
-        console.log('🔵 loadDecks: Starting deck fetch...')
-        const result = await getDecksAction()
-        console.log('🔵 loadDecks: Raw result:', result)
-        
-        if (!result || !result.success) {
-          console.warn('🟡 loadDecks: Failed to load decks - no success result:', result)
-          // Still try to show error in UI
-          pushToast({ type: 'error', text: result?.error || 'Failed to load decks' })
+        console.log('🔵 loadDecks: Starting deck fetch (client fetch with credentials)')
+
+        // Fetch directly from the frontend proxy so the browser sends cookies
+        const resp = await fetch('/api/decks', { method: 'GET', credentials: 'include', headers: { 'Accept': 'application/json' } })
+        if (!resp.ok) {
+          const text = await resp.text().catch(() => '')
+          console.warn('🟡 loadDecks: fetch returned not-ok:', resp.status, text)
+          pushToast({ type: 'error', text: `Failed to load decks: ${resp.statusText}` })
           return
         }
-        
-        if (!mounted) return
-        
-        const list = Array.isArray(result.decks) ? result.decks : []
+
+        const data = await resp.json()
+        // The proxy returns either an array of decks or an object with decks
+        const list = Array.isArray(data) ? data : (data.decks || [])
         console.log('🟢 loadDecks: Successfully loaded decks:', list.length, 'decks')
         console.log('🟢 loadDecks: Deck names:', list.map(d => d.deckName))
-        
-        setDecks(list)
+
+        if (!mounted) return
+
+        // Normalize _id and owner to string so the select values are stable
+        const normalized = list.map(d => {
+          const rawId = d._id
+          let idStr = null
+          try {
+            if (!rawId) idStr = ''
+            else if (typeof rawId === 'string') idStr = rawId
+            else if (rawId.$oid) idStr = rawId.$oid
+            else if (rawId.toString) idStr = rawId.toString()
+            else idStr = String(rawId)
+          } catch (e) {
+            idStr = String(rawId)
+          }
+
+          let ownerStr = null
+          try {
+            const rawOwner = d.owner
+            if (!rawOwner) ownerStr = null
+            else if (typeof rawOwner === 'string') ownerStr = rawOwner
+            else if (rawOwner.$oid) ownerStr = rawOwner.$oid
+            else if (rawOwner.toString) ownerStr = rawOwner.toString()
+            else ownerStr = String(rawOwner)
+          } catch (e) {
+            ownerStr = d.owner
+          }
+
+          return {
+            ...d,
+            _id: idStr,
+            owner: ownerStr
+          }
+        })
+
+        setDecks(normalized)
         
         if (list.length) {
           // Prefer a public Rider-Waite deck (no owner) or a deck explicitly named 'Rider-Waite Tarot'
@@ -1222,7 +1257,16 @@ export default function HomePage() {
           const byName = list.find(d => d.deckName === 'Rider-Waite Tarot')
           const defaultDeck = publicRider || byName || list[0]
           console.log('🟢 loadDecks: Selected default deck:', defaultDeck?.deckName)
-          setSelectedDeck(prev => prev || defaultDeck._id)
+
+          // If there's a previously selected deck, verify it still exists in the new list
+          setSelectedDeck(prev => {
+            try {
+              if (prev && list.find(d => d._id === prev)) return prev
+            } catch (e) {
+              // fallthrough
+            }
+            return defaultDeck._id
+          })
         } else {
           console.warn('🟡 loadDecks: No decks available')
           pushToast({ type: 'warning', text: 'No decks available. Please create a deck first.' })
