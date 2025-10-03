@@ -9,6 +9,7 @@ export default function CameraModal({ show, onClose, onCaptured }) {
   const [cameraError, setCameraError] = useState(null)
   const attemptRef = useRef(false)
   const notifiedRef = useRef(false)
+  const [diag, setDiag] = useState(null)
 
   useEffect(() => {
     let mounted = true
@@ -73,6 +74,8 @@ export default function CameraModal({ show, onClose, onCaptured }) {
       attemptRef.current = false
       notifiedRef.current = false
       start()
+      // run diagnostics automatically to gather permission/policy info
+      try { runDiagnostics().then(r => setDiag(r)).catch(() => {}) } catch(e) {}
     }
     return () => {
       mounted = false
@@ -81,6 +84,62 @@ export default function CameraModal({ show, onClose, onCaptured }) {
       try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch (e) {}
     }
   }, [show])
+
+  // Diagnostics: gather info useful for investigating Permissions Policy issues
+  async function runDiagnostics() {
+    const out = {
+      ts: new Date().toISOString(),
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+      inIframe: (typeof window !== 'undefined') ? (window.top !== window.self) : null,
+      permissionsQuery: null,
+      enumerateDevices: null,
+      headers: {}
+    }
+
+    // Permissions API
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const p = await navigator.permissions.query({ name: 'camera' })
+          out.permissionsQuery = { state: p.state }
+        } catch (pq) {
+          out.permissionsQuery = { error: pq && pq.message ? pq.message : String(pq) }
+        }
+      } else {
+        out.permissionsQuery = { supported: false }
+      }
+    } catch (e) {
+      out.permissionsQuery = { error: e && e.message ? e.message : String(e) }
+    }
+
+    // enumerateDevices (may have empty labels if no permission)
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices()
+        out.enumerateDevices = devices.map(d => ({ kind: d.kind, label: d.label, id: d.deviceId }))
+      } else {
+        out.enumerateDevices = { supported: false }
+      }
+    } catch (e) {
+      out.enumerateDevices = { error: e && e.message ? e.message : String(e) }
+    }
+
+    // Fetch response headers from same-origin HEAD request to detect Permissions-Policy
+    try {
+      const resp = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' })
+      const names = ['permissions-policy', 'feature-policy', 'permissions-policy-report-only', 'feature-policy-report-only']
+      names.forEach(n => {
+        const v = resp.headers.get(n)
+        if (v) out.headers[n] = v
+      })
+      // include any known header variants
+      Array.from(resp.headers.keys()).forEach(k => { if (!out.headers[k]) out.headers[k] = resp.headers.get(k) })
+    } catch (e) {
+      out.headers.error = e && e.message ? e.message : String(e)
+    }
+
+    return out
+  }
 
   if (!show) return null
   // Determine current image size limit (MB) from localStorage or build-time env
