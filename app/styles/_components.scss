@@ -187,7 +187,7 @@ header, header .navbar {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 1060; /* Higher than Bootstrap modals (1055) and navbar (1030) */
+  z-index: 99999 !important; /* Ensure toasts appear above any header/overlay */
 }
 
 .app-toast {
@@ -228,7 +228,7 @@ header, header .navbar {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 1060; /* Higher than Bootstrap modals (1055) and navbar (1030) */
+  z-index: 99999 !important; /* Ensure toasts appear above any header/overlay */
   display: flex;
   flex-direction: column;
   gap: 12px;
