@@ -39,7 +39,7 @@
     {
 		"spread": "Three Card (Body, Mind, Spirit)",
 		"cards": ["Body", "Mind", "Spirit"],
-		"image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/images/spreads/three-cardbms.png",
+		"image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/spreads/three-cardbms.png",
 		"numberofCards": 3
 	},
     {
@@ -82,7 +82,7 @@
 			"Best Course of Action",
 			"Outcome"
 		],
-		"image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/images/spreads/horseshoe.png",
+		"image": "https://emfobsnlxploca6s.public.blob.vercel-storage.com/spreads/horseshoe.png",
 		"numberofCards": 7
 	},
 	{
