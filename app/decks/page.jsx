@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
 import CameraModal from '../../components/CameraModal'
+import ToastPortal from '../../components/ToastPortal'
 import SmartImageV2 from '../../components/SmartImageV2'
 import { IMAGE_TYPES, getDeckImageUrl, getCardImageUrl } from '../../lib/imageServiceV3'
 import {
@@ -43,12 +44,14 @@ function Toast({ message, type = 'info', onClose }) {
   // Prefer the shared .app-toast-wrapper/.app-toast styles so z-index is managed centrally.
   // Add an inline zIndex fallback extremely high to handle unexpected stacking contexts.
   return (
-    <div className="app-toast-wrapper" style={{ zIndex: 99999999 }}>
-      <div className={`app-toast ${bg} p-2`} role="alert">
-        <div className="app-toast__body">{message}</div>
-        <button type="button" className="app-toast__close" aria-label="Close" onClick={onClose}>✕</button>
+    <ToastPortal>
+      <div className="app-toast-wrapper" style={{ zIndex: 99999999 }}>
+        <div className={`app-toast ${bg} p-2`} role="alert">
+          <div className="app-toast__body">{message}</div>
+          <button type="button" className="app-toast__close" aria-label="Close" onClick={onClose}>✕</button>
+        </div>
       </div>
-    </div>
+    </ToastPortal>
   )
 }
 
