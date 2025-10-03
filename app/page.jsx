@@ -1332,7 +1332,6 @@ export default function HomePage() {
     try {
       // If CameraModal already uploaded the capture and returned a URL, treat it as final
       if (typeof dataUrlOrUrl === 'string' && (dataUrlOrUrl.startsWith('http') || dataUrlOrUrl.startsWith('/'))) {
-        // Set the uploadedImage to the returned URL and preview it
         setUploadedImage(dataUrlOrUrl)
         setPreviewImage(dataUrlOrUrl)
         setUploadedFile(null)
@@ -1340,34 +1339,19 @@ export default function HomePage() {
         return
       }
 
-      // Otherwise assume it's a data URL and convert to Blob/File so it uploads on Save
-      const res = await fetch(dataUrlOrUrl)
-      const blob = await res.blob()
-      const name = `camera-${Date.now()}.jpg`
-      const fileToStore = new File([blob], name, { type: blob.type || 'image/jpeg' })
-
-      // Check file size using the same limit as other functions
-      const maxSizeBytes = getImageSizeLimitBytes()
-      if (fileToStore.size > maxSizeBytes) {
-        const sizeMB = (fileToStore.size / (1024 * 1024)).toFixed(2)
-        const limitMB = (maxSizeBytes / (1024 * 1024)).toFixed(2)
-        pushToast({ 
-          type: 'error', 
-          text: `Captured image too large (${sizeMB}MB). Maximum size is ${limitMB}MB. Please try again or use a different image.` 
-        })
+      // Otherwise prepare image using shared helper (handles dataURL and Blobs)
+      const { prepareImageForUpload } = await import('../lib/imageUploader')
+      const prep = await prepareImageForUpload(dataUrlOrUrl)
+      if (!prep.success) {
+        pushToast({ type: 'error', text: prep.error || 'Captured image not acceptable' })
         return
       }
 
-      // Show a preview and keep file pending for upload on Save
-      try {
-        const preview = URL.createObjectURL(fileToStore)
-        setPreviewImage(preview)
-        setUploadedImage(null) // Clear any previous upload
-      } catch (e) {
-        // fallback to dataUrl preview
-        setPreviewImage(dataUrlOrUrl)
-        setUploadedImage(null) // Clear any previous upload
-      }
+      const fileToStore = prep.file
+      const preview = prep.previewUrl || null
+
+      setPreviewImage(preview || dataUrlOrUrl)
+      setUploadedImage(null)
       setUploadedFile(fileToStore)
       pushToast({ type: 'info', text: 'Image ready — it will be attached when you save the reading.' })
     } catch (err) {

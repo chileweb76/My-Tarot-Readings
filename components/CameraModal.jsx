@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { notify } from '../lib/toast'
 import { uploadImageToBlob } from '../lib/blobUpload'
+import { prepareImageForUpload } from '../lib/imageUploader'
 
 export default function CameraModal({ show, onClose, onCaptured }) {
   const videoRef = useRef(null)
@@ -218,52 +219,29 @@ export default function CameraModal({ show, onClose, onCaptured }) {
                 const ctx = canvas.getContext('2d')
                 ctx.drawImage(video, 0, 0, w, h)
 
-                // Convert to blob (JPEG to reduce size)
-                await new Promise((resolve, reject) => {
-                  canvas.toBlob(async (blob) => {
-                    if (!blob) return reject(new Error('Failed to create image blob'))
+                // Convert canvas to blob and prepare file with shared helper
+                const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+                if (!blob) throw new Error('Failed to create image blob')
+                const prep = await prepareImageForUpload(blob)
+                if (!prep.success) {
+                  notify({ type: 'error', text: prep.error || 'Captured image not acceptable' })
+                  throw new Error(prep.error || 'Captured image not acceptable')
+                }
 
-                    try {
-                      // Determine configured image size limit (MB)
-                      let imageLimitMb = 5.0
-                      try {
-                        const v = typeof window !== 'undefined' ? localStorage.getItem('IMAGE_SIZE_LIMIT_MB') : null
-                        if (v) imageLimitMb = parseFloat(v)
-                        else if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB) imageLimitMb = parseFloat(process.env.NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB)
-                      } catch (e) { /* ignore */ }
+                const file = prep.file
+                notify({ type: 'info', text: 'Uploading captured image...' })
+                const tempReadingId = `temp-${Date.now()}`
+                const result = await uploadImageToBlob(tempReadingId, file)
+                if (!result.success) {
+                  notify({ type: 'error', text: 'Upload failed: ' + (result.error || 'unknown') })
+                  throw new Error(result.error || 'Upload failed')
+                }
 
-                      const maxBytes = Math.round((imageLimitMb || 5.0) * 1024 * 1024)
-                      if (blob.size > maxBytes) {
-                        notify({ type: 'error', text: `Captured image too large (${(blob.size/1024/1024).toFixed(2)}MB). Please choose a smaller capture or compress.` })
-                        return reject(new Error('Captured image too large'))
-                      }
-
-                      // Wrap blob as File so upload helper can read name/type
-                      const filename = `camera-${Date.now()}.jpg`
-                      const file = new File([blob], filename, { type: blob.type || 'image/jpeg' })
-
-                      notify({ type: 'info', text: 'Uploading captured image...' })
-                      // Use a temporary reading id if none provided; server expects a readingId
-                      const tempReadingId = `temp-${Date.now()}`
-                      const result = await uploadImageToBlob(tempReadingId, file)
-                      if (!result.success) {
-                        notify({ type: 'error', text: 'Upload failed: ' + (result.error || 'unknown') })
-                        return reject(new Error(result.error || 'Upload failed'))
-                      }
-
-                      const imageUrl = result.url || result.image || null
-                      try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {}
-                      if (onCaptured) onCaptured(imageUrl)
-                      if (onClose) onClose()
-                      notify({ type: 'success', text: 'Image captured and uploaded.' })
-                      return resolve()
-                    } catch (e) {
-                      console.error('Capture/upload failed', e)
-                      notify({ type: 'error', text: 'Failed to upload captured image.' })
-                      return reject(e)
-                    }
-                  }, 'image/jpeg', 0.85)
-                })
+                const imageUrl = result.url || result.image || null
+                try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {}
+                if (onCaptured) onCaptured(imageUrl)
+                if (onClose) onClose()
+                notify({ type: 'success', text: 'Image captured and uploaded.' })
 
               } catch (err) {
                 console.error('Capture failed', err)
