@@ -13,6 +13,7 @@ export default function CameraModal({ show, onClose, onCaptured }) {
   const notifiedRef = useRef(false)
   const [diag, setDiag] = useState(null)
   const [showDiagPanel, setShowDiagPanel] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -206,9 +207,10 @@ export default function CameraModal({ show, onClose, onCaptured }) {
             Note: images larger than <strong>{Number.isFinite(imageLimitMb) ? imageLimitMb.toFixed(1) : '5.0'} MB</strong> will prompt for confirmation when embedding in exports.
           </div>
             <div className="modal-footer">
-            <button className="btn btn-secondary" onClick={() => { try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {} ; if (onClose) onClose() }}>Cancel</button>
-            <button className="btn btn-primary" onClick={async () => {
+            <button className="btn btn-secondary" disabled={uploading} onClick={() => { try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {} ; if (onClose) onClose() }}>Cancel</button>
+            <button className="btn btn-primary" disabled={uploading} onClick={async () => {
               try {
+                setUploading(true)
                 const video = videoRef.current
                 if (!video) return
                 const w = video.videoWidth || 1280
@@ -242,12 +244,15 @@ export default function CameraModal({ show, onClose, onCaptured }) {
                 if (onCaptured) onCaptured(imageUrl)
                 if (onClose) onClose()
                 notify({ type: 'success', text: 'Image captured and uploaded.' })
-
               } catch (err) {
                 console.error('Capture failed', err)
                 notify({ type: 'error', text: 'Failed to capture or upload image.' })
+              } finally {
+                setUploading(false)
               }
-            }}>Capture</button>
+            }}>
+              {uploading ? (<><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Uploading...</>) : 'Capture'}
+            </button>
           </div>
         </div>
       </div>

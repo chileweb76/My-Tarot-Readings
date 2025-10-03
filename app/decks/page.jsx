@@ -14,6 +14,7 @@ import {
   uploadDeckBlobAction,
   uploadCardBlobAction
 } from '../../lib/actions'
+import { uploadImageToBlob } from '../../lib/blobUpload'
 
 // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
@@ -401,19 +402,13 @@ export default function DecksPage() {
         setDeckDetails(prev => ({ ...prev, image: previewUrl, uploading: true }))
       }
 
-      // Add deckId to formData for Server Action
-      fd.append('deckId', selectedDeck)
-      
-      const result = await uploadDeckBlobAction(fd)
-      
+      // Upload via the client-side proxy helper (same used by readings)
+      const result = await uploadImageToBlob(selectedDeck, processedFile)
       if (!result.success) {
-        throw new Error(`Upload failed: ${result.error}`)
+        throw new Error(result.error || 'Upload failed')
       }
-      
       const updated = result
-      
-      // Handle Vercel Blob response format using utility
-      const imageUrl = extractBlobUrl(updated)
+      const imageUrl = updated.url || updated.image || null
       
       setToast({ message: 'Deck image uploaded to Vercel Blob', type: 'success' })
       setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
