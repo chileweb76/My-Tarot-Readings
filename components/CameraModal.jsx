@@ -10,6 +10,7 @@ export default function CameraModal({ show, onClose, onCaptured }) {
   const attemptRef = useRef(false)
   const notifiedRef = useRef(false)
   const [diag, setDiag] = useState(null)
+  const [showDiagPanel, setShowDiagPanel] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -180,7 +181,22 @@ export default function CameraModal({ show, onClose, onCaptured }) {
                   <button className="btn btn-secondary btn-sm" onClick={() => {
                     try { window.open(window.location.origin, '_blank') } catch(e) { notify({ type: 'error', text: 'Failed to open settings tab' }) }
                   }}>Open site in new tab</button>
+                  <button className="btn btn-outline-info btn-sm ms-auto" onClick={() => setShowDiagPanel(!showDiagPanel)}>{showDiagPanel ? 'Hide diagnostics' : 'Show diagnostics'}</button>
                 </div>
+              </div>
+            )}
+
+            {/* Diagnostics panel (visible when diagnostics have been collected) */}
+            {diag && showDiagPanel && (
+              <div className="mt-3 text-start">
+                <h6>Diagnostics</h6>
+                <div className="d-flex gap-2 mb-2">
+                  <button className="btn btn-sm btn-outline-secondary" onClick={async () => {
+                    try { await navigator.clipboard.writeText(JSON.stringify(diag, null, 2)); notify({ type: 'success', text: 'Diagnostics copied to clipboard' }) } catch (e) { notify({ type: 'error', text: 'Failed to copy diagnostics' }) }
+                  }}>Copy diagnostics</button>
+                  <button className="btn btn-sm btn-outline-secondary" onClick={() => setShowDiagPanel(false)}>Close</button>
+                </div>
+                <pre style={{ maxHeight: 240, overflow: 'auto', background: '#f8f9fa', padding: 12, borderRadius: 6 }}>{JSON.stringify(diag, null, 2)}</pre>
               </div>
             )}
           </div>
