@@ -1502,7 +1502,6 @@ export default function HomePage() {
                     <div className="fw-bold mb-2">📸 Add Image to Reading</div>
                     <div className="small text-muted">
                       • Choose a file from your device or use your camera<br/>
-                      • Maximum file size: 5MB<br/>
                       • After selecting, click "Upload Image" to save to cloud
                     </div>
                   </div>
