@@ -91,6 +91,7 @@ export default function HomePage() {
   const handleImageUpload = async () => {
     if (!uploadedFile || uploadedFile.size === 0) {
       console.log('🟡 No image to upload')
+      pushToast({ type: 'warning', text: 'Please choose an image first before uploading.' })
       return
     }
     
@@ -1335,6 +1336,18 @@ export default function HomePage() {
       const name = `camera-${Date.now()}.jpg`
       const fileToStore = new File([blob], name, { type: blob.type || 'image/jpeg' })
 
+      // Check file size using the same limit as other functions
+      const maxSizeBytes = getImageSizeLimitBytes()
+      if (fileToStore.size > maxSizeBytes) {
+        const sizeMB = (fileToStore.size / (1024 * 1024)).toFixed(2)
+        const limitMB = (maxSizeBytes / (1024 * 1024)).toFixed(2)
+        pushToast({ 
+          type: 'error', 
+          text: `Captured image too large (${sizeMB}MB). Maximum size is ${limitMB}MB. Please try again or use a different image.` 
+        })
+        return
+      }
+
       // Show a preview and keep file pending for upload on Save
       try {
         const preview = URL.createObjectURL(fileToStore)
@@ -1485,7 +1498,14 @@ export default function HomePage() {
             <div className="col-12 col-lg-6 mb-3">
               <div className="card h-100">
                 <div className="card-body">
-                  <div className="mb-2">Connect an image to this reading (upload or use camera)</div>
+                  <div className="mb-3">
+                    <div className="fw-bold mb-2">📸 Add Image to Reading</div>
+                    <div className="small text-muted">
+                      • Choose a file from your device or use your camera<br/>
+                      • Maximum file size: 5MB<br/>
+                      • After selecting, click "Upload Image" to save to cloud
+                    </div>
+                  </div>
                   {(uploadedImage || previewImage) ? (
                     <div className="mb-2 text-center">
                       {/* Show upload status */}
@@ -1517,7 +1537,7 @@ export default function HomePage() {
                     <div className="mb-2 text-center text-muted">No image chosen</div>
                   )}
 
-                  <div className="mb-2 small text-muted">Image conversion limit: {(getImageSizeLimitBytes() / 1024 / 1024).toFixed(2)} MB</div>
+                  <div className="mb-2 small text-muted">💡 Maximum file size: {(getImageSizeLimitBytes() / 1024 / 1024).toFixed(1)}MB</div>
                   <div className="d-flex align-items-center mb-3" style={{ gap: 8 }}>
                     <a href="/settings" className="btn btn-outline-secondary btn-sm">Settings</a>
                     <div className="form-text">Open Settings to change export image size threshold</div>
@@ -1535,6 +1555,19 @@ export default function HomePage() {
                         }
                         
                         console.log('🔵 File selected:', f.name, f.type, f.size)
+                        
+                        // Check file size using the same limit as other functions
+                        const maxSizeBytes = getImageSizeLimitBytes()
+                        if (f.size > maxSizeBytes) {
+                          const sizeMB = (f.size / (1024 * 1024)).toFixed(2)
+                          const limitMB = (maxSizeBytes / (1024 * 1024)).toFixed(2)
+                          pushToast({ 
+                            type: 'error', 
+                            text: `File too large (${sizeMB}MB). Please choose a file smaller than ${limitMB}MB or compress the image.` 
+                          })
+                          e.target.value = '' // Clear the input
+                          return
+                        }
                         
                         try {
                           // Check if it's a HEIC file and show loading
