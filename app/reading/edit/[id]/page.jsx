@@ -340,12 +340,14 @@ export default function EditReadingPage() {
                 {/* Action buttons moved here so they appear below the Outcome textarea */}
                 <div className="mt-3 d-flex justify-content-end gap-2">
                   <button 
+                    type="button"
                     className="btn btn-cancel-black"
                     onClick={() => router.push('/reading')}
                   >
                     Cancel
                   </button>
                   <button 
+                    type="button"
                     className={`btn btn-success ${flashSave ? 'btn-flash' : ''}`}
                     onClick={handleSave}
                     disabled={saving}

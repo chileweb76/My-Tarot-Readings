@@ -1441,6 +1441,7 @@ export default function HomePage() {
           />
 
           <button
+            type="button"
             id="addSpreadBtn"
             className="btn btn-tarot-primary btn-sm ms-2"
             onClick={() => {

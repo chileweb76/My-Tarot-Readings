@@ -66,6 +66,7 @@ export default function NotificationTester() {
         </p>
         
         <button 
+          type="button"
           className="btn btn-outline-primary btn-sm"
           onClick={sendTestNotifications}
           disabled={loading}

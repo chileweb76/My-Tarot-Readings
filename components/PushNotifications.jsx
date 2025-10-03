@@ -154,6 +154,7 @@ export default function PushNotifications() {
         <div className="d-flex gap-2 flex-wrap">
           {!isSubscribed ? (
             <button 
+              type="button"
               className="btn btn-primary"
               onClick={subscribeToPush}
               disabled={loading}
@@ -163,6 +164,7 @@ export default function PushNotifications() {
           ) : (
             <>
               <button 
+                type="button"
                 className="btn btn-outline-secondary"
                 onClick={unsubscribeFromPush}
                 disabled={loading}
@@ -170,6 +172,7 @@ export default function PushNotifications() {
                 {loading ? 'Unsubscribing...' : 'Disable Notifications'}
               </button>
               <button 
+                type="button"
                 className="btn btn-outline-primary"
                 onClick={sendTestNotification}
               >

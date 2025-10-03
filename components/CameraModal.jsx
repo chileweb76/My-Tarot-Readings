@@ -178,13 +178,13 @@ export default function CameraModal({ show, onClose, onCaptured }) {
                   <li>If you changed settings, reload this page and re-open the camera.</li>
                 </ol>
                 <div className="d-flex gap-2 mt-2">
-                  <button className="btn btn-outline-secondary btn-sm" onClick={() => {
+                  <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => {
                     try { navigator.clipboard.writeText(window.location.origin); notify({ type: 'success', text: 'Origin copied to clipboard' }) } catch(e) { notify({ type: 'error', text: 'Failed to copy origin' }) }
                   }}>Copy site origin</button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => {
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => {
                     try { window.open(window.location.origin, '_blank') } catch(e) { notify({ type: 'error', text: 'Failed to open settings tab' }) }
                   }}>Open site in new tab</button>
-                  <button className="btn btn-outline-info btn-sm ms-auto" onClick={() => setShowDiagPanel(!showDiagPanel)}>{showDiagPanel ? 'Hide diagnostics' : 'Show diagnostics'}</button>
+                  <button type="button" className="btn btn-outline-info btn-sm ms-auto" onClick={() => setShowDiagPanel(!showDiagPanel)}>{showDiagPanel ? 'Hide diagnostics' : 'Show diagnostics'}</button>
                 </div>
               </div>
             )}
@@ -194,10 +194,10 @@ export default function CameraModal({ show, onClose, onCaptured }) {
               <div className="mt-3 text-start">
                 <h6>Diagnostics</h6>
                 <div className="d-flex gap-2 mb-2">
-                  <button className="btn btn-sm btn-outline-secondary" onClick={async () => {
+                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={async () => {
                     try { await navigator.clipboard.writeText(JSON.stringify(diag, null, 2)); notify({ type: 'success', text: 'Diagnostics copied to clipboard' }) } catch (e) { notify({ type: 'error', text: 'Failed to copy diagnostics' }) }
                   }}>Copy diagnostics</button>
-                  <button className="btn btn-sm btn-outline-secondary" onClick={() => setShowDiagPanel(false)}>Close</button>
+                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setShowDiagPanel(false)}>Close</button>
                 </div>
                 <pre style={{ maxHeight: 240, overflow: 'auto', background: '#f8f9fa', padding: 12, borderRadius: 6 }}>{JSON.stringify(diag, null, 2)}</pre>
               </div>
@@ -207,8 +207,8 @@ export default function CameraModal({ show, onClose, onCaptured }) {
             Note: images larger than <strong>{Number.isFinite(imageLimitMb) ? imageLimitMb.toFixed(1) : '5.0'} MB</strong> will prompt for confirmation when embedding in exports.
           </div>
             <div className="modal-footer">
-            <button className="btn btn-secondary" disabled={uploading} onClick={() => { try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {} ; if (onClose) onClose() }}>Cancel</button>
-            <button className="btn btn-primary" disabled={uploading} onClick={async () => {
+            <button type="button" className="btn btn-secondary" disabled={uploading} onClick={() => { try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {} ; if (onClose) onClose() }}>Cancel</button>
+            <button type="button" className="btn btn-primary" disabled={uploading} onClick={async () => {
               try {
                 setUploading(true)
                 const video = videoRef.current

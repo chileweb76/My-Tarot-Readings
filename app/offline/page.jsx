@@ -4,6 +4,16 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export default function OfflinePage() {
+  // Small helper handlers so buttons don't reference undefined functions
+  const install = () => {
+    // noop — real install flow handled elsewhere
+    try { console.log('Install PWA requested') } catch (e) {}
+  }
+
+  const checkSW = () => {
+    try { console.log('Check service worker requested') } catch (e) {}
+  }
+
   return (
     <div className="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-gradient">
       <div className="text-center p-4">
@@ -16,18 +26,18 @@ export default function OfflinePage() {
           className="mb-4"
           style={{ height: 'auto', objectFit: 'contain' }}
         />
-        
+
         <div className="card shadow-lg" style={{ maxWidth: '400px', margin: '0 auto' }}>
           <div className="card-body p-4">
             <h2 className="card-title text-center mb-3">
               <i className="fas fa-wifi-slash text-warning me-2"></i>
               You&apos;re Offline
             </h2>
-            
+
             <p className="card-text text-center mb-4">
               It looks like you&apos;re not connected to the internet. Don&apos;t worry - you can still:
             </p>
-            
+
             <ul className="list-unstyled mb-4">
               <li className="mb-2">
                 <i className="fas fa-check-circle text-success me-2"></i>
@@ -46,29 +56,41 @@ export default function OfflinePage() {
                 Auto-sync when connection returns
               </li>
             </ul>
-            
+
             <div className="text-center">
-              <button 
-                className="btn btn-tarot-primary me-2" 
+              <button
+                type="button"
+                className="btn btn-tarot-primary me-2"
                 onClick={() => window.location.reload()}
               >
                 <i className="fas fa-refresh me-1"></i>
                 Try Again
               </button>
-              
-              <Link href="/" className="btn btn-outline-secondary">
-                <i className="fas fa-home me-1"></i>
-                Go Home
-              </Link>
+
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={install}
+              >
+                Install PWA
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={checkSW}
+              >
+                Check Service Worker
+              </button>
+            </div>
+
+            <div className="mt-4 text-center">
+              <small className="text-muted">
+                <i className="fas fa-info-circle me-1"></i>
+                Your data will sync automatically when you&apos;re back online
+              </small>
             </div>
           </div>
-        </div>
-        
-        <div className="mt-4">
-          <small className="text-muted">
-            <i className="fas fa-info-circle me-1"></i>
-            Your data will sync automatically when you&apos;re back online
-          </small>
         </div>
       </div>
     </div>

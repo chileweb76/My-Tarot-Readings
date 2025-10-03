@@ -220,12 +220,14 @@ export default function SecurityTest() {
               {/* Actions */}
               <div className="d-flex gap-2">
                 <button 
+                  type="button"
                   className="btn btn-primary"
                   onClick={() => window.location.reload()}
                 >
                   🔄 Retest
                 </button>
                 <button 
+                  type="button"
                   className="btn btn-outline-secondary"
                   onClick={() => window.open('https://securityheaders.com/?q=' + encodeURIComponent(window.location.origin), '_blank')}
                 >

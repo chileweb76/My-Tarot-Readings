@@ -13,8 +13,8 @@ export default function ConfirmModal({ show, title, body, confirmText = 'Confirm
           <p className="card-text">{body}</p>
 
           <div className="d-flex justify-content-end gap-2">
-            <button className="btn btn-secondary" onClick={onCancel} disabled={loading}>Cancel</button>
-            <button className="btn btn-danger" onClick={onConfirm} disabled={loading || confirmDisabled}>
+            <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={loading}>Cancel</button>
+            <button type="button" className="btn btn-danger" onClick={onConfirm} disabled={loading || confirmDisabled}>
               {loading ? (
                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               ) : null}

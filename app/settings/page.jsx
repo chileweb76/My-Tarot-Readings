@@ -151,7 +151,7 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <button className="btn btn-primary" onClick={saveImageLimit}>Save</button>
+            <button type="button" className="btn btn-primary" onClick={saveImageLimit}>Save</button>
           </div>
         </div>
 
