@@ -41,6 +41,7 @@ import SpreadModal from '../components/SpreadModal'
 import CameraModal from '../components/CameraModal'
 import Card from '../components/Card'
 import Toasts from '../components/Toasts'
+import ToastPortal from '../components/ToastPortal'
 import ExportToolbar from '../components/ExportToolbar'
 import { LargeImageWarningModal, ExportSignInModal } from '../components/modals'
 
@@ -1404,7 +1405,9 @@ export default function HomePage() {
       <>
         <ExportSignInModal show={showExportSignInModal} onClose={() => setShowExportSignInModal(false)} />
         <LargeImageWarningModal info={largeImagePending} getImageSizeLimitBytes={getImageSizeLimitBytes} onClose={() => setLargeImagePending(null)} />
-        <Toasts toasts={toasts} onRemove={removeToast} />
+        <ToastPortal>
+          <Toasts toasts={toasts} onRemove={removeToast} />
+        </ToastPortal>
         
         <form id="reading" className="reading" action={readingFormAction}>
         <p>Reading by: {user?.username || 'Guest'}</p>
