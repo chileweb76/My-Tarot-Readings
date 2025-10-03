@@ -11,6 +11,8 @@ export const dynamic = 'force-dynamic'
 export default function AuthSuccessPage() {
   const [status, setStatus] = useState('processing')
   const [debugInfo, setDebugInfo] = useState(null)
+  const [cookieInfo, setCookieInfo] = useState(null)
+  const [deckCheck, setDeckCheck] = useState(null)
 
   const fetchUserData = useCallback(async (retryCount = 0) => {
     try {
@@ -127,6 +129,33 @@ export default function AuthSuccessPage() {
     }
   }, [fetchUserData])
 
+  // Developer helper: check document cookies and do a test fetch to /api/decks
+  const runClientDiagnostics = async () => {
+    try {
+      const raw = typeof document !== 'undefined' ? document.cookie : ''
+      // mask cookie values for safety
+      const masked = raw.split(';').map(c => {
+        const [k, v] = c.split('=')
+        if (!k) return ''
+        const key = k.trim()
+        const val = v ? v.trim() : ''
+        if (!val) return key + '='
+        return `${key}=${val.substring(0, 6)}...(${val.length})`
+      }).filter(Boolean).join('; ')
+      setCookieInfo(masked)
+
+      // Test fetch to /api/decks with credentials to see if cookie is sent and user decks returned
+      setDeckCheck({ status: 'running' })
+      const resp = await fetch('/api/decks', { method: 'GET', credentials: 'include' })
+      const json = await resp.clone().json().catch(() => null)
+      setDeckCheck({ status: resp.ok ? 'ok' : 'error', code: resp.status, body: json })
+      console.log('Diagnostics /api/decks response:', resp, json)
+    } catch (err) {
+      console.error('Diagnostics error', err)
+      setDeckCheck({ status: 'error', error: String(err) })
+    }
+  }
+
   const handleOAuthTokenRelay = async (token) => {
     try {
       // Clear the token from URL immediately for security
@@ -220,6 +249,33 @@ export default function AuthSuccessPage() {
                   <a href="/auth" className="btn btn-tarot-primary">
                     Return to Sign In
                   </a>
+                </div>
+              )}
+
+              {/* Developer diagnostics panel (non-production) */}
+              {process.env.NODE_ENV !== 'production' && (
+                <div className="mt-3 text-start small">
+                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={runClientDiagnostics}>Run client diagnostics</button>
+                  {cookieInfo && (
+                    <div className="mt-2">
+                      <strong>Cookies:</strong>
+                      <div className="text-monospace">{cookieInfo}</div>
+                    </div>
+                  )}
+                  {deckCheck && (
+                    <div className="mt-2">
+                      <strong>/api/decks:</strong>
+                      <div className="mt-1">
+                        {deckCheck.status === 'running' && <span>Running…</span>}
+                        {deckCheck.status === 'ok' && (
+                          <pre className="small">{JSON.stringify(deckCheck.body, null, 2)}</pre>
+                        )}
+                        {deckCheck.status === 'error' && (
+                          <pre className="small">{JSON.stringify(deckCheck, null, 2)}</pre>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
