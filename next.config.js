@@ -47,7 +47,10 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            // Allow camera/microphone/geolocation for same-origin pages only.
+            // Previously set to deny all, which prevents getUserMedia and causes
+            // `Permissions policy violation: camera is not allowed in this document.`
+            value: 'camera=(self), microphone=(self), geolocation=(self)',
           },
         ],
       },
