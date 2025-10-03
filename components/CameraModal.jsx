@@ -7,10 +7,15 @@ export default function CameraModal({ show, onClose, onCaptured }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const [cameraError, setCameraError] = useState(null)
+  const attemptRef = useRef(false)
+  const notifiedRef = useRef(false)
 
   useEffect(() => {
     let mounted = true
     const start = async () => {
+      // Prevent multiple concurrent attempts (parent may re-render and recreate handlers)
+      if (attemptRef.current) return
+      attemptRef.current = true
       try {
         // Try to query permissions but do not treat it as authoritative in all browsers
         let permState = null
@@ -35,6 +40,9 @@ export default function CameraModal({ show, onClose, onCaptured }) {
           }
           streamRef.current = s
           if (videoRef.current) videoRef.current.srcObject = s
+          // Clear any previous error/notifications on success
+          setCameraError(null)
+          notifiedRef.current = false
           return
         } catch (gmErr) {
           console.warn('getUserMedia failed after permissions check', gmErr)
@@ -45,21 +53,34 @@ export default function CameraModal({ show, onClose, onCaptured }) {
         console.warn('Camera start failed', err)
         setCameraError(err)
 
-        // Provide clearer guidance but keep the modal open so the user can follow steps
-        if (err && err.name === 'NotAllowedError') {
-          notify({ type: 'error', text: 'Camera permission denied. Please allow camera access to use this feature.' })
-        } else if (err && err.name === 'NotFoundError') {
-          notify({ type: 'error', text: 'No camera found on this device.' })
-        } else {
-          notify({ type: 'error', text: 'Unable to access camera. Please check your camera permissions.' })
+        // Only notify once per modal open to avoid spamming toasts
+        if (!notifiedRef.current) {
+          if (err && err.name === 'NotAllowedError') {
+            notify({ type: 'error', text: 'Camera permission denied. Please allow camera access to use this feature.' })
+          } else if (err && err.name === 'NotFoundError') {
+            notify({ type: 'error', text: 'No camera found on this device.' })
+          } else {
+            notify({ type: 'error', text: 'Unable to access camera. Please check your camera permissions.' })
+          }
+          notifiedRef.current = true
         }
 
         // Don't auto-close modal on desktop - let user take action
       }
     }
-    if (show) start()
-    return () => { mounted = false; try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch (e) {} }
-  }, [show, onClose])
+    if (show) {
+      // reset attempt/notify flags when modal opens so user can retry manually
+      attemptRef.current = false
+      notifiedRef.current = false
+      start()
+    }
+    return () => {
+      mounted = false
+      attemptRef.current = false
+      notifiedRef.current = false
+      try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch (e) {}
+    }
+  }, [show])
 
   if (!show) return null
   // Determine current image size limit (MB) from localStorage or build-time env
