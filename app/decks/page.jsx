@@ -39,14 +39,14 @@ function isRiderWaiteDeck(deckDetails) {
 
 function Toast({ message, type = 'info', onClose }) {
   if (!message) return null
-  const bg = type === 'success' ? 'bg-success text-white' : type === 'error' ? 'bg-danger text-white' : 'bg-secondary text-white'
+  const bg = type === 'success' ? 'app-toast--success' : type === 'error' ? 'app-toast--error' : type === 'app-toast--info'
+  // Prefer the shared .app-toast-wrapper/.app-toast styles so z-index is managed centrally.
+  // Add an inline zIndex fallback extremely high to handle unexpected stacking contexts.
   return (
-    <div style={{ position: 'fixed', right: 20, top: 20, zIndex: 2000 }}>
-      <div className={`toast ${bg} p-2`} role="alert">
-        <div className="d-flex">
-          <div className="toast-body">{message}</div>
-          <button type="button" className="btn-close btn-close-white ms-2 m-auto" aria-label="Close" onClick={onClose}></button>
-        </div>
+    <div className="app-toast-wrapper" style={{ zIndex: 99999999 }}>
+      <div className={`app-toast ${bg} p-2`} role="alert">
+        <div className="app-toast__body">{message}</div>
+        <button type="button" className="app-toast__close" aria-label="Close" onClick={onClose}>✕</button>
       </div>
     </div>
   )
