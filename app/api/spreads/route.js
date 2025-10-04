@@ -6,8 +6,6 @@ const API_BASE_URL = process.env.API_BASE_URL || process.env.SERVER_URL || proce
 // GET /api/spreads - Fetch all spreads
 export async function GET(request) {
   try {
-    console.log('🔵 Frontend Spreads Proxy: Starting request')
-    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const name = searchParams.get('name')
@@ -20,8 +18,6 @@ export async function GET(request) {
     } else if (name) {
       url = `${API_BASE_URL}/api/spreads/by-name?name=${encodeURIComponent(name)}`
     }
-    
-    console.log('🔵 Frontend Spreads Proxy: Proxying request to:', url)
     
     // Get authorization from header OR cookies
     const authHeader = request.headers.get('authorization')
@@ -37,13 +33,9 @@ export async function GET(request) {
     // Add authentication - prefer Bearer token, fallback to cookie
     if (authHeader) {
       headers['Authorization'] = authHeader
-      console.log('🔵 Frontend Spreads Proxy: Using Authorization header')
     } else if (token) {
       headers['Authorization'] = `Bearer ${token}`
       headers['Cookie'] = `token=${token}`
-      console.log('🔵 Frontend Spreads Proxy: Using token from cookies')
-    } else {
-      console.log('🔵 Frontend Spreads Proxy: No authentication found, proceeding without auth')
     }
     
     const response = await fetch(url, {
