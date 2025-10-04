@@ -88,11 +88,9 @@ export default function DecksPage() {
 
   async function loadDecks() {
       try {
-        console.log('🔵 DeckPage: Attempting to fetch decks via Server Action...');
         const result = await getDecksAction()
 
         if (!result.success) {
-
           setToast('Failed to load decks: ' + result.error)
           setDecks([])
           return
@@ -102,14 +100,12 @@ export default function DecksPage() {
         const arr = Array.isArray(result.decks) ? result.decks : []
 
         if (arr.length === 0) {
-
           setToast('No decks available. Please check your connection.')
           setDecks([])
           return
         }
 
         const normalized = arr.map(d => {
-
           return {
             ...d, // Keep all original properties
             _id: d._id || d.id || '',
@@ -117,14 +113,11 @@ export default function DecksPage() {
           }
         })
 
-
         setDecks(normalized)
         if (normalized.length) {
-
           setSelectedDeck(normalized[0]._id)
         }
       } catch (err) {
-
         setToast('Failed to load decks: ' + err.message)
         setDecks([])
       }

@@ -6,8 +6,6 @@ const API_BASE_URL = process.env.API_BASE_URL || process.env.SERVER_URL || proce
 // GET /api/decks - Fetch all decks
 export async function GET(request) {
   try {
-    console.log('🔵 Frontend Decks Proxy: Starting request')
-    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     
@@ -17,8 +15,6 @@ export async function GET(request) {
     if (id) {
       url = `${API_BASE_URL}/api/decks/${id}`
     }
-    
-    console.log('🔵 Frontend Decks Proxy: Proxying request to:', url)
     
     // Get authorization from header OR cookies
     const authHeader = request.headers.get('authorization')
@@ -34,13 +30,9 @@ export async function GET(request) {
     // Add authentication - prefer Bearer token, fallback to cookie
     if (authHeader) {
       headers['Authorization'] = authHeader
-      console.log('🔵 Frontend Decks Proxy: Using Authorization header')
     } else if (token) {
       headers['Authorization'] = `Bearer ${token}`
       headers['Cookie'] = `token=${token}`
-      console.log('🔵 Frontend Decks Proxy: Using token from cookies')
-    } else {
-      console.log('🔵 Frontend Decks Proxy: No authentication found, proceeding without auth')
     }
     
     const response = await fetch(url, {
