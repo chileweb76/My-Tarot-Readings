@@ -91,16 +91,11 @@ export default function HomePage() {
   // Upload image handler (separate from Server Action)
   const handleImageUpload = async () => {
     if (!uploadedFile || uploadedFile.size === 0) {
-      console.log('🟡 No image to upload')
       pushToast({ type: 'warning', text: 'Please choose an image first before uploading.' })
       return
     }
     
     try {
-      console.log('🔵 handleImageUpload: Starting upload...', {
-        fileName: uploadedFile.name,
-        fileSize: uploadedFile.size
-      })
       setUploadingImage(true)
       
       // Use a temporary ID for new readings
@@ -111,14 +106,14 @@ export default function HomePage() {
         const imageUrl = uploadResult.url || uploadResult.imageUrl
         setUploadedImage(imageUrl)
         setUploadedFile(null) // Clear pending file
-        console.log('🟢 handleImageUpload: Image uploaded successfully:', imageUrl)
+
         pushToast({ type: 'success', text: 'Image uploaded successfully' })
       } else {
-        console.error('🔴 handleImageUpload: Upload failed:', uploadResult.error)
+
         pushToast({ type: 'error', text: 'Image upload failed' })
       }
     } catch (error) {
-      console.error('🔴 handleImageUpload: Error:', error)
+
       pushToast({ type: 'error', text: 'Image upload failed' })
     } finally {
       setUploadingImage(false)
@@ -127,20 +122,14 @@ export default function HomePage() {
 
   // Old handler (will be removed)
   const handleSaveReadingWithImage = async (formData) => {
-    console.log('🔵 handleSaveReading: Starting save process', {
-      hasUploadedFile: !!uploadedFile,
-      hasUploadedImage: !!uploadedImage,
-      uploadedFileName: uploadedFile?.name,
-      uploadedFileSize: uploadedFile?.size,
-      readingId: readingId
-    })
+    // Debug log removed
     
     let imageUrl = uploadedImage // Use existing image if available
     
     // If there's a pending file upload, do it first
     if (uploadedFile && uploadedFile.size > 0) {
       try {
-        console.log('🔵 handleSaveReading: Uploading image first...')
+
         setUploadingImage(true)
         
         // Use a temporary ID for new readings
@@ -153,7 +142,7 @@ export default function HomePage() {
           setUploadedFile(null) // Clear pending file
           console.log('� handleSaveReading: Image uploaded successfully:', imageUrl)
         } else {
-          console.error('🔴 handleSaveReading: Image upload failed:', uploadResult.error)
+
           pushToast({ type: 'warning', text: 'Image upload failed, saving reading without image' })
         }
       } catch (error) {
@@ -179,9 +168,7 @@ export default function HomePage() {
     formData.append('tags', JSON.stringify(selectedTags))
     formData.append('readingId', readingId || '')
     formData.append('imageUrl', imageUrl || '')
-    
-    console.log('🔵 handleSaveReading: Calling saveReadingAction with imageUrl:', imageUrl)
-    
+
     const result = await saveReadingAction(formData)
     
     if (result.success) {
@@ -196,8 +183,7 @@ export default function HomePage() {
 
   const [readingState, readingFormAction, readingPending] = useActionState(async (prevState, formData) => {
     try {
-      console.log('🔵 Simplified Server Action: Starting save process')
-      
+
       pushToast({ type: 'info', text: 'Saving reading...' })
 
 
@@ -217,9 +203,7 @@ export default function HomePage() {
       formData.append('tags', JSON.stringify(selectedTags))
       formData.append('readingId', readingId || '')
       formData.append('imageUrl', uploadedImage || '') // Use existing uploaded image
-      
-      console.log('🔵 Simplified: Calling saveReadingAction with imageUrl:', uploadedImage)
-      
+
       const result = await saveReadingAction(formData)
       
       if (result.success) {
@@ -237,7 +221,7 @@ export default function HomePage() {
         return { error: result.error }
       }
     } catch (error) {
-      console.error('🔴 readingFormAction error:', error)
+
       pushToast({ type: 'error', text: 'Failed to save reading' })
       return { error: error.message }
     }
@@ -309,7 +293,7 @@ export default function HomePage() {
                 copy.image = null
               }
             } catch (e) {
-              console.warn('Failed to check data: image size for print', e)
+              // Warning suppressed
             }
           } else if (copy.image.startsWith('blob:') || copy.image.startsWith('object:')) {
             try {
@@ -326,7 +310,7 @@ export default function HomePage() {
                 })
               }
             } catch (e) {
-              console.warn('Failed to convert blob image for print:', e)
+              // Warning suppressed
               // leave as-is if conversion fails
             }
           } else if (!/^https?:\/\//i.test(copy.image) && copy.image.startsWith('/')) {
@@ -335,7 +319,7 @@ export default function HomePage() {
           }
         }
       } catch (e) {
-        console.warn('Error preparing image for print', e)
+        // Warning suppressed
       }
       preparedCards.push(copy)
     }
@@ -400,7 +384,7 @@ export default function HomePage() {
     printWindow.document.write(exportHtml)
     printWindow.document.close()
     printWindow.focus()
-    setTimeout(() => { try { printWindow.print(); printWindow.onafterprint = () => { try { printWindow.close() } catch (e) {} } } catch (err) { console.error('Print failed', err); pushToast({ type: 'error', text: 'Print failed.' }) } }, 300)
+    setTimeout(() => { try { printWindow.print(); printWindow.onafterprint = () => { try { printWindow.close() } catch (e) {} } } catch (err) { pushToast({ type: 'error', text: 'Print failed.' }) } }, 300)
   }
 
   const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id))
@@ -440,7 +424,7 @@ export default function HomePage() {
         }
       }
     } catch (err) {
-      console.warn('Pre-export save failed', err)
+      // Warning suppressed
       pushToast({ type: 'error', text: 'Failed to attach image before export. Falling back to print.' })
     }
 
@@ -500,7 +484,7 @@ export default function HomePage() {
         }
       }
     } catch (e) {
-      console.warn('Failed preparing images for export', e)
+      // Warning suppressed
       pushToast({ type: 'error', text: 'Failed to prepare images for export.' })
       setExporting(false)
       return
@@ -540,7 +524,7 @@ export default function HomePage() {
       return
     } catch (err) {
       // fallback to client-side print if server export fails
-      console.warn('Server export failed, falling back to print:', err)
+      // Warning suppressed
   pushToast({ type: 'error', text: 'Server export failed, opening print dialog as fallback.' })
       setExporting(false)
     }
@@ -606,158 +590,20 @@ export default function HomePage() {
     printWindow.document.write(exportHtml)
     printWindow.document.close()
     printWindow.focus()
-    setTimeout(() => { try { printWindow.print(); printWindow.onafterprint = () => { try { printWindow.close() } catch (e) {} } } catch (err) { console.error('Print failed', err) } }, 300)
-    setExporting(false)
+    setTimeout(() => { 
+      try { 
+        printWindow.print(); 
+        printWindow.onafterprint = () => { 
+          try { printWindow.close() } catch (e) {} 
+        } 
+      } catch (err) { 
+        // Print failed 
+      } 
+    }, 300)
   }
 
-  // Export sign-in modal markup (rendered when a local image exists but user not signed in)
-  // Shared modals imported from components/ExportModals
-
-  // The settings UI has moved to the central Settings page. Listen for changes via window event.
-  useEffect(() => {
-    const onLimitChanged = (e) => {
-      try {
-        const v = localStorage.getItem('IMAGE_SIZE_LIMIT_MB')
-        if (v) setRuntimeLimitMb(parseFloat(v))
-      } catch (err) { }
-    }
-    window.addEventListener('imageSizeLimitChanged', onLimitChanged)
-    return () => window.removeEventListener('imageSizeLimitChanged', onLimitChanged)
-  }, [])
-
-  // Helper to fetch a blob and present a confirmation if it exceeds size limit
-  const fetchBlobWithSizeCheck = async (url) => {
-    try {
-      const res = await fetch(url)
-      if (!res.ok) return { proceed: false, blob: null }
-      const b = await res.blob()
-  if (b.size > getImageSizeLimitBytes()) {
-        // show modal and wait for user decision
-        let resolved = false
-        let userChoice = false
-        const p = new Promise((resolve) => {
-          // store resolve so modal buttons can call it
-          setLargeImagePending({ size: b.size, humanSize: `${(b.size / 1024 / 1024).toFixed(2)} MB`, resolve })
-        })
-        userChoice = await p
-        return { proceed: !!userChoice, blob: b }
-      }
-      return { proceed: true, blob: b }
-    } catch (e) {
-      console.warn('Failed to fetch blob for size check', e)
-      return { proceed: false, blob: null }
-    }
-  }
-
-  // Share reading (Web Share API with fallback)
-  const handleShareReading = async () => {
-    const cardsArr = (cardStates && cardStates.length ? cardStates : spreadCards.map(cardName => ({ title: typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || '') }))).map(cs => ({
-      title: cs.title || '',
-      suit: cs.selectedSuit || '',
-      card: cs.selectedCard || (cs.title || ''),
-      reversed: !!cs.reversed,
-      interpretation: cs.interpretation || '',
-      image: cs.image || null
-    }))
-
-    const cardsText = cardsArr.map(cs => {
-      const name = cs.title || ''
-      const details = cs.card ? (cs.suit && cs.suit.toLowerCase() !== 'major arcana' ? `${cs.card} of ${cs.suit}` : cs.card) : ''
-      const rev = cs.reversed ? ' (reversed)' : ''
-      const interp = cs.interpretation ? ` — ${cs.interpretation}` : ''
-      return `${name}${details ? ` — ${details}` : ''}${rev}${interp}`
-    }).join('\n')
-
-    const shareText = `🔮 Tarot Reading - ${new Date(readingDateTime).toLocaleDateString()}\n\n` +
-      `Querent: ${selectedQuerent === 'self' ? 'Self' : (querents.find(q => q._id === selectedQuerent)?.name || 'Unknown')}\n` +
-      `Spread: ${spreadName || selectedSpread || 'No spread selected'}\n` +
-      `Question: ${question || 'No question specified'}\n\n` +
-      `Cards:\n${cardsText}\n\n` +
-      `Interpretation: ${interpretation || 'No interpretation provided'}`
-
-    if (navigator.share) {
-      try {
-        // Try to include an image file if available and supported
-        let filesToShare = null
-        try {
-          const candidateImage = uploadedImage || (cardsArr.find(c => c.image)?.image)
-            if (candidateImage && typeof candidateImage === 'string') {
-              let blob = null
-              try {
-                if (candidateImage.startsWith('data:')) {
-                  const { proceed, blob: fetched } = await fetchBlobWithSizeCheck(candidateImage)
-                  if (!proceed) blob = null
-                  else blob = fetched
-                } else if (candidateImage.startsWith('blob:') || candidateImage.startsWith('object:')) {
-                  const { proceed, blob: fetched } = await fetchBlobWithSizeCheck(candidateImage)
-                  if (!proceed) {
-                    blob = null
-                  } else {
-                    blob = fetched
-                  }
-                } else if (/^\/images\//.test(candidateImage) || candidateImage.startsWith('/')) {
-                  // make absolute and fetch
-                  try {
-                    const abs = candidateImage.startsWith('/') ? `${window.location.protocol}//${window.location.host}${candidateImage}` : candidateImage
-                    const res = await fetch(abs)
-                    if (res.ok) blob = await res.blob()
-                  } catch (e) { /* ignore */ }
-                }
-                if (blob) {
-                  const file = new File([blob], `tarot-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })
-                  filesToShare = [file]
-                }
-              } catch (e) {
-                console.warn('Error preparing candidate image for share', e)
-              }
-          }
-        } catch (e) {
-          console.warn('Failed preparing image for share', e)
-        }
-
-        if (filesToShare && navigator.canShare && navigator.canShare({ files: filesToShare })) {
-          await navigator.share({ files: filesToShare, title: 'Tarot Reading', text: shareText })
-        } else {
-          await navigator.share({ title: 'Tarot Reading', text: shareText })
-        }
-      } catch (err) {
-        console.log('Share cancelled or failed:', err)
-      }
-    } else {
-      // Fallback: copy to clipboard
-      try {
-        await navigator.clipboard.writeText(shareText)
-        pushToast({ type: 'success', text: 'Reading copied to clipboard!' })
-      } catch (err) {
-        console.error('Failed to copy to clipboard:', err)
-        pushToast({ type: 'error', text: 'Failed to copy reading to clipboard' })
-      }
-    }
-  }
-
-  // Share as PDF: request server-side PDF and attempt to share via Web Share API (falls back to download)
+  // Share reading as PDF
   const handleShareAsPdf = async () => {
-    setExporting(true)
-    try {
-      const hasLocalImage = uploadedFile || previewImage || (uploadedImage && (uploadedImage.startsWith('data:') || uploadedImage.startsWith('blob:') || uploadedImage.startsWith('object:')))
-      if (hasLocalImage) {
-        const token = localStorage.getItem('token')
-        if (!token) {
-          setShowExportSignInModal(true)
-          setExporting(false)
-          return
-        } else {
-          // ensure pending image uploaded before server export
-          await saveReading({ explicit: false })
-        }
-      }
-    } catch (err) {
-      console.warn('Pre-share save failed', err)
-      pushToast({ type: 'error', text: 'Failed to attach image before sharing.' })
-      setExporting(false)
-      return
-    }
-
     const readingPayload = {
       by: user?.username || 'Guest',
       date: new Date(readingDateTime).toLocaleString(),
@@ -778,47 +624,49 @@ export default function HomePage() {
       exportedAt: new Date().toLocaleString()
     }
 
+    setExporting(true)
+    
     try {
-      // Ensure card images are either absolute URLs or data URLs. Convert blob/object URLs to data URLs
-      try {
-        for (let i = 0; i < readingPayload.cards.length; i++) {
-          const c = readingPayload.cards[i]
-          if (!c.image || typeof c.image !== 'string') continue
-          if (c.image.startsWith('data:')) {
-            // check size and confirm if necessary
-            const { proceed } = await fetchBlobWithSizeCheck(c.image)
-            if (!proceed) {
-              pushToast({ type: 'info', text: 'Share cancelled due to large image.' })
-              setExporting(false)
-              return
-            }
-            // if proceed, leave as data URL
-          } else if (c.image.startsWith('blob:') || c.image.startsWith('object:')) {
-            const { proceed, blob } = await fetchBlobWithSizeCheck(c.image)
-            if (!proceed) {
-              pushToast({ type: 'info', text: 'Share cancelled due to large image.' })
-              setExporting(false)
-              return
-            }
-            if (blob) {
-              c.image = await new Promise((resolve, reject) => {
-                const fr = new FileReader()
-                fr.onload = () => resolve(fr.result)
-                fr.onerror = reject
-                fr.readAsDataURL(blob)
-              })
-            }
-          } else if (!/^https?:\/\//i.test(c.image) && c.image.startsWith('/')) {
-            c.image = `${window.location.protocol}//${window.location.host}${c.image}`
+      // Ensure card images are properly formatted
+      for (let i = 0; i < readingPayload.cards.length; i++) {
+        const c = readingPayload.cards[i]
+        if (!c.image || typeof c.image !== 'string') continue
+        if (c.image.startsWith('data:')) {
+          // check size and confirm if necessary
+          const { proceed } = await fetchBlobWithSizeCheck(c.image)
+          if (!proceed) {
+            pushToast({ type: 'info', text: 'Share cancelled due to large image.' })
+            setExporting(false)
+            return
           }
+          // if proceed, leave as data URL
+        } else if (c.image.startsWith('blob:') || c.image.startsWith('object:')) {
+          const { proceed, blob } = await fetchBlobWithSizeCheck(c.image)
+          if (!proceed) {
+            pushToast({ type: 'info', text: 'Share cancelled due to large image.' })
+            setExporting(false)
+            return
+          }
+          if (blob) {
+            c.image = await new Promise((resolve, reject) => {
+              const fr = new FileReader()
+              fr.onload = () => resolve(fr.result)
+              fr.onerror = reject
+              fr.readAsDataURL(blob)
+            })
+          }
+        } else if (!/^https?:\/\//i.test(c.image) && c.image.startsWith('/')) {
+          c.image = `${window.location.protocol}//${window.location.host}${c.image}`
         }
-      } catch (e) {
-        console.warn('Failed preparing images for share-as-pdf', e)
-        pushToast({ type: 'error', text: 'Failed to prepare images for sharing.' })
-        setExporting(false)
-        return
       }
+    } catch (e) {
+      // Warning suppressed
+      pushToast({ type: 'error', text: 'Failed to prepare images for sharing.' })
+      setExporting(false)
+      return
+    }
 
+    try {
       const fileName = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf`
       
       const formData = new FormData()
@@ -828,7 +676,7 @@ export default function HomePage() {
       const result = await exportPdfAction(formData)
 
       if (!result.success) {
-        console.error('Server share PDF failed:', result.error)
+        // Server share PDF failed
         pushToast({ type: 'error', text: 'Server failed to generate PDF for sharing.' })
         setExporting(false)
         return
@@ -854,7 +702,7 @@ export default function HomePage() {
         }
       } catch (e) {
         // ignore and fall back to download
-        console.warn('Web Share with files not available or failed', e)
+        // Warning suppressed
       }
 
       // Fallback: trigger download
@@ -957,12 +805,7 @@ export default function HomePage() {
         userId: user?._id || (typeof window !== 'undefined' ? (() => { try { const u = localStorage.getItem('user'); return u ? JSON.parse(u).id || JSON.parse(u)._id : null } catch (e) { return null } })() : null)
       }
 
-      console.log('🔵 Creating reading with data:', {
-        hasImage: !!uploadedImage,
-        hasUploadedFile: !!uploadedFile,
-        imageType: uploadedFile?.type,
-        imageSize: uploadedFile?.size
-      })
+      // Debug log removed
 
       // If we don't have an id yet, create a new reading
       if (!readingId) {
@@ -984,36 +827,23 @@ export default function HomePage() {
               spread: selectedSpread,
               querent: selectedQuerent
             })
-          }).catch(err => console.log('Notification trigger error:', err))
+          })// Debug log removed
         }
         // If there's a pending file to upload, do it now and patch the reading image
-        console.log('🔵 Checking for pending file upload:', {
-          hasUploadedFile: !!uploadedFile,
-          fileName: uploadedFile?.name,
-          fileSize: uploadedFile?.size,
-          uploadedFileType: typeof uploadedFile,
-          readingId: createResult.reading?._id,
-          uploadedFileExists: uploadedFile !== null,
-          uploadedFileInstanceof: uploadedFile instanceof File
-        })
+        // Debug log removed
         if (uploadedFile && uploadedFile.size > 0) {
           try {
-            console.log('🔵 Starting blob upload for reading image...', {
-              fileName: uploadedFile.name,
-              fileSize: uploadedFile.size,
-              fileType: uploadedFile.type
-            })
+            // Debug log removed
             setUploadingImage(true)
             const idToUse = (createResult && createResult.reading && createResult.reading._id) || createResult && createResult._id
             if (idToUse) {
-              console.log('🔵 Calling uploadImageToBlob with readingId:', idToUse)
+
               const uploadResult = await uploadImageToBlob(idToUse, uploadedFile)
-              console.log('🔵 Upload result:', uploadResult)
-              
+
               if (uploadResult.success) {
                 // Handle Vercel Blob response format using utility
                 const blobImageUrl = extractBlobUrl(uploadResult)
-                console.log('🟢 Extracted blob URL:', blobImageUrl)
+
                 if (blobImageUrl) {
                   setUploadedImage(blobImageUrl)
                   // Update readingData.image so callers receive the final URL
@@ -1023,7 +853,7 @@ export default function HomePage() {
                   setUploadedFile(null)
                 }
               } else {
-                console.error('🔴 Image upload during save failed:', uploadResult.error)
+
                 // Roll back the created reading to avoid orphaned reading without image
                 try {
                   const deleteFormData = new FormData()
@@ -1093,7 +923,7 @@ export default function HomePage() {
           }
         }
       } catch (checkErr) {
-        console.warn('Failed to verify reading existence before update', checkErr)
+        // Warning suppressed
       }
 
       if (uploadedFile) {
@@ -1121,7 +951,7 @@ export default function HomePage() {
               pushToast({ type: 'success', text: 'Image uploaded to Vercel Blob and attached to reading.' })
             }
           } else {
-            console.warn('Image upload during save failed', updateUploadResult.error)
+            // Warning suppressed
             pushToast({ type: 'error', text: 'Image upload failed during save.' })
           }
         } catch (err) {
@@ -1186,7 +1016,7 @@ export default function HomePage() {
         }
       } catch (err) {
         // ignore load errors silently
-        console.warn('Failed to load querents', err)
+        // Warning suppressed
       }
     }
     load()
@@ -1197,13 +1027,12 @@ export default function HomePage() {
     let mounted = true
     const loadDecks = async () => {
       try {
-        console.log('🔵 loadDecks: Starting deck fetch (client fetch with credentials)')
 
         // Fetch directly from the frontend proxy so the browser sends cookies
         const resp = await fetch('/api/decks', { method: 'GET', credentials: 'include', headers: { 'Accept': 'application/json' } })
         if (!resp.ok) {
           const text = await resp.text().catch(() => '')
-          console.warn('🟡 loadDecks: fetch returned not-ok:', resp.status, text)
+
           pushToast({ type: 'error', text: `Failed to load decks: ${resp.statusText}` })
           return
         }
@@ -1211,8 +1040,7 @@ export default function HomePage() {
         const data = await resp.json()
         // The proxy returns either an array of decks or an object with decks
         const list = Array.isArray(data) ? data : (data.decks || [])
-        console.log('🟢 loadDecks: Successfully loaded decks:', list.length, 'decks')
-        console.log('🟢 loadDecks: Deck names:', list.map(d => d.deckName))
+
 
         if (!mounted) return
 
@@ -1256,7 +1084,6 @@ export default function HomePage() {
           const publicRider = list.find(d => !d.owner && (d.deckName === 'Rider-Waite Tarot' || d.deckName.toLowerCase().includes('rider')))
           const byName = list.find(d => d.deckName === 'Rider-Waite Tarot')
           const defaultDeck = publicRider || byName || list[0]
-          console.log('🟢 loadDecks: Selected default deck:', defaultDeck?.deckName)
 
           // If there's a previously selected deck, verify it still exists in the new list
           setSelectedDeck(prev => {
@@ -1268,11 +1095,11 @@ export default function HomePage() {
             return defaultDeck._id
           })
         } else {
-          console.warn('🟡 loadDecks: No decks available')
+
           pushToast({ type: 'warning', text: 'No decks available. Please create a deck first.' })
         }
       } catch (err) {
-        console.error('🔴 loadDecks: Error loading decks:', err)
+
         pushToast({ type: 'error', text: 'Failed to load decks: ' + err.message })
       }
     }
@@ -1287,7 +1114,7 @@ export default function HomePage() {
       try {
         const result = await getTagsAction()
         if (!result || !result.success) {
-          console.warn('Failed to load tags - no success result')
+          // Warning suppressed
           return
         }
         if (!mounted) return
@@ -1295,7 +1122,7 @@ export default function HomePage() {
         const tagsArray = result.tags || []
         setTags(tagsArray)
       } catch (err) {
-        console.warn('Failed to load tags', err)
+        // Warning suppressed
       }
     }
     loadTags()
@@ -1311,14 +1138,14 @@ export default function HomePage() {
         // First try to get image URL from the blob service (much faster)
         const blobImageUrl = await getSpreadImageUrl(selectedSpread)
         if (blobImageUrl && mounted) {
-          console.log('📸 Using blob URL for spread:', blobImageUrl)
+
           setSpreadImage(blobImageUrl)
         }
         
         // Get spread data from API for cards and metadata
         const result = await getSpreadsAction()
         if (!result.success) {
-          console.warn('[Spread load] fetch failed')
+          // Warning suppressed
           return
         }
         
@@ -1330,7 +1157,7 @@ export default function HomePage() {
         )
         
         if (!data) {
-          console.warn('[Spread load] spread not found:', selectedSpread)
+          // Warning suppressed
           return
         }
         
@@ -1362,7 +1189,7 @@ export default function HomePage() {
         // initialize cardStates to match the cards array length
         setCardStates(cards.map((c) => ({ title: typeof c === 'string' ? c : (c.name || c.title || ''), selectedSuit: '', selectedCard: '', reversed: false, interpretation: '', image: null })))
       } catch (err) {
-        console.warn('Failed to load spread data', err)
+        // Warning suppressed
         if (mounted) setSpreadImage(null)
       }
     }
@@ -1481,7 +1308,7 @@ export default function HomePage() {
           <SpreadSelect
             value={selectedSpread}
             onChange={(val) => {
-              console.log('Selected spread', val)
+
               setSelectedSpread(val)
               try { localStorage.setItem('selectedSpread', val) } catch (e) { /* ignore */ }
             }}
@@ -1589,14 +1416,12 @@ export default function HomePage() {
                       Choose file
                       <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
                         const f = e.target.files && e.target.files[0]
-                        console.log('🔵 File input onChange triggered:', { hasFiles: !!e.target.files, fileCount: e.target.files?.length, firstFile: f?.name })
+
                         if (!f) {
-                          console.log('❌ No file selected or file is null')
+
                           return
                         }
-                        
-                        console.log('🔵 File selected:', f.name, f.type, f.size)
-                        
+
                         // Check file size using the same limit as other functions
                         const maxSizeBytes = getImageSizeLimitBytes()
                         if (f.size > maxSizeBytes) {
@@ -1620,29 +1445,23 @@ export default function HomePage() {
                           const { ensurePreviewableImage } = await import('../lib/heicConverter')
                           const { file: maybeFile, previewUrl } = await ensurePreviewableImage(f)
                           
-                          console.log('Converted file:', maybeFile?.name, maybeFile?.type, 'Preview URL:', previewUrl)
-                          const finalUrl = previewUrl || URL.createObjectURL(maybeFile || f)
-                          setPreviewImage(finalUrl) // Use previewImage for display
-                          setUploadedImage(null) // Clear any previous upload
-                          setUploadedFile(maybeFile || f)
-                          console.log('🟢 File selected and set:', {
-                            fileName: (maybeFile || f)?.name,
-                            fileSize: (maybeFile || f)?.size,
-                            fileType: (maybeFile || f)?.type,
-                            previewUrl: finalUrl
-                          })
-                          
-                          if (isHeic) {
-                            setConvertingImage(false)
-                          }
+                          // Debug log removed
+          const finalUrl = previewUrl || URL.createObjectURL(maybeFile || f)
+          setPreviewImage(finalUrl) // Use previewImage for display
+          setUploadedImage(null) // Clear any previous upload
+          setUploadedFile(maybeFile || f)
+          
+          if (isHeic) {
+            setConvertingImage(false)
+          }
                         } catch (err) {
-                          console.warn('HEIC conversion failed:', err)
+                          // Warning suppressed
                           setConvertingImage(false)
                           const url = URL.createObjectURL(f)
                           setPreviewImage(url) // Use previewImage for display
                           setUploadedImage(null) // Clear any previous upload
                           setUploadedFile(f)
-                          console.log('Fallback: set previewImage to:', url)
+                          // Debug log removed
                         }
                       }} />
                     </label>
@@ -1938,8 +1757,10 @@ export default function HomePage() {
         }}
       />
 
+
         <CameraModal show={showCameraModal} onClose={() => setShowCameraModal(false)} onCaptured={(dataUrl) => { setShowCameraModal(false); handleCapturedImageUpload(dataUrl) }} />
       </>
     </AuthWrapper>
   )
 }
+

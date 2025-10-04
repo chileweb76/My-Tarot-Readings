@@ -11,19 +11,13 @@ export const dynamic = 'force-dynamic'
 export default function AuthSuccessPage() {
   const [status, setStatus] = useState('processing')
   const [debugInfo, setDebugInfo] = useState(null)
-  const [cookieInfo, setCookieInfo] = useState(null)
-  const [deckCheck, setDeckCheck] = useState(null)
 
   const fetchUserData = useCallback(async (retryCount = 0) => {
     try {
-      // First get debug info
-      const debug = await debugAuthStatusAction()
-      setDebugInfo(debug)
-      console.log('Auth debug info:', debug)
-      
-      // Use Server Action to get current user (uses HTTP-only cookies)
-      const result = await getCurrentUserAction()
-      console.log('getCurrentUserAction result:', result)
+  // First get debug info and attempt to retrieve current user
+  const debug = await debugAuthStatusAction()
+  setDebugInfo(debug)
+  const result = await getCurrentUserAction()
 
       if (result.success && result.user) {
         // Store user data in localStorage for client components that need it
@@ -41,7 +35,7 @@ export default function AuthSuccessPage() {
 
       // If no token found and we haven't retried much, wait and retry
       if (!debug.debug?.hasToken && retryCount < 3) {
-        console.log(`No token found, retrying in 1 second (attempt ${retryCount + 1}/3)`)
+        // Token not present yet; retry briefly
         setTimeout(() => fetchUserData(retryCount + 1), 1000)
         return
       }
@@ -52,27 +46,16 @@ export default function AuthSuccessPage() {
       const provider = sp.get('provider')
       
       if (provider && !debug.debug?.hasToken) {
-        console.error('OAuth flow detected but no token available. Possible causes:')
-        console.error('1. OAuth callback failed to set cookie or redirect with token')
-        console.error('2. Backend environment variables not configured')
-        console.error('3. Cross-origin cookie issues')
-        console.error('Redirecting back to auth page...')
-        
-        // Redirect back to auth page after a delay
-        setTimeout(() => {
-          window.location.href = '/auth?error=oauth_failed'
-        }, 3000)
+        // OAuth flow but no token — redirect back to auth
+        setTimeout(() => { window.location.href = '/auth?error=oauth_failed' }, 3000)
         return
       }
 
-      console.error('auth/success: getCurrentUserAction failed:', result.error)
+      // Failed to get current user
       setStatus('error')
     } catch (error) {
-      console.error('Error fetching user data:', error)
-      
       // Retry on network errors up to 3 times
       if (retryCount < 3) {
-        console.log(`Retrying due to error (attempt ${retryCount + 1}/3):`, error.message)
         setTimeout(() => fetchUserData(retryCount + 1), 1000)
         return
       }
@@ -87,18 +70,11 @@ export default function AuthSuccessPage() {
     const verified = sp.get('verified')
     const token = sp.get('token') // OAuth token from cross-domain callback
     
-    // Enhanced debugging
-    console.log('Auth success page loaded with params:', {
-      provider,
-      verified,
-      token: token ? `${token.substring(0, 10)}...` : null,
-      fullUrl: window.location.href,
-      search: window.location.search
-    })
+    // Determine flow from query params
 
     // If verification flow (no provider) — show verified message and redirect to sign-in
     if (!provider && verified === 'true') {
-      console.log('Email verification flow detected')
+  // Email verification flow
       setStatus('verified')
       setTimeout(() => {
         // send user back to sign-in so they can log in
@@ -109,64 +85,32 @@ export default function AuthSuccessPage() {
 
     // For OAuth with token relay (cross-domain)
     if (provider && token) {
-      console.log('OAuth token relay detected, exchanging token...', { 
-        provider, 
-        tokenPresent: !!token,
-        tokenLength: token.length
-      })
+      // OAuth token relay detected
       handleOAuthTokenRelay(token)
       return
     }
 
     // For authentication success (Google OAuth or other providers)
     if (provider || window.location.pathname.includes('success')) {
-      console.log('Standard OAuth flow detected (no token in URL), checking cookies...', { provider })
+  // Standard OAuth flow detected — check cookies via server action
       // Fetch user data using Server Action (cookies are handled automatically)
       fetchUserData()
     } else {
-      console.log('No valid auth flow detected, showing error')
+      // No valid auth flow detected
       setStatus('error')
     }
   }, [fetchUserData])
-
-  // Developer helper: check document cookies and do a test fetch to /api/decks
-  const runClientDiagnostics = async () => {
-    try {
-      const raw = typeof document !== 'undefined' ? document.cookie : ''
-      // mask cookie values for safety
-      const masked = raw.split(';').map(c => {
-        const [k, v] = c.split('=')
-        if (!k) return ''
-        const key = k.trim()
-        const val = v ? v.trim() : ''
-        if (!val) return key + '='
-        return `${key}=${val.substring(0, 6)}...(${val.length})`
-      }).filter(Boolean).join('; ')
-      setCookieInfo(masked)
-
-      // Test fetch to /api/decks with credentials to see if cookie is sent and user decks returned
-      setDeckCheck({ status: 'running' })
-      const resp = await fetch('/api/decks', { method: 'GET', credentials: 'include' })
-      const json = await resp.clone().json().catch(() => null)
-      setDeckCheck({ status: resp.ok ? 'ok' : 'error', code: resp.status, body: json })
-      console.log('Diagnostics /api/decks response:', resp, json)
-    } catch (err) {
-      console.error('Diagnostics error', err)
-      setDeckCheck({ status: 'error', error: String(err) })
-    }
-  }
+  // Diagnostics removed
 
   const handleOAuthTokenRelay = async (token) => {
     try {
-      // Clear the token from URL immediately for security
-      const newUrl = window.location.origin + window.location.pathname + '?provider=google'
-      window.history.replaceState({}, document.title, newUrl)
+  // Clear the token from URL immediately for security
+  const newUrl = window.location.origin + window.location.pathname + '?provider=google'
+  window.history.replaceState({}, document.title, newUrl)
       
-      // Exchange the token for a proper cookie
-      const result = await exchangeOAuthTokenAction(token)
-      console.log('Token exchange result:', result)
-      
-      if (result.success && result.user) {
+  // Exchange the token for a proper cookie
+  const result = await exchangeOAuthTokenAction(token)
+  if (result.success && result.user) {
         // Store user data in localStorage for client components that need it
         localStorage.setItem('user', JSON.stringify(result.user))
         
@@ -180,10 +124,10 @@ export default function AuthSuccessPage() {
         return
       }
       
-      console.error('OAuth token exchange failed:', result.error)
+      // OAuth token exchange failed
       setStatus('error')
     } catch (error) {
-      console.error('Error in OAuth token relay:', error)
+      // Error in OAuth token relay
       setStatus('error')
     }
   }
@@ -252,32 +196,7 @@ export default function AuthSuccessPage() {
                 </div>
               )}
 
-              {/* Developer diagnostics panel (non-production) */}
-              {process.env.NODE_ENV !== 'production' && (
-                <div className="mt-3 text-start small">
-                  <button type="button" className="btn btn-sm btn-outline-secondary" onClick={runClientDiagnostics}>Run client diagnostics</button>
-                  {cookieInfo && (
-                    <div className="mt-2">
-                      <strong>Cookies:</strong>
-                      <div className="text-monospace">{cookieInfo}</div>
-                    </div>
-                  )}
-                  {deckCheck && (
-                    <div className="mt-2">
-                      <strong>/api/decks:</strong>
-                      <div className="mt-1">
-                        {deckCheck.status === 'running' && <span>Running…</span>}
-                        {deckCheck.status === 'ok' && (
-                          <pre className="small">{JSON.stringify(deckCheck.body, null, 2)}</pre>
-                        )}
-                        {deckCheck.status === 'error' && (
-                          <pre className="small">{JSON.stringify(deckCheck, null, 2)}</pre>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Diagnostics removed */}
             </div>
           </div>
         </div>

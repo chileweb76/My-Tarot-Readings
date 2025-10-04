@@ -70,7 +70,7 @@ self.addEventListener('fetch', (event) => {
     // Handle other POST requests (like API calls) normally
     event.respondWith(
       fetch(event.request).catch((error) => {
-        console.log('[SW] POST request failed:', error)
+        // SW POST request failed (error suppressed)
         return new Response(
           JSON.stringify({ error: 'Network error, please try again when online' }),
           { status: 503, headers: { 'Content-Type': 'application/json' }}
@@ -170,7 +170,7 @@ self.addEventListener('push', (event) => {
         requireInteraction: payload.requireInteraction || false
       }
     } catch (error) {
-      console.error('Error parsing push payload:', error)
+      // Push payload parse error (suppressed)
     }
   }
 

@@ -7,11 +7,11 @@ export default function OfflinePage() {
   // Small helper handlers so buttons don't reference undefined functions
   const install = () => {
     // noop — real install flow handled elsewhere
-    try { console.log('Install PWA requested') } catch (e) {}
+    // Install PWA requested
   }
 
   const checkSW = () => {
-    try { console.log('Check service worker requested') } catch (e) {}
+    // Check service worker requested
   }
 
   return (

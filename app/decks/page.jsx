@@ -90,10 +90,9 @@ export default function DecksPage() {
       try {
         console.log('🔵 DeckPage: Attempting to fetch decks via Server Action...');
         const result = await getDecksAction()
-        console.log('🔵 DeckPage: Raw result:', result)
-        
+
         if (!result.success) {
-          console.error('🔴 DeckPage: Failed to fetch decks:', result.error)
+
           setToast('Failed to load decks: ' + result.error)
           setDecks([])
           return
@@ -101,17 +100,16 @@ export default function DecksPage() {
 
         // Ensure we have an array to map over
         const arr = Array.isArray(result.decks) ? result.decks : []
-        console.log('🔵 DeckPage: Raw decks array:', arr.length, 'decks')
-        
+
         if (arr.length === 0) {
-          console.warn('🟡 DeckPage: No decks returned from API')
+
           setToast('No decks available. Please check your connection.')
           setDecks([])
           return
         }
 
         const normalized = arr.map(d => {
-          console.log('🔵 DeckPage: Normalizing deck:', d?.deckName || d?.name)
+
           return {
             ...d, // Keep all original properties
             _id: d._id || d.id || '',
@@ -119,16 +117,14 @@ export default function DecksPage() {
           }
         })
 
-        console.log('🟢 DeckPage: Successfully normalized', normalized.length, 'decks')
-        console.log('🟢 DeckPage: Available decks:', normalized.map(d => ({ id: d._id, name: d.deckName })))
-        
+
         setDecks(normalized)
         if (normalized.length) {
-          console.log('🟢 DeckPage: Setting selected deck to:', normalized[0].deckName)
+
           setSelectedDeck(normalized[0]._id)
         }
       } catch (err) {
-        console.error('🔴 DeckPage: Error loading decks:', err)
+
         setToast('Failed to load decks: ' + err.message)
         setDecks([])
       }
@@ -158,8 +154,8 @@ export default function DecksPage() {
 
     // Validate that selectedDeck looks like a valid MongoDB ObjectId
     if (typeof selectedDeck !== 'string' || selectedDeck.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(selectedDeck)) {
-      console.warn('🚫 Invalid deck ID format:', selectedDeck, 'Skipping load.')
-      console.warn('🚫 Expected 24-character MongoDB ObjectId, got:', typeof selectedDeck, selectedDeck?.length)
+
+
       setDeckDetails(null)
       // Reset to empty string to prevent invalid IDs from persisting
       setSelectedDeck('')

@@ -317,43 +317,40 @@ export default function SettingsPage() {
   // load decks for this user (only user-owned decks)
   ;(async () => {
           try {
-            console.log('🔵 Settings: Loading decks for user deletion management...')
+
             const result = await getDecksAction()
-            console.log('🔵 Settings: Decks result:', result)
-            
+
             if (result.success && result.decks) {
               // Filter to only show decks owned by the current user
               const userId = user && (user._id || user.id) ? String(user._id || user.id) : null
-              console.log('🔵 Settings: Current user ID:', userId)
-              console.log('🔵 Settings: All decks:', result.decks.map(d => ({ id: d._id, name: d.deckName, owner: d.owner })))
-              
+
+
               const userOwnedDecks = result.decks.filter(deck => {
                 // Explicitly exclude Rider-Waite Tarot deck
                 if (deck.deckName === 'Rider-Waite Tarot Deck') {
-                  console.log('🟡 Settings: Excluding system deck:', deck.deckName)
+
                   return false
                 }
                 
                 // If deck has an owner field, check if it matches current user
                 if (deck.owner) {
                   const isOwned = String(deck.owner) === userId
-                  console.log(`🔵 Settings: Deck "${deck.deckName}" owner check:`, deck.owner, 'vs', userId, '=', isOwned)
+
                   return isOwned
                 }
                 
                 // Exclude system decks (owner: null) and other decks without owner
-                console.log('🟡 Settings: Excluding deck with no owner:', deck.deckName)
+
                 return false
               })
-              
-              console.log('🟢 Settings: User-owned decks:', userOwnedDecks.length, userOwnedDecks.map(d => d.deckName))
+
               setDecks(userOwnedDecks)
               if (userOwnedDecks.length) setSelectedDeckId(userOwnedDecks[0]._id)
             } else {
-              console.warn('🟡 Settings: No decks result or failed:', result)
+
             }
           } catch (err) {
-            console.error('🔴 Settings: Failed to load decks', err)
+
           }
   })()
   // load spreads and pick user's custom spreads

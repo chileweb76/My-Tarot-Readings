@@ -70,4 +70,4 @@ const results = spreads.map(sp => {
   }
 })
 
-console.log(JSON.stringify(results, null, 2))
+// Results output removed for production

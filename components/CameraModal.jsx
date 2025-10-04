@@ -28,7 +28,7 @@ export default function CameraModal({ show, onClose, onCaptured }) {
           if (navigator.permissions && navigator.permissions.query) {
             const p = await navigator.permissions.query({ name: 'camera' })
             permState = p.state
-            console.log('Camera permission state:', permState)
+            // Debug log removed
           }
         } catch (e) {
           // ignore permission API failures
