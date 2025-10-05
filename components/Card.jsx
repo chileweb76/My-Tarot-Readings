@@ -100,11 +100,14 @@ export default function Card({
           ? selectedCard 
           : `${selectedCard} of ${selectedSuit}`
         
+        console.log('🔍 fetchCardImage called:', { cardName, hasDeckData: !!deckData, hasCards: !!deckData?.cards, cardsCount: deckData?.cards?.length })
+        
         if (deckData && deckData.cards) {
           // For any deck with card data (including Rider-Waite), use the deck data directly
           const card = deckData.cards.find(c => 
             (c.name || '').toLowerCase() === cardName.toLowerCase()
           )
+          console.log('🔍 Found card:', { found: !!card, cardImage: card?.image })
           if (card && card.image) {
             setCurrentImage(card.image)
           } else {
@@ -162,10 +165,8 @@ export default function Card({
               (c.name || '').toLowerCase() === title.toLowerCase()
             )
             if (card && card.image) {
-              console.log(`Found card image for "${title}":`, card.image)
               setCurrentImage(card.image)
             } else {
-              console.log(`No image found for card "${title}" in deck data`)
               setCurrentImage(null)
             }
           } else if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
@@ -173,10 +174,8 @@ export default function Card({
             try {
               const imageUrl = await getCardImageUrlService(title, deck)
               if (imageUrl) {
-                console.log('Got image URL from service:', imageUrl)
                 setCurrentImage(imageUrl)
               } else {
-                console.log('No image URL returned from service')
                 setCurrentImage(null)
               }
             } catch (apiError) {
@@ -184,15 +183,12 @@ export default function Card({
               setCurrentImage(null)
             }
           } else {
-            console.log(`Fetching image for card: "${title}" from deck: "${deck}"`)
             try {
               // Use the new image service for backend API calls
               const imageUrl = await getCardImageUrlService(title, deck)
               if (imageUrl) {
-                console.log('Got image URL from service:', imageUrl)
                 setCurrentImage(imageUrl)
               } else {
-                console.log('No image URL returned from service')
                 setCurrentImage(null)
               }
             } catch (apiError) {
