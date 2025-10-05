@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useActionState } from 'react'
+import { useState, useEffect, useActionState, Component } from 'react'
 import Image from 'next/image'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCog, faUserCircle, faSignOutAlt, faFileExport, faDatabase, faSave } from '../../lib/icons'
@@ -28,6 +28,47 @@ import {
   requestAccountDeletionAction,
   cancelAccountDeletionAction
 } from '../../lib/actions'
+
+// Error Boundary to catch rendering errors in PWA
+class SettingsErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Settings page error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="container mt-5">
+          <div className="alert alert-danger">
+            <h4>Settings page error</h4>
+            <p>Something went wrong loading the settings page.</p>
+            <details>
+              <summary>Error details</summary>
+              <pre>{String(this.state.error)}</pre>
+            </details>
+            <button 
+              className="btn btn-primary mt-3" 
+              onClick={() => window.location.reload()}
+            >
+              Reload page
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 // DiagnosticsPanel: small client-only helper to inspect cookies and test /api/decks with credentials
 function DiagnosticsPanel() {
@@ -125,9 +166,19 @@ export default function SettingsPage() {
   }, { success: false, error: null })
 
   useEffect(() => {
-    const userData = localStorage.getItem('user')
-    if (userData) {
-      setUser(JSON.parse(userData))
+    try {
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        setUser(JSON.parse(userData))
+      }
+    } catch (err) {
+      console.error('Failed to load user from localStorage:', err)
+      // Fallback: try to get user from server
+      getCurrentUserAction().then(result => {
+        if (result.success && result.user) {
+          setUser(result.user)
+        }
+      }).catch(e => console.error('Failed to load user from server:', e))
     }
   }, [])
 
@@ -751,14 +802,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <AuthWrapper>
-      <div className="row">
-        <div className="col-lg-8 mx-auto">
-          <div className="card card-reading p-4">
-            <h1 className="text-center mb-4">
-              <FontAwesomeIcon icon={faCog} className="text-primary me-2" />
-              Settings
-            </h1>
+    <SettingsErrorBoundary>
+      <AuthWrapper>
+        <div className="row">
+          <div className="col-lg-8 mx-auto">
+            <div className="card card-reading p-4">
+              <h1 className="text-center mb-4">
+                <FontAwesomeIcon icon={faCog} className="text-primary me-2" />
+                Settings
+              </h1>
 
             {/* Diagnostics: helps debug PWA / cookie issues (visible only in client) */}
             <div className="mb-3">
@@ -1278,5 +1330,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </AuthWrapper>
+    </SettingsErrorBoundary>
   )
 }
