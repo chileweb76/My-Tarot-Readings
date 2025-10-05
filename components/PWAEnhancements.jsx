@@ -144,6 +144,62 @@ export default function PWAEnhancements() {
     }
   }
 
+  // Expose a global trigger for other UI (or modals) that may instruct the user
+  // to "click the Install App button above" — some modals are rendered elsewhere
+  // and we inject a real button into them via MutationObserver below.
+  useEffect(() => {
+    window.triggerPwaInstall = async () => {
+      if (deferredPrompt) {
+        try {
+          deferredPrompt.prompt()
+          const { outcome } = await deferredPrompt.userChoice
+          if (outcome === 'accepted') setDeferredPrompt(null)
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        // No beforeinstallprompt available; do nothing (instructions explain manual install)
+      }
+    }
+
+    // Observe for modals titled 'Install App' and inject an Install button if missing
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of Array.from(m.addedNodes || [])) {
+          try {
+            if (!(node instanceof HTMLElement)) continue
+            const modalTitles = node.querySelectorAll && node.querySelectorAll('.modal-title')
+            if (!modalTitles) continue
+            modalTitles.forEach(titleEl => {
+              if (titleEl && /install app/i.test(titleEl.textContent || '')) {
+                const header = titleEl.closest('.modal-content')?.querySelector('.modal-header')
+                if (header && !header.querySelector('.pwa-install-btn')) {
+                  const btn = document.createElement('button')
+                  btn.type = 'button'
+                  btn.className = 'btn btn-primary btn-sm ms-2 pwa-install-btn'
+                  btn.textContent = 'Install App'
+                  btn.addEventListener('click', () => {
+                    if (window.triggerPwaInstall) window.triggerPwaInstall()
+                  })
+                  header.appendChild(btn)
+                }
+              }
+            })
+          } catch (e) {
+            // safe-ignore
+          }
+        }
+      }
+    })
+
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    return () => {
+      observer.disconnect()
+      try { delete window.triggerPwaInstall } catch (e) {}
+    }
+  }, [deferredPrompt])
+
   const handleSyncOfflineData = () => {
     const form = new FormData()
     form.append('offlineReadings', JSON.stringify(offlineData.readings))
