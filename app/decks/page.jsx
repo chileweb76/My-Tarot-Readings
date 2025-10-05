@@ -11,6 +11,7 @@ import {
   getDecksAction,
   getSingleDeckAction,
   createDeckAction,
+  updateDeckAction,
   uploadDeckBlobAction,
   uploadCardBlobAction
 } from '../../lib/actions'
@@ -78,6 +79,10 @@ export default function DecksPage() {
   const [uploadingDeckImage, setUploadingDeckImage] = useState(false)
   const [editingCard, setEditingCard] = useState(null) // stores card name being edited
   const [showCardEditModal, setShowCardEditModal] = useState(false)
+  const [showDeckInfoModal, setShowDeckInfoModal] = useState(false)
+  const [editDeckName, setEditDeckName] = useState('')
+  const [editDeckDescription, setEditDeckDescription] = useState('')
+  const [updatingDeckInfo, setUpdatingDeckInfo] = useState(false)
 
   useEffect(() => {
     const rawBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
@@ -649,6 +654,45 @@ export default function DecksPage() {
     }
   }
 
+  const updateDeckInfo = async () => {
+    const name = (editDeckName || '').trim()
+    if (!name) {
+      setToast({ message: 'Deck name is required', type: 'error' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+      return
+    }
+    
+    setUpdatingDeckInfo(true)
+    try {
+      const formData = new FormData()
+      formData.append('deckId', selectedDeck)
+      formData.append('deckName', name)
+      formData.append('description', editDeckDescription || '')
+      
+      const result = await updateDeckAction(formData)
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update deck')
+      }
+      
+      // Update deck in local state
+      setDecks(prev => prev.map(d => d._id === selectedDeck ? { ...d, deckName: name, description: editDeckDescription || '' } : d))
+      
+      // Update deckDetails
+      setDeckDetails(prev => prev ? { ...prev, deckName: name, description: editDeckDescription || '' } : null)
+      
+      setShowDeckInfoModal(false)
+      setToast({ message: 'Deck updated successfully', type: 'success' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+    } catch (err) {
+      console.error(err)
+      setToast({ message: err.message || 'Failed to update deck', type: 'error' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+    } finally {
+      setUpdatingDeckInfo(false)
+    }
+  }
+
   return (
     <AuthWrapper>
       <div className="reading text-center my-4">
@@ -696,6 +740,76 @@ export default function DecksPage() {
         onNameChange={setNewDeckName}
         onDescriptionChange={setNewDeckDescription}
       />
+      
+      {/* Deck Info Edit Modal */}
+      {showDeckInfoModal && (
+        <div className="modal show d-block" tabIndex={-1} role="dialog">
+          <div className="modal-dialog modal-md" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit Deck Info</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  aria-label="Close" 
+                  onClick={() => setShowDeckInfoModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label htmlFor="editDeckName" className="form-label">Deck Name</label>
+                  <input
+                    id="editDeckName"
+                    type="text"
+                    className="form-control"
+                    value={editDeckName}
+                    onChange={(e) => setEditDeckName(e.target.value)}
+                    placeholder="Enter deck name"
+                    disabled={updatingDeckInfo}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="editDeckDescription" className="form-label">Description</label>
+                  <textarea
+                    id="editDeckDescription"
+                    className="form-control"
+                    rows={4}
+                    value={editDeckDescription}
+                    onChange={(e) => setEditDeckDescription(e.target.value)}
+                    placeholder="Enter deck description (optional)"
+                    disabled={updatingDeckInfo}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowDeckInfoModal(false)}
+                  disabled={updatingDeckInfo}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  onClick={updateDeckInfo}
+                  disabled={updatingDeckInfo}
+                >
+                  {updatingDeckInfo ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Updating...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Deck Edit Modal */}
       {showDeckEditModal && (
@@ -1007,13 +1121,26 @@ export default function DecksPage() {
                           <div className="d-flex justify-content-between align-items-start mb-2">
                             <h4 className="card-title mb-0">{deckDetails.deckName}</h4>
                             {!isRiderWaiteDeck(deckDetails) && (
-                              <button 
-                                className="btn btn-outline-primary btn-sm" 
-                                onClick={() => setShowDeckEditModal(true)}
-                                title="Edit deck image"
-                              >
-                                ✏️ Edit Image
-                              </button>
+                              <div className="d-flex gap-2">
+                                <button 
+                                  className="btn btn-outline-primary btn-sm" 
+                                  onClick={() => {
+                                    setEditDeckName(deckDetails.deckName || '')
+                                    setEditDeckDescription(deckDetails.description || '')
+                                    setShowDeckInfoModal(true)
+                                  }}
+                                  title="Edit deck name and description"
+                                >
+                                  ✏️ Edit Info
+                                </button>
+                                <button 
+                                  className="btn btn-outline-primary btn-sm" 
+                                  onClick={() => setShowDeckEditModal(true)}
+                                  title="Edit deck image"
+                                >
+                                  🖼️ Edit Image
+                                </button>
+                              </div>
                             )}
                           </div>
                           {deckDetails.description && (
