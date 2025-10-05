@@ -40,7 +40,7 @@ export default function PushNotificationsIOS() {
     // Check push notification support
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       // iOS requires PWA to be installed for push notifications
-      if (iosDetected && !pwaInstalled) {
+      if (iosDetected && !isPWAInstalled) {
         setIsSupported(false)
       } else {
         setIsSupported(true)
