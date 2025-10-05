@@ -506,12 +506,12 @@ export default function HomePage() {
       }
 
       // Convert base64 to blob and download
-      const binaryString = atob(result.pdf)
+      const binaryString = atob(result.data.blob)
       const bytes = new Uint8Array(binaryString.length)
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i)
       }
-      const blob = new Blob([bytes], { type: 'application/pdf' })
+      const blob = new Blob([bytes], { type: result.data.contentType || 'application/pdf' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -722,12 +722,12 @@ export default function HomePage() {
       }
 
       // Convert base64 to blob
-      const binaryString = atob(result.pdf)
+      const binaryString = atob(result.data.blob)
       const bytes = new Uint8Array(binaryString.length)
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i)
       }
-      const blob = new Blob([bytes], { type: 'application/pdf' })
+      const blob = new Blob([bytes], { type: result.data.contentType || 'application/pdf' })
       const filename = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf`
 
       // Try to share as a file using Web Share API
