@@ -102,34 +102,45 @@ export default function PushNotificationsIOS() {
     setLoading(true)
     try {
       // Request notification permission first (required on iOS)
+      console.log('[Push] Requesting notification permission...')
       const permission = await Notification.requestPermission()
+      console.log('[Push] Permission result:', permission)
 
       if (permission !== 'granted') {
         // permission denied or default
+        console.log('[Push] Permission was not granted:', permission)
         const err = new Error('permission_denied')
         err.code = 'PERMISSION_DENIED'
         throw err
       }
 
       // Ensure service worker registration and PushManager exist
+      console.log('[Push] Checking service worker...')
       const registration = await navigator.serviceWorker.ready
+      console.log('[Push] Service worker registration:', registration)
       if (!registration) {
         const err = new Error('no_service_worker')
         err.code = 'NO_SERVICE_WORKER'
         throw err
       }
+      console.log('[Push] Checking pushManager...')
       if (!registration.pushManager) {
+        console.log('[Push] PushManager not available')
         const err = new Error('no_push_manager')
         err.code = 'NO_PUSH_MANAGER'
         throw err
       }
 
+      console.log('[Push] Subscribing to push notifications...')
+      console.log('[Push] VAPID key available:', !!VAPID_PUBLIC_KEY)
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       })
+      console.log('[Push] Subscription successful:', subscription)
 
       // Send subscription to server
+      console.log('[Push] Sending subscription to server...')
       const response = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: {
