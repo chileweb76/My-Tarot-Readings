@@ -92,11 +92,6 @@ export default function PushNotificationsIOS() {
   }
 
   const subscribeToPush = async () => {
-    if (!VAPID_PUBLIC_KEY) {
-      alert('VAPID public key not configured. Please set NEXT_PUBLIC_VAPID_PUBLIC_KEY environment variable.')
-      return
-    }
-
     // iOS-specific check
     // If iOS and not installed, show instructions (early exit)
     if (isIOS && !isPWAInstalled) {
@@ -159,20 +154,14 @@ export default function PushNotificationsIOS() {
 
       // Provide clearer messages based on error code
       if (error && (error.code === 'PERMISSION_DENIED' || error.name === 'NotAllowedError')) {
-        alert('Please allow notifications in your device settings (Settings → Safari → Notifications) and try again.')
+        alert('Notification permission denied. To enable:\n\n1. Open iOS Settings\n2. Scroll to Safari\n3. Tap Notifications\n4. Enable "Allow Notifications"\n\nThen return here and try again.')
       } else if (error && error.code === 'NO_SERVICE_WORKER') {
-        alert('Service worker not active. Please open the app from your home screen (installed PWA) and try again.')
+        alert('App not properly installed. Please:\n\n1. Close this app\n2. Return to home screen\n3. Tap the app icon to reopen\n\nThen try subscribing again.')
       } else if (error && error.code === 'NO_PUSH_MANAGER') {
-        alert('PushManager not available. Ensure this app is installed and opened from the home screen, then try again.')
+        alert('Push notifications unavailable. Make sure:\n\n1. App is installed (added to home screen)\n2. Opened from home screen, not Safari\n3. iOS is up to date\n\nThen try again.')
       } else {
-        // Fallback message preserving previous guidance
-        if (isIOS && !isPWAInstalled) {
-          setShowIOSInstructions(true)
-        } else if (isIOS) {
-          alert('Failed to subscribe to notifications. Ensure the app is installed (open from home screen) and that Safari permissions allow notifications.')
-        } else {
-          alert('Failed to subscribe to notifications. Please try again.')
-        }
+        // Simplified fallback - no need to check isPWAInstalled again since we already checked in UI
+        alert('Unable to enable notifications. This might be due to:\n\n• Permissions denied in iOS Settings → Safari\n• App needs to be reinstalled from home screen\n• Service worker not ready\n\nPlease check settings and try again.')
       }
     } finally {
       setLoading(false)
@@ -305,28 +294,39 @@ export default function PushNotificationsIOS() {
           </div>
         )}
         
-        <div className="d-flex gap-2 flex-wrap">
-          {!isSubscribed ? (
-            <button 
-              className="btn btn-primary"
-              onClick={subscribeToPush}
-              disabled={loading}
-            >
-              {loading ? 'Subscribing...' : 'Enable Notifications'}
-            </button>
-          ) : (
-            <>
+        {/* Check if VAPID keys are configured before showing subscribe button */}
+        {!VAPID_PUBLIC_KEY ? (
+          <div className="alert alert-warning">
+            <strong>⚙️ Setup Required</strong>
+            <p className="mb-0 mt-2">
+              Push notifications require server configuration (VAPID keys). 
+              This is an optional feature. Contact the site administrator if you'd like notifications enabled.
+            </p>
+          </div>
+        ) : (
+          <div className="d-flex gap-2 flex-wrap">
+            {!isSubscribed ? (
               <button 
-                className="btn btn-outline-secondary"
-                onClick={unsubscribeFromPush}
+                className="btn btn-primary"
+                onClick={subscribeToPush}
                 disabled={loading}
               >
-                {loading ? 'Unsubscribing...' : 'Disable Notifications'}
+                {loading ? 'Subscribing...' : 'Enable Notifications'}
               </button>
-              {/* Send Test button removed from production settings */}
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <button 
+                  className="btn btn-outline-secondary"
+                  onClick={unsubscribeFromPush}
+                  disabled={loading}
+                >
+                  {loading ? 'Unsubscribing...' : 'Disable Notifications'}
+                </button>
+                {/* Send Test button removed from production settings */}
+              </>
+            )}
+          </div>
+        )}
 
         {isSubscribed && (
           <div className="mt-3">
