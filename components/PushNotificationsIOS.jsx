@@ -154,14 +154,13 @@ export default function PushNotificationsIOS() {
 
       // Provide clearer messages based on error code
       if (error && (error.code === 'PERMISSION_DENIED' || error.name === 'NotAllowedError')) {
-        alert('Notification permission denied. To enable:\n\n1. Open iOS Settings\n2. Scroll to Safari\n3. Tap Notifications\n4. Enable "Allow Notifications"\n\nThen return here and try again.')
+        alert('Notification permission denied. To enable:\n\n1. Open iOS Settings app (gear icon)\n2. Scroll down and tap "Notifications"\n3. Find and tap "Safari"\n4. Enable "Allow Notifications"\n5. Return to this app and try again\n\nNote: You may need to reinstall this app from the home screen after changing notification settings.')
       } else if (error && error.code === 'NO_SERVICE_WORKER') {
-        alert('App not properly installed. Please:\n\n1. Close this app\n2. Return to home screen\n3. Tap the app icon to reopen\n\nThen try subscribing again.')
+        alert('App not properly installed. Please:\n\n1. Remove this app from home screen\n2. In Safari, visit the site again\n3. Tap Share → Add to Home Screen\n4. Open from home screen and try again')
       } else if (error && error.code === 'NO_PUSH_MANAGER') {
-        alert('Push notifications unavailable. Make sure:\n\n1. App is installed (added to home screen)\n2. Opened from home screen, not Safari\n3. iOS is up to date\n\nThen try again.')
+        alert('Push notifications unavailable. Ensure:\n\n1. App is installed via "Add to Home Screen"\n2. Opened from home screen icon (not Safari)\n3. iOS is version 16.4 or later\n4. Website notifications enabled in iOS Settings')
       } else {
-        // Simplified fallback - no need to check isPWAInstalled again since we already checked in UI
-        alert('Unable to enable notifications. This might be due to:\n\n• Permissions denied in iOS Settings → Safari\n• App needs to be reinstalled from home screen\n• Service worker not ready\n\nPlease check settings and try again.')
+        alert('Unable to enable notifications. This might be due to:\n\n• Permissions denied in iOS Settings → Notifications → Safari\n• App needs to be reinstalled from home screen\n• Service worker not ready\n• iOS version too old (need 16.4+)\n\nPlease check settings and try again.')
       }
     } finally {
       setLoading(false)
