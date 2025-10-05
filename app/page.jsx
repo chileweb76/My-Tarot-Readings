@@ -16,6 +16,7 @@ import {
   uploadBlobAction,
   getQuerentsAction,
   getDecksAction,
+  getSingleDeckAction,
   getTagsAction,
   getSpreadsAction,
   createQuerentAction
@@ -395,6 +396,7 @@ export default function HomePage() {
   const [question, setQuestion] = useState('')
   const [decks, setDecks] = useState([])
   const [selectedDeck, setSelectedDeck] = useState('')
+  const [selectedDeckDetails, setSelectedDeckDetails] = useState(null) // Full deck with cards
   const [interpretation, setInterpretation] = useState('')
   // reading date/time (initialized to current local date/time, editable)
   const [readingDateTime, setReadingDateTime] = useState(() => {
@@ -1167,6 +1169,30 @@ export default function HomePage() {
     return () => { mounted = false }
   }, [user])
 
+  // Load full deck details (including cards) when selectedDeck changes
+  useEffect(() => {
+    if (!selectedDeck) {
+      setSelectedDeckDetails(null)
+      return
+    }
+
+    let mounted = true
+    const loadDeckDetails = async () => {
+      try {
+        const result = await getSingleDeckAction(selectedDeck)
+        if (!result || !result.success) {
+          return
+        }
+        if (!mounted) return
+        setSelectedDeckDetails(result.deck)
+      } catch (err) {
+        console.error('Failed to load deck details:', err)
+      }
+    }
+    loadDeckDetails()
+    return () => { mounted = false }
+  }, [selectedDeck])
+
   // load spread image when selectedSpread changes
   useEffect(() => {
     let mounted = true
@@ -1591,7 +1617,7 @@ export default function HomePage() {
                 <Card 
                   title={typeof cardName === 'string' ? cardName : (cardName.name || cardName.title || '')} 
                   deck={decks.find(d => d._id === selectedDeck)?.deckName || 'rider-waite'}
-                  deckData={decks.find(d => d._id === selectedDeck)}
+                  deckData={selectedDeckDetails}
                   initialSelectedSuit={cardStates[idx]?.selectedSuit}
                   initialSelectedCard={cardStates[idx]?.selectedCard}
                   initialReversed={cardStates[idx]?.reversed}

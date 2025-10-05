@@ -106,10 +106,8 @@ export default function Card({
             (c.name || '').toLowerCase() === cardName.toLowerCase()
           )
           if (card && card.image) {
-            console.log(`Found card image for "${cardName}":`, card.image)
             setCurrentImage(card.image)
           } else {
-            console.log(`No image found for card "${cardName}" in deck data`)
             setCurrentImage(null)
           }
         } else if (deck === 'rider-waite' || deck?.toLowerCase().includes('rider-waite')) {
@@ -117,10 +115,8 @@ export default function Card({
           try {
             const imageUrl = await getCardImageUrlService(cardName, deck)
             if (imageUrl) {
-              console.log('Got image URL from service:', imageUrl)
               setCurrentImage(imageUrl)
             } else {
-              console.log('No image URL returned from service')
               setCurrentImage(null)
             }
           } catch (apiError) {
@@ -128,15 +124,12 @@ export default function Card({
             setCurrentImage(null)
           }
         } else {
-          console.log(`Fetching image for card: "${cardName}" from deck: "${deck}"`)
           try {
             // Use the new image service for backend API calls
             const imageUrl = await getCardImageUrlService(cardName, deck)
             if (imageUrl) {
-              console.log('Got image URL from service:', imageUrl)
               setCurrentImage(imageUrl)
             } else {
-              console.log('No image URL returned from service')
               setCurrentImage(null)
             }
           } catch (apiError) {
