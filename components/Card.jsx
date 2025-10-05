@@ -100,14 +100,11 @@ export default function Card({
           ? selectedCard 
           : `${selectedCard} of ${selectedSuit}`
         
-        console.log('🔍 fetchCardImage called:', { cardName, hasDeckData: !!deckData, hasCards: !!deckData?.cards, cardsCount: deckData?.cards?.length })
-        
         if (deckData && deckData.cards) {
           // For any deck with card data (including Rider-Waite), use the deck data directly
           const card = deckData.cards.find(c => 
             (c.name || '').toLowerCase() === cardName.toLowerCase()
           )
-          console.log('🔍 Found card:', { found: !!card, cardImage: card?.image })
           if (card && card.image) {
             setCurrentImage(card.image)
           } else {
