@@ -5,6 +5,7 @@ import AuthWrapper from '../../components/AuthWrapper'
 import DeckModal from '../../components/DeckModal'
 import CameraModal from '../../components/CameraModal'
 import ToastPortal from '../../components/ToastPortal'
+import ModalPortal from '../../components/ModalPortal'
 import SmartImageV2 from '../../components/SmartImageV2'
 import { IMAGE_TYPES, getDeckImageUrl, getCardImageUrl } from '../../lib/imageServiceV3'
 import {
@@ -743,9 +744,9 @@ export default function DecksPage() {
       
       {/* Deck Info Edit Modal */}
       {showDeckInfoModal && (
-        <>
-          <div className="modal-backdrop show" style={{ zIndex: 100000 }}></div>
-          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 100001, position: 'fixed' }}>
+        <ModalPortal>
+          <div className="modal-backdrop show"></div>
+          <div className="modal show d-block" tabIndex={-1} role="dialog">
             <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
@@ -811,14 +812,14 @@ export default function DecksPage() {
             </div>
           </div>
         </div>
-        </>
+        </ModalPortal>
       )}
       
       {/* Deck Edit Modal */}
       {showDeckEditModal && (
-        <>
-          <div className="modal-backdrop show" style={{ zIndex: 100000 }}></div>
-          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 100001, position: 'fixed' }}>
+        <ModalPortal>
+          <div className="modal-backdrop show"></div>
+          <div className="modal show d-block" tabIndex={-1} role="dialog">
             <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
@@ -929,14 +930,14 @@ export default function DecksPage() {
             </div>
           </div>
         </div>
-        </>
+        </ModalPortal>
       )}
 
       {/* Card Edit Modal */}
       {showCardEditModal && editingCard && (
-        <>
-          <div className="modal-backdrop show" style={{ zIndex: 100000 }}></div>
-          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 100001, position: 'fixed' }}>
+        <ModalPortal>
+          <div className="modal-backdrop show"></div>
+          <div className="modal show d-block" tabIndex={-1} role="dialog">
             <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
@@ -1064,7 +1065,7 @@ export default function DecksPage() {
             </div>
           </div>
         </div>
-        </>
+        </ModalPortal>
       )}
 
         {/* Deck card grid */}
