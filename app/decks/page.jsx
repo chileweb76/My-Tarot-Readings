@@ -743,7 +743,7 @@ export default function DecksPage() {
       
       {/* Deck Info Edit Modal */}
       {showDeckInfoModal && (
-        <div className="modal show d-block" tabIndex={-1} role="dialog">
+        <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998 }}>
           <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
@@ -813,7 +813,7 @@ export default function DecksPage() {
       
       {/* Deck Edit Modal */}
       {showDeckEditModal && (
-        <div className="modal show d-block" tabIndex={-1} role="dialog">
+        <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998 }}>
           <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
@@ -928,7 +928,7 @@ export default function DecksPage() {
 
       {/* Card Edit Modal */}
       {showCardEditModal && editingCard && (
-        <div className="modal show d-block" tabIndex={-1} role="dialog">
+        <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998 }}>
           <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
