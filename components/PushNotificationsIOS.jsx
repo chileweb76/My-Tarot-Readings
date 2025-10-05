@@ -19,9 +19,23 @@ export default function PushNotificationsIOS() {
     setIsIOS(iosDetected)
 
     // Detect if PWA is installed (standalone mode)
-    const pwaInstalled = window.matchMedia('(display-mode: standalone)').matches ||
-                        window.navigator.standalone === true
-    setIsPWAInstalled(pwaInstalled)
+    const detectPWAInstalled = () => {
+      try {
+        return window.matchMedia && window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true ||
+               // Some iOS versions/clients set display-mode after launch; also consider visibility
+               document.referrer && document.referrer.includes('applewebdata')
+      } catch (e) {
+        return false
+      }
+    }
+
+    setIsPWAInstalled(detectPWAInstalled())
+
+    // Re-check install state when page becomes visible or gains focus (user may have installed and returned)
+    const onVisibility = () => setIsPWAInstalled(detectPWAInstalled())
+    window.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('focus', onVisibility)
 
     // Check push notification support
     if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -32,6 +46,11 @@ export default function PushNotificationsIOS() {
         setIsSupported(true)
         checkSubscription()
       }
+    }
+
+    return () => {
+      window.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', onVisibility)
     }
   }, [])
 
@@ -79,6 +98,7 @@ export default function PushNotificationsIOS() {
     }
 
     // iOS-specific check
+    // If iOS and not installed, show instructions (early exit)
     if (isIOS && !isPWAInstalled) {
       setShowIOSInstructions(true)
       return
@@ -88,13 +108,27 @@ export default function PushNotificationsIOS() {
     try {
       // Request notification permission first (required on iOS)
       const permission = await Notification.requestPermission()
-      
+
       if (permission !== 'granted') {
-        throw new Error('Notification permission denied')
+        // permission denied or default
+        const err = new Error('permission_denied')
+        err.code = 'PERMISSION_DENIED'
+        throw err
       }
 
+      // Ensure service worker registration and PushManager exist
       const registration = await navigator.serviceWorker.ready
-      
+      if (!registration) {
+        const err = new Error('no_service_worker')
+        err.code = 'NO_SERVICE_WORKER'
+        throw err
+      }
+      if (!registration.pushManager) {
+        const err = new Error('no_push_manager')
+        err.code = 'NO_PUSH_MANAGER'
+        throw err
+      }
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -122,16 +156,23 @@ export default function PushNotificationsIOS() {
       }
     } catch (error) {
       console.error('Error subscribing to push notifications:', error)
-      
-      // iOS-specific error handling
-      if (isIOS) {
-        if (error.message.includes('permission')) {
-          alert('Please allow notifications in your device settings and try again.')
-        } else {
-          alert('Make sure this app is installed to your home screen first, then try enabling notifications.')
-        }
+
+      // Provide clearer messages based on error code
+      if (error && (error.code === 'PERMISSION_DENIED' || error.name === 'NotAllowedError')) {
+        alert('Please allow notifications in your device settings (Settings → Safari → Notifications) and try again.')
+      } else if (error && error.code === 'NO_SERVICE_WORKER') {
+        alert('Service worker not active. Please open the app from your home screen (installed PWA) and try again.')
+      } else if (error && error.code === 'NO_PUSH_MANAGER') {
+        alert('PushManager not available. Ensure this app is installed and opened from the home screen, then try again.')
       } else {
-        alert('Failed to subscribe to notifications. Please try again.')
+        // Fallback message preserving previous guidance
+        if (isIOS && !isPWAInstalled) {
+          setShowIOSInstructions(true)
+        } else if (isIOS) {
+          alert('Failed to subscribe to notifications. Ensure the app is installed (open from home screen) and that Safari permissions allow notifications.')
+        } else {
+          alert('Failed to subscribe to notifications. Please try again.')
+        }
       }
     } finally {
       setLoading(false)
