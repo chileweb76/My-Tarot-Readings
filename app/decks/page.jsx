@@ -60,10 +60,8 @@ export default function DecksPage() {
   const [decks, setDecks] = useState([])
   const [selectedDeck, setSelectedDeckState] = useState('')
   
-  // Wrap setSelectedDeck with logging
+  // Wrap setSelectedDeck with state setter
   const setSelectedDeck = (value) => {
-    console.log('🎯 setSelectedDeck called with:', value)
-    console.trace('🎯 setSelectedDeck stack trace')
     setSelectedDeckState(value)
   }
   const [deckDetails, setDeckDetails] = useState(null)
@@ -127,8 +125,6 @@ export default function DecksPage() {
   }, [])
 
   const handleSelectDeck = (deckId) => {
-    console.log('handleSelectDeck called with:', deckId)
-    console.trace('handleSelectDeck stack trace')
     setSelectedDeck(deckId)
   }
 
@@ -165,7 +161,6 @@ export default function DecksPage() {
       
       const loadDeck = async () => {
         setLoadingDeck(true)
-        console.log('Loading deck with ID:', selectedDeck)
         try {
           const result = await getSingleDeckAction(selectedDeck)
           
@@ -183,7 +178,6 @@ export default function DecksPage() {
             // Workaround: Fix incorrect deck cover URL for Rider-Waite deck
             if (data && data.image === 'https://emfobsnlxploca6s.public.blob.vercel-storage.com/decks/Rider_Waite_Tarot_Deck_cover.jpg') {
               data.image = 'https://emfobsnlxploca6s.public.blob.vercel-storage.com/cards/rider-waite/cover-1KaB9HnbWmssDeiwAOtWqkifDAc9FW.jpg';
-              console.log('Fixed deck image URL:', data.image);
             }
             setDeckDetails(data);
           }
@@ -733,7 +727,6 @@ export default function DecksPage() {
                   }}>
                     {deckDetails && deckDetails.image ? (
                       <>
-                        {console.log('Frontend: Rendering deck image with src:', deckDetails.image)}
                         <SmartImageV2
                           src={deckDetails.image}
                           alt="Deck cover"
