@@ -1131,7 +1131,7 @@ export default function DecksPage() {
                           <div className="d-flex justify-content-between align-items-start mb-2">
                             <h4 className="card-title mb-0">{deckDetails.deckName}</h4>
                             {!isRiderWaiteDeck(deckDetails) && (
-                              <div className="d-flex gap-2">
+                              <div className="d-flex flex-column gap-2">
                                 <button 
                                   className="btn btn-outline-primary btn-sm" 
                                   onClick={() => {
