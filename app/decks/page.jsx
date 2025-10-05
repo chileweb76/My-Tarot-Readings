@@ -744,8 +744,8 @@ export default function DecksPage() {
       {/* Deck Info Edit Modal */}
       {showDeckInfoModal && (
         <>
-          <div className="modal-backdrop show" style={{ zIndex: 99997 }}></div>
-          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998, position: 'fixed' }}>
+          <div className="modal-backdrop show" style={{ zIndex: 100000 }}></div>
+          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 100001, position: 'fixed' }}>
             <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
@@ -817,8 +817,8 @@ export default function DecksPage() {
       {/* Deck Edit Modal */}
       {showDeckEditModal && (
         <>
-          <div className="modal-backdrop show" style={{ zIndex: 99997 }}></div>
-          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998, position: 'fixed' }}>
+          <div className="modal-backdrop show" style={{ zIndex: 100000 }}></div>
+          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 100001, position: 'fixed' }}>
             <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
@@ -935,8 +935,8 @@ export default function DecksPage() {
       {/* Card Edit Modal */}
       {showCardEditModal && editingCard && (
         <>
-          <div className="modal-backdrop show" style={{ zIndex: 99997 }}></div>
-          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998, position: 'fixed' }}>
+          <div className="modal-backdrop show" style={{ zIndex: 100000 }}></div>
+          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 100001, position: 'fixed' }}>
             <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
