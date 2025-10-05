@@ -14,6 +14,17 @@ export default function PushNotifications() {
       setIsSupported(true)
       checkSubscription()
     }
+
+    // Listen for programmatic prompt requests (e.g., after PWA install)
+    const handler = () => {
+      // Try to subscribe when asked
+      subscribeToPush()
+    }
+    window.addEventListener('promptEnableNotifications', handler)
+
+    return () => {
+      window.removeEventListener('promptEnableNotifications', handler)
+    }
   }, [])
 
   const checkSubscription = async () => {
@@ -171,13 +182,7 @@ export default function PushNotifications() {
               >
                 {loading ? 'Unsubscribing...' : 'Disable Notifications'}
               </button>
-              <button 
-                type="button"
-                className="btn btn-outline-primary"
-                onClick={sendTestNotification}
-              >
-                Send Test
-              </button>
+              {/* Send Test button removed from production settings */}
             </>
           )}
         </div>

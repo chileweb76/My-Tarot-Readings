@@ -7,7 +7,6 @@ import { faCog, faUserCircle, faSignOutAlt, faFileExport, faDatabase, faSave } f
 import AuthWrapper from '../../components/AuthWrapper'
 import ConfirmModal from '../../components/ConfirmModal'
 import PushNotificationsUniversal from '../../components/PushNotificationsUniversal'
-import NotificationTester from '../../components/NotificationTester'
 import { notify } from '../../lib/toast'
 import SmartImage from '../../components/SmartImage'
 
@@ -370,6 +369,28 @@ export default function SettingsPage() {
         })()
     }
   }, [user])
+
+  // Listen for PWA install events and prompt enabling notifications
+  useEffect(() => {
+    const onAppInstalled = () => {
+      try { window.dispatchEvent(new Event('promptEnableNotifications')) } catch (e) {}
+    }
+
+    const onBeforeInstallPrompt = (e) => {
+      // Some browsers expose beforeinstallprompt; when it's available we can
+      // prompt the user to install and after a successful install we enable notifications.
+      // Keep a reference if the app wants to show an install prompt later.
+      window.deferredPWAInstallPrompt = e
+    }
+
+    window.addEventListener('appinstalled', onAppInstalled)
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+
+    return () => {
+      window.removeEventListener('appinstalled', onAppInstalled)
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+    }
+  }, [])
 
   const handleLinkGoogle = () => {
   // legacy message cleared
@@ -959,7 +980,6 @@ export default function SettingsPage() {
 
             {/* Push Notifications Section */}
             <PushNotificationsUniversal />
-            <NotificationTester />
 
             <ConfirmModal
               show={showDeleteModal}

@@ -35,6 +35,14 @@ export default function PushNotificationsIOS() {
     }
   }, [])
 
+  useEffect(() => {
+    const handler = () => {
+      subscribeToPush()
+    }
+    window.addEventListener('promptEnableNotifications', handler)
+    return () => window.removeEventListener('promptEnableNotifications', handler)
+  }, [isPWAInstalled, isIOS])
+
   const checkSubscription = async () => {
     try {
       const registration = await navigator.serviceWorker.ready
@@ -274,12 +282,7 @@ export default function PushNotificationsIOS() {
               >
                 {loading ? 'Unsubscribing...' : 'Disable Notifications'}
               </button>
-              <button 
-                className="btn btn-outline-primary"
-                onClick={sendTestNotification}
-              >
-                Send Test
-              </button>
+              {/* Send Test button removed from production settings */}
             </>
           )}
         </div>
