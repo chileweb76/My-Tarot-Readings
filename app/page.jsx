@@ -141,7 +141,6 @@ export default function HomePage() {
           imageUrl = uploadResult.url || uploadResult.imageUrl
           setUploadedImage(imageUrl)
           setUploadedFile(null) // Clear pending file
-          console.log('� handleSaveReading: Image uploaded successfully:', imageUrl)
         } else {
 
           pushToast({ type: 'warning', text: 'Image upload failed, saving reading without image' })
@@ -734,15 +733,21 @@ export default function HomePage() {
       // Try to share as a file using Web Share API
       try {
         const file = new File([blob], filename, { type: 'application/pdf' })
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'Tarot Reading', text: 'Sharing a PDF of the tarot reading.' })
-          pushToast({ type: 'success', text: 'PDF shared.' })
-          setExporting(false)
-          return
+        // Check if share API is available and file sharing is supported
+        if (navigator.share && navigator.canShare) {
+          // Verify the file can be shared before attempting
+          const canShareFile = navigator.canShare({ files: [file] })
+          if (canShareFile) {
+            await navigator.share({ files: [file], title: 'Tarot Reading', text: 'Sharing a PDF of the tarot reading.' })
+            pushToast({ type: 'success', text: 'PDF shared.' })
+            setExporting(false)
+            return
+          }
         }
+        // If we reach here, sharing is not available - fall through to download
       } catch (e) {
-        // ignore and fall back to download
-        // Warning suppressed
+        // Share failed or was cancelled - fall back to download
+        // Errors are expected and handled gracefully (user may cancel, permissions denied, etc.)
       }
 
       // Fallback: trigger download

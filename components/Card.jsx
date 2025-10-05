@@ -497,12 +497,15 @@ export default function Card({
                         const filename = `tarot-card-${(selectedCard||title||'card').replace(/\s+/g,'-').toLowerCase()}.pdf`
                         try {
                           const file = new File([blob], filename, { type: 'application/pdf' })
-                          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({ files: [file], title: 'Tarot Card', text: `Sharing ${title}` })
-                            return
+                          if (navigator.share && navigator.canShare) {
+                            const canShareFile = navigator.canShare({ files: [file] })
+                            if (canShareFile) {
+                              await navigator.share({ files: [file], title: 'Tarot Card', text: `Sharing ${title}` })
+                              return
+                            }
                           }
                         } catch (e) {
-                          // fall back to download
+                          // Share failed or cancelled - fall back to download
                         }
                         const url = URL.createObjectURL(blob)
                         const link = document.createElement('a')
