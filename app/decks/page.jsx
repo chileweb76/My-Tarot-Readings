@@ -743,8 +743,10 @@ export default function DecksPage() {
       
       {/* Deck Info Edit Modal */}
       {showDeckInfoModal && (
-        <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998 }}>
-          <div className="modal-dialog modal-md" role="document">
+        <>
+          <div className="modal-backdrop show" style={{ zIndex: 99997 }}></div>
+          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998, position: 'fixed' }}>
+            <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Edit Deck Info</h5>
@@ -809,12 +811,15 @@ export default function DecksPage() {
             </div>
           </div>
         </div>
+        </>
       )}
       
       {/* Deck Edit Modal */}
       {showDeckEditModal && (
-        <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998 }}>
-          <div className="modal-dialog modal-md" role="document">
+        <>
+          <div className="modal-backdrop show" style={{ zIndex: 99997 }}></div>
+          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998, position: 'fixed' }}>
+            <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Edit Deck Image</h5>
@@ -924,12 +929,15 @@ export default function DecksPage() {
             </div>
           </div>
         </div>
+        </>
       )}
 
       {/* Card Edit Modal */}
       {showCardEditModal && editingCard && (
-        <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998 }}>
-          <div className="modal-dialog modal-md" role="document">
+        <>
+          <div className="modal-backdrop show" style={{ zIndex: 99997 }}></div>
+          <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ zIndex: 99998, position: 'fixed' }}>
+            <div className="modal-dialog modal-md" role="document">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Edit Card Image: {editingCard}</h5>
@@ -1056,6 +1064,7 @@ export default function DecksPage() {
             </div>
           </div>
         </div>
+        </>
       )}
 
         {/* Deck card grid */}
