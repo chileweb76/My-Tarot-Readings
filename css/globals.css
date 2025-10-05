@@ -1173,6 +1173,15 @@ main.container {
   color: #222;
 }
 
+/* Ensure all modals appear above header and other content */
+.modal.show {
+  z-index: 99998 !important; /* Just below toasts (99999) but above header (3) */
+}
+
+.modal-backdrop.show {
+  z-index: 99997 !important; /* Backdrop just below modal */
+}
+
 .tarot-modal .modal-header {
   background: linear-gradient(90deg, var(--tarot-mystical), var(--tarot-primary));
   color: #fff;
