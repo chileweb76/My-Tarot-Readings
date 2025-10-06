@@ -70,48 +70,6 @@ class SettingsErrorBoundary extends Component {
   }
 }
 
-// DiagnosticsPanel: small client-only helper to inspect cookies and test /api/decks with credentials
-function DiagnosticsPanel() {
-  const [cookieString, setCookieString] = useState('')
-  const [decksResult, setDecksResult] = useState(null)
-  const [running, setRunning] = useState(false)
-
-  const runDiagnostics = async () => {
-    setRunning(true)
-    try {
-      // Document.cookie is only available to non-httpOnly cookies; this helps check if the token cookie exists
-      let cookies = ''
-      try { cookies = String(document.cookie || '') } catch (e) { cookies = `error: ${e.message}` }
-      setCookieString(cookies)
-
-      // Run a credentials-included fetch to the frontend proxy to confirm cookie forwarding
-      const resp = await fetch('/api/decks', { credentials: 'include' })
-      const text = await resp.text()
-      let parsed = null
-      try { parsed = JSON.parse(text) } catch (e) { parsed = { raw: text } }
-      setDecksResult({ status: resp.status, ok: resp.ok, body: parsed })
-    } catch (err) {
-      setDecksResult({ error: String(err) })
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  return (
-    <div>
-      <div className="mb-2">
-        <button type="button" className="btn btn-sm btn-outline-secondary me-2" onClick={runDiagnostics} disabled={running}>{running ? 'Running...' : 'Run diagnostics'}</button>
-        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => { setCookieString(''); setDecksResult(null) }}>Clear</button>
-      </div>
-      <div className="small">
-        <div><strong>document.cookie</strong>: <span className="text-muted">{cookieString || <em>empty</em>}</span></div>
-        <div className="mt-2"><strong>/api/decks result</strong>:</div>
-        <pre style={{ maxHeight: 160, overflow: 'auto', background: '#f8f9fa', padding: 8 }}>{JSON.stringify(decksResult, null, 2)}</pre>
-      </div>
-    </div>
-  )
-}
-
 export default function SettingsPage() {
   const [user, setUser] = useState(null)
   const [settings, setSettings] = useState({
@@ -812,15 +770,6 @@ export default function SettingsPage() {
                 Settings
               </h1>
 
-            {/* Diagnostics: helps debug PWA / cookie issues (visible only in client) */}
-            <div className="mb-3">
-              <div className="card card-body mb-3">
-                <strong>Diagnostics</strong>
-                <div className="small text-muted mb-2">Run this in your browser (including PWA/standalone) to confirm cookies and a credentials-included request to <code>/api/decks</code>.</div>
-                <DiagnosticsPanel />
-              </div>
-            </div>
-
             {/* Profile Section with editable username and logout */}
             <div className="mb-5">
               <h4 className="mb-3">
@@ -1287,7 +1236,7 @@ export default function SettingsPage() {
             />
 
             {/* Save Button */}
-            <div className="text-center">
+            <div className="text-center mt-5">
               <button 
                 className="btn btn-primary btn-lg"
                 onClick={handleSaveSettings}
