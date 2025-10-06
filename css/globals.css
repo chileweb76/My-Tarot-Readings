@@ -1175,11 +1175,12 @@ main.container {
 
 /* Ensure all modals appear above header and other content */
 .modal.show {
-  z-index: 99998 !important; /* Just below toasts (99999) but above header (3) */
+  z-index: 100001 !important; /* Very high to ensure it's above everything */
+  position: fixed !important;
 }
 
 .modal-backdrop.show {
-  z-index: 99997 !important; /* Backdrop just below modal */
+  z-index: 100000 !important; /* Backdrop just below modal */
 }
 
 .tarot-modal .modal-header {
