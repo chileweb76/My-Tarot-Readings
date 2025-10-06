@@ -39,7 +39,7 @@ export default function AuthPage() {
     return result
   }, { success: false, error: null })
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
   return (
     <div className="auth-container">
@@ -142,7 +142,7 @@ export default function AuthPage() {
                                   <button
                     type="button"
                     className="btn btn-outline-danger w-100 mb-4"
-                    onClick={() => window.location.href = `${API_URL}/auth/google`}
+                    onClick={() => window.location.href = `${API_BASE}/api/auth/google`}
                     disabled={signInPending}
                   >
                     <FontAwesomeIcon icon={faGoogle} className="me-2" />
