@@ -141,13 +141,18 @@ export default function PushNotificationsIOS() {
 
       // Send subscription to server
       console.log('[Push] Sending subscription to server...')
+      
+      // Convert PushSubscription to a plain object
+      const subscriptionJSON = subscription.toJSON()
+      console.log('[Push] Subscription JSON:', subscriptionJSON)
+      
       const response = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...subscription,
+          ...subscriptionJSON,
           platform: isIOS ? 'ios' : 'other',
           userAgent: navigator.userAgent
         }),
