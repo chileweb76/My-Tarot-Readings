@@ -23,9 +23,16 @@ export default function AuthPage() {
   const [signUpState, signUpFormAction, signUpPending] = useActionState(async (prevState, formData) => {
     const result = await signUpAction(formData)
     if (result.success) {
-      // Store user data in localStorage for client-side components
+      // If registration requires email verification, do NOT log user in
+      if (result.requiresVerification) {
+        return { 
+          success: true, 
+          message: result.message || 'Registration successful! Please check your email to verify your account before logging in.',
+          requiresVerification: true
+        }
+      }
+      // Legacy path: if no verification required (shouldn't happen with new flow)
       localStorage.setItem('user', JSON.stringify(result.user))
-      // Redirect after successful sign up
       window.location.href = '/'
       return { success: true, message: 'Account created successfully!' }
     }
@@ -58,22 +65,14 @@ export default function AuthPage() {
                 <button
                   type="button"
                   className={`btn ${isSignIn ? 'btn-tarot-primary' : 'btn-outline-tarot-primary'}`}
-                  onClick={() => {
-                    setIsSignIn(true)
-                    setError('')
-                    setSuccess('')
-                  }}
+                  onClick={() => setIsSignIn(true)}
                 >
                   Sign In
                 </button>
                 <button
                   type="button"
                   className={`btn ${!isSignIn ? 'btn-tarot-primary' : 'btn-outline-tarot-primary'}`}
-                  onClick={() => {
-                    setIsSignIn(false)
-                    setError('')
-                    setSuccess('')
-                  }}
+                  onClick={() => setIsSignIn(false)}
                 >
                   Register
                 </button>
@@ -86,8 +85,14 @@ export default function AuthPage() {
                 </div>
               )}
               {(signInState.success || signUpState.success) && (
-                <div className="alert alert-success" role="alert">
-                  {signInState.message || signUpState.message}
+                <div className={`alert ${signUpState.requiresVerification ? 'alert-info' : 'alert-success'}`} role="alert">
+                  <strong>{signUpState.requiresVerification ? '📧 Verification Required' : 'Success!'}</strong>
+                  <div className="mt-2">{signInState.message || signUpState.message}</div>
+                  {signUpState.requiresVerification && (
+                    <div className="mt-2 small">
+                      Please check your email inbox (and spam folder) for a verification link. You must verify your email before you can log in.
+                    </div>
+                  )}
                 </div>
               )}
 
