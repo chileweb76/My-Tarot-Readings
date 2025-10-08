@@ -85,11 +85,11 @@ export default function AuthPage() {
                 </div>
               )}
               {(signInState.success || signUpState.success) && (
-                <div className={`alert ${signUpState.requiresVerification ? 'alert-info' : 'alert-success'}`} role="alert">
+                <div className={`alert ${signUpState.requiresVerification ? 'alert-info' : 'alert-success'}`} role="alert" style={signUpState.requiresVerification ? { color: '#004085', backgroundColor: '#d1ecf1', borderColor: '#bee5eb' } : {}}>
                   <strong>{signUpState.requiresVerification ? '📧 Verification Required' : 'Success!'}</strong>
                   <div className="mt-2">{signInState.message || signUpState.message}</div>
                   {signUpState.requiresVerification && (
-                    <div className="mt-2 small">
+                    <div className="mt-2 small" style={{ color: '#004085' }}>
                       Please check your email inbox (and spam folder) for a verification link. You must verify your email before you can log in.
                     </div>
                   )}
