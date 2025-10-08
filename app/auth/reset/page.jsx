@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 // Reset page should be publicly accessible (do not use AuthWrapper which
 // enforces authentication). Render in the public auth container instead.
 import { notify } from '../../../lib/toast'
@@ -24,12 +25,20 @@ export default function ResetPage() {
   }, { success: false, error: null })
 
   // Set-new-password form (token in URL)
+  const router = useRouter()
+
   const [setState, setFormAction, setPending] = useActionState(async (prevState, formData) => {
     const result = await submitNewPasswordAction(formData)
+    console.debug('submitNewPasswordAction result:', result)
     if (result.success) {
       notify({ type: 'success', text: result.message })
-      // redirect to sign in after short delay
-      setTimeout(() => (window.location.href = '/auth'), 1500)
+      // Use router.replace for immediate, reliable redirect in Next client
+      try {
+        router.replace('/auth')
+      } catch (e) {
+        // Fallback
+        window.location.replace('/auth')
+      }
       return { success: true }
     } else {
       notify({ type: 'error', text: result.error })
