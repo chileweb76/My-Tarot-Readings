@@ -41,7 +41,9 @@ export async function GET(request) {
     })
     
     if (!response.ok) {
-      console.error('Backend decks API error:', response.status, response.statusText)
+  // backend error
+  const logger = require('../../../lib/logger').default || console
+  logger.error('Backend decks API error:', response.status, response.statusText)
       return NextResponse.json(
         { error: `Backend API error: ${response.statusText}` },
         { status: response.status }
@@ -52,7 +54,8 @@ export async function GET(request) {
     return NextResponse.json(data)
     
   } catch (error) {
-    console.error('Decks API proxy error:', error)
+  const logger = require('../../../lib/logger').default || console
+  logger.error('Decks API proxy error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch decks', details: error.message },
       { status: 500 }
@@ -80,7 +83,8 @@ export async function POST(request) {
     
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('Backend create deck error:', response.status, errorData)
+  const logger = require('../../../lib/logger').default || console
+  logger.error('Backend create deck error:', response.status, errorData)
       return NextResponse.json(
         { error: errorData || `Backend API error: ${response.statusText}` },
         { status: response.status }
@@ -91,7 +95,8 @@ export async function POST(request) {
     return NextResponse.json(data, { status: 201 })
     
   } catch (error) {
-    console.error('Create deck API proxy error:', error)
+  const logger = require('../../../lib/logger').default || console
+  logger.error('Create deck API proxy error:', error)
     return NextResponse.json(
       { error: 'Failed to create deck', details: error.message },
       { status: 500 }

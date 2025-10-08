@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 // enforces authentication). Render in the public auth container instead.
 import { notify } from '../../../lib/toast'
 import { resetPasswordAction, submitNewPasswordAction } from '../../../lib/actions'
+import logger from '../../../lib/logger'
 import { useSearchParams } from 'next/navigation'
 
 export default function ResetPage() {
@@ -28,8 +29,8 @@ export default function ResetPage() {
   const router = useRouter()
 
   const [setState, setFormAction, setPending] = useActionState(async (prevState, formData) => {
-    const result = await submitNewPasswordAction(formData)
-    console.debug('submitNewPasswordAction result:', result)
+  const result = await submitNewPasswordAction(formData)
+  logger.debug('submitNewPasswordAction result:', result)
     if (result.success) {
       notify({ type: 'success', text: result.message })
       // Use router.replace for immediate, reliable redirect in Next client

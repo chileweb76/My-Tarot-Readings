@@ -44,7 +44,8 @@ export async function GET(request) {
     })
     
     if (!response.ok) {
-      console.error('Backend spreads API error:', response.status, response.statusText)
+  const logger = require('../../../lib/logger').default || console
+  logger.error('Backend spreads API error:', response.status, response.statusText)
       return NextResponse.json(
         { error: `Backend API error: ${response.statusText}` },
         { status: response.status }
@@ -55,7 +56,8 @@ export async function GET(request) {
     return NextResponse.json(data)
     
   } catch (error) {
-    console.error('Spreads API proxy error:', error)
+  const logger = require('../../../lib/logger').default || console
+  logger.error('Spreads API proxy error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch spreads', details: error.message },
       { status: 500 }
@@ -83,7 +85,8 @@ export async function POST(request) {
     
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('Backend create spread error:', response.status, errorData)
+  const logger = require('../../../lib/logger').default || console
+  logger.error('Backend create spread error:', response.status, errorData)
       return NextResponse.json(
         { error: errorData || `Backend API error: ${response.statusText}` },
         { status: response.status }
@@ -94,7 +97,8 @@ export async function POST(request) {
     return NextResponse.json(data, { status: 201 })
     
   } catch (error) {
-    console.error('Create spread API proxy error:', error)
+  const logger = require('../../../lib/logger').default || console
+  logger.error('Create spread API proxy error:', error)
     return NextResponse.json(
       { error: 'Failed to create spread', details: error.message },
       { status: 500 }

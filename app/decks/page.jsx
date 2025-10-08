@@ -17,6 +17,7 @@ import {
   uploadCardBlobAction
 } from '../../lib/actions'
 import { uploadImageToBlob } from '../../lib/blobUpload'
+import logger from '../../lib/logger'
 
 // Vercel Blob utility functions
 const extractBlobUrl = (uploadResponse) => {
@@ -171,8 +172,8 @@ export default function DecksPage() {
           const result = await getSingleDeckAction(selectedDeck)
           
           if (!result.success) {
-            console.error('Failed to fetch deck:', result.error)
-            console.error('Full result object:', result)
+            logger.error('Failed to fetch deck:', result.error)
+              logger.error('Full result object:', result)
             setToast({ message: `Failed to load deck: ${result.error}`, type: 'error' })
             setDeckDetails(null)
             setLoadingDeck(false)
@@ -188,7 +189,7 @@ export default function DecksPage() {
             setDeckDetails(data);
           }
         } catch (err) {
-          console.error('Error loading deck details', err)
+          logger.error('Error loading deck details', err)
           if (!cancelled) setDeckDetails(null)
         } finally {
           if (!cancelled) setLoadingDeck(false)
@@ -281,7 +282,7 @@ export default function DecksPage() {
       })
       return updated
     } catch (err) {
-      console.error('Upload error', err)
+  logger.error('Upload error', err)
       setUploadingCardIndex(null)
       
       // Remove preview on error
@@ -336,7 +337,7 @@ export default function DecksPage() {
       setToast({ message: 'Image captured and uploaded!', type: 'success' })
       setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
     } catch (err) {
-      console.error('Camera capture upload error', err)
+  logger.error('Camera capture upload error', err)
       setCurrentCardForCamera(null)
       
       // Remove the preview on error
@@ -420,7 +421,7 @@ export default function DecksPage() {
 
       return updated
     } catch (err) {
-      console.error('Deck image upload error', err)
+  logger.error('Deck image upload error', err)
       
       // Remove preview on error
       setDecks(prev => prev.map(deck => {
@@ -471,7 +472,7 @@ export default function DecksPage() {
       setToast({ message: 'Deck image captured and uploaded!', type: 'success' })
       setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
     } catch (err) {
-      console.error('Deck camera capture upload error', err)
+  logger.error('Deck camera capture upload error', err)
       setToast({ message: 'Failed to upload captured deck image', type: 'error' })
       setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
     }
@@ -525,7 +526,7 @@ export default function DecksPage() {
       setEditingCard(null)
 
     } catch (err) {
-      console.error('Card image edit upload error', err)
+  logger.error('Card image edit upload error', err)
       
       // Clear uploading state on error
       setDeckDetails(prev => {
@@ -574,7 +575,7 @@ export default function DecksPage() {
       await uploadCardImageEdit(editingCard, file)
       
     } catch (err) {
-      console.error('Card camera edit error', err)
+  logger.error('Card camera edit error', err)
       
       // Clear uploading state on error
       const cardIndex = deckDetails.cards.findIndex(c => c.name === editingCard)
@@ -643,7 +644,7 @@ export default function DecksPage() {
       setSelectedDeck(created._id)
       setShowNewDeckModal(false)
     } catch (err) {
-      console.error(err)
+  logger.error(err)
       if (err.message && err.message.includes('401')) {
         alert('Unauthorized: please sign in and try again')
         window.location.href = '/auth'
@@ -686,7 +687,7 @@ export default function DecksPage() {
       setToast({ message: 'Deck updated successfully', type: 'success' })
       setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
     } catch (err) {
-      console.error(err)
+  logger.error(err)
       setToast({ message: err.message || 'Failed to update deck', type: 'error' })
       setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
     } finally {

@@ -36,6 +36,7 @@ const prepareBlobUpload = (formData, options = {}) => {
   return formData
 }
 import { addListener } from '../lib/toast'
+import logger from '../lib/logger'
 import QuerentModal from '../components/QuerentModal'
 import SpreadSelect from '../components/SpreadSelect'
 import SpreadModal from '../components/SpreadModal'
@@ -146,7 +147,7 @@ export default function HomePage() {
           pushToast({ type: 'warning', text: 'Image upload failed, saving reading without image' })
         }
       } catch (error) {
-        console.error('� handleSaveReading: Image upload error:', error)
+  logger.error('� handleSaveReading: Image upload error:', error)
         pushToast({ type: 'warning', text: 'Image upload failed, saving reading without image' })
       } finally {
         setUploadingImage(false)
@@ -500,7 +501,7 @@ export default function HomePage() {
       const result = await exportPdfAction(formData)
       
       if (!result.success) {
-        console.error('Server export failed:', result.error)
+    logger.error('Server export failed:', result.error)
         pushToast({ type: 'error', text: `Export failed: ${result.error}` })
         throw new Error('Server export failed')
       }
@@ -636,7 +637,7 @@ export default function HomePage() {
         pushToast({ type: 'success', text: 'Reading copied to clipboard.' })
       }
     } catch (err) {
-      console.error('Share reading failed:', err)
+  logger.error('Share reading failed:', err)
       pushToast({ type: 'error', text: 'Failed to share reading.' })
     }
   }
@@ -761,7 +762,7 @@ export default function HomePage() {
       URL.revokeObjectURL(url)
       pushToast({ type: 'success', text: 'PDF downloaded.' })
     } catch (err) {
-      console.error('Share as PDF failed', err)
+  logger.error('Share as PDF failed', err)
       pushToast({ type: 'error', text: 'Failed to share or download PDF.' })
     } finally {
       setExporting(false)
@@ -907,14 +908,14 @@ export default function HomePage() {
                   setReadingId(null)
                   pushToast({ type: 'error', text: 'Image upload failed during save — reading was rolled back.' })
                 } catch (delErr) {
-                  console.error('Failed to rollback reading after image upload failure', delErr)
+            logger.error('Failed to rollback reading after image upload failure', delErr)
                   pushToast({ type: 'error', text: 'Image upload failed and rollback also failed. Please check server.' })
                 }
                 throw new Error('Image upload failed during save')
               }
             }
           } catch (err) {
-            console.error('Failed to upload pending image during save', err)
+            logger.error('Failed to upload pending image during save', err)
             // Attempt rollback if we have a created reading id
             try {
               const idToUse = (createResult && createResult.reading && createResult.reading._id) || createResult && createResult._id
@@ -926,7 +927,7 @@ export default function HomePage() {
                 pushToast({ type: 'error', text: 'Failed to upload image during save — reading rolled back.' })
               }
             } catch (delErr) {
-              console.error('Rollback failed', delErr)
+              logger.error('Rollback failed', delErr)
               pushToast({ type: 'error', text: 'Failed to upload image and rollback failed.' })
             }
             throw err
@@ -1000,7 +1001,7 @@ export default function HomePage() {
             pushToast({ type: 'error', text: 'Image upload failed during save.' })
           }
         } catch (err) {
-          console.error('Failed to upload pending image during save', err)
+          logger.error('Failed to upload pending image during save', err)
           pushToast({ type: 'error', text: 'Failed to upload image during save.' })
         } finally {
           setUploadingImage(false)
@@ -1023,7 +1024,7 @@ export default function HomePage() {
       }
       return updateResult.reading
     } catch (err) {
-      console.error('Error saving/updating reading:', err)
+  logger.error('Error saving/updating reading:', err)
       if (explicit) pushToast({ type: 'error', text: err.message || 'Failed to save reading' })
       return null
     } finally {
@@ -1191,7 +1192,7 @@ export default function HomePage() {
         if (!mounted) return
         setSelectedDeckDetails(result.deck)
       } catch (err) {
-        console.error('Failed to load deck details:', err)
+  logger.error('Failed to load deck details:', err)
       }
     }
     loadDeckDetails()
@@ -1296,7 +1297,7 @@ export default function HomePage() {
       setUploadedFile(fileToStore)
       pushToast({ type: 'info', text: 'Image ready — it will be attached when you save the reading.' })
     } catch (err) {
-      console.error('Failed to process captured image', err)
+  logger.error('Failed to process captured image', err)
       pushToast({ type: 'error', text: 'Failed to process captured image' })
     }
   }
@@ -1324,7 +1325,7 @@ export default function HomePage() {
       setNewTagName('')
       pushToast({ type: 'success', text: 'Tag created and added to reading' })
     } catch (err) {
-      console.error('Error creating tag:', err)
+  logger.error('Error creating tag:', err)
       pushToast({ type: 'error', text: 'Failed to create tag' })
     } finally {
       setAddingTag(false)

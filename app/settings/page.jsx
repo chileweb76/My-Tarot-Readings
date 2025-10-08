@@ -8,6 +8,7 @@ import AuthWrapper from '../../components/AuthWrapper'
 import ConfirmModal from '../../components/ConfirmModal'
 import PushNotificationsUniversal from '../../components/PushNotificationsUniversal'
 import { notify } from '../../lib/toast'
+import logger from '../../lib/logger'
 import SmartImage from '../../components/SmartImage'
 
 import { 
@@ -41,7 +42,7 @@ class SettingsErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('Settings page error:', error, errorInfo)
+  logger.error('Settings page error:', error, errorInfo)
   }
 
   render() {
@@ -130,13 +131,13 @@ export default function SettingsPage() {
         setUser(JSON.parse(userData))
       }
     } catch (err) {
-      console.error('Failed to load user from localStorage:', err)
+  logger.error('Failed to load user from localStorage:', err)
       // Fallback: try to get user from server
       getCurrentUserAction().then(result => {
         if (result.success && result.user) {
           setUser(result.user)
         }
-      }).catch(e => console.error('Failed to load user from server:', e))
+  }).catch(e => logger.error('Failed to load user from server:', e))
     }
   }, [])
 
@@ -236,7 +237,7 @@ export default function SettingsPage() {
 
   const handleSaveSettings = () => {
     // Here you would save settings to the backend
-    console.log('Saving settings:', settings)
+  logger.info('Saving settings:', settings)
     alert('Settings saved successfully!')
   }
 
@@ -336,7 +337,7 @@ export default function SettingsPage() {
         // defensive: if the hook setter isn't available (unexpected), log for diagnosis
         // this shouldn't happen in normal React rendering
         // eslint-disable-next-line no-console
-        console.warn('setPicturePreview is not a function at init', setPicturePreview)
+  logger.warn('setPicturePreview is not a function at init', setPicturePreview)
       }
   // load querents for this user
   ;(async () => {
@@ -347,7 +348,7 @@ export default function SettingsPage() {
             if (result.querents.length) setSelectedQuerentId(result.querents[0]._id)
           }
         } catch (err) {
-          console.warn('Failed to load querents', err)
+          logger.warn('Failed to load querents', err)
         }
   })();
   // load tags for this user (only user-created tags)
@@ -361,7 +362,7 @@ export default function SettingsPage() {
             if (userTags.length) setSelectedTagId(userTags[0]._id)
           }
         } catch (err) {
-          console.warn('Failed to load tags', err)
+          logger.warn('Failed to load tags', err)
         }
   })();
   // load decks for this user (only user-owned decks)
@@ -415,7 +416,7 @@ export default function SettingsPage() {
               if (mySpreads.length) setSelectedSpreadId(mySpreads[0]._id)
             }
           } catch (err) {
-            console.warn('Failed to load spreads', err)
+            logger.warn('Failed to load spreads', err)
           }
         })()
     }
@@ -526,7 +527,7 @@ export default function SettingsPage() {
           }
         }
       } catch (err) {
-        console.error('Failed to fetch current user:', err)
+  logger.error('Failed to fetch current user:', err)
         if (mounted) {
           notify({ type: 'error', text: 'Failed to refresh session. Please log in again.' })
           window.location.href = '/auth'
@@ -586,7 +587,7 @@ export default function SettingsPage() {
           localStorage.setItem('user', JSON.stringify(userResult.user))
         }
       } catch (err) {
-        console.error('Error refreshing user after delete-request:', err)
+  logger.error('Error refreshing user after delete-request:', err)
       }
 
   notify({ type: 'success', text: data.message || 'Account marked for deletion' })
@@ -608,10 +609,10 @@ export default function SettingsPage() {
         setPicturePreview(previewUrl || URL.createObjectURL(maybeFile || file))
       } else {
         // eslint-disable-next-line no-console
-        console.warn('setPicturePreview is not a function in handlePictureChange', setPicturePreview)
+  logger.warn('setPicturePreview is not a function in handlePictureChange', setPicturePreview)
       }
     } catch (err) {
-      console.warn('HEIC conversion failed:', err)
+  logger.warn('HEIC conversion failed:', err)
       // Fallback: set raw file URL
       setPictureFile(file)
       try { if (typeof setPicturePreview === 'function') setPicturePreview(URL.createObjectURL(file)) } catch (e) {}
@@ -662,7 +663,7 @@ export default function SettingsPage() {
         setPicturePreview(null)
       } else {
         // eslint-disable-next-line no-console
-        console.warn('setPicturePreview is not a function in handleRemovePicture', setPicturePreview)
+  logger.warn('setPicturePreview is not a function in handleRemovePicture', setPicturePreview)
       }
       notify({ type: 'success', text: result.message || 'Profile picture removed' })
     } catch (err) {
