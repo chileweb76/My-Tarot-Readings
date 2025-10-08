@@ -442,9 +442,10 @@ export default function Card({
                     setCurrentImage(null)
                   }}
                   onLoadingComplete={() => { /* no-op, kept for parity with previous loader */ }}
-                  width={220}
-                  height={320}
-                  style={{ objectFit: 'cover' }}
+                  width={0}
+                  height={0}
+                  sizes="100vw"
+                  style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
                   unoptimized
                 />
                 <div className="mt-2 d-flex justify-content-center">

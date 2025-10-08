@@ -117,23 +117,31 @@
 .card-image,
 .card-image img {
   max-width: 100%;
-  max-height: 400px; /* Prevent oversized images in Safari */
+  width: 100%;
   height: auto;
   object-fit: contain;
   border-radius: 8px;
 }
 
-@media (max-width: 768px) {
+/* Allow images to grow larger on bigger screens */
+@media (min-width: 768px) {
   .card-image,
   .card-image img {
-    max-height: 300px;
+    max-height: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .card-image,
+  .card-image img {
+    max-height: 400px;
   }
 }
 
 @media (max-width: 576px) {
   .card-image,
   .card-image img {
-    max-height: 250px;
+    max-height: 350px;
   }
 }
 

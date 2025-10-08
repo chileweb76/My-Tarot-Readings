@@ -72,15 +72,35 @@
   align-items: center;
   justify-content: center;
   width: 100%;
+  position: relative;
 }
 
 .card-image {
-  height: 100%;
-  width: auto;
-  object-fit: cover;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100%;
+  object-fit: contain;
   transition: transform 0.3s ease;
   display: block;
-  max-width: 100%;
+}
+
+/* Responsive image sizing */
+@media (min-width: 768px) {
+  .card-image-wrapper {
+    min-height: 400px;
+  }
+}
+
+@media (min-width: 992px) {
+  .card-image-wrapper {
+    min-height: 500px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .card-image-wrapper {
+    min-height: 600px;
+  }
 }
 
 .card-image.reversed {
