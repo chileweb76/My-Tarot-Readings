@@ -986,41 +986,21 @@ main.container {
   min-height: 400px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
   position: relative;
   overflow: visible;
 }
 
-/* Ensure the Image component's internal wrapper also fills */
-.card-image-wrapper > span {
-  flex: 1 !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 400px !important;
-  position: relative !important;
-}
-
-/* Override Next.js Image inline styles */
-.card-image-wrapper img {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  -o-object-fit: contain !important;
-     object-fit: contain !important;
-  position: relative !important;
-  inset: auto !important;
-}
-
+/* Card image styling - now using regular img tag */
 .card-image {
   width: 100% !important;
   height: 100% !important;
+  max-width: 100% !important;
   -o-object-fit: contain !important;
      object-fit: contain !important;
   transition: transform 0.3s ease;
   display: block;
-  position: relative !important;
 }
 
 .card-image.reversed {
@@ -1046,20 +1026,17 @@ main.container {
 
 /* Responsive image sizing */
 @media (min-width: 768px) {
-  .card-image-wrapper,
-  .card-image-wrapper > span {
+  .card-image-wrapper {
     min-height: 500px !important;
   }
 }
 @media (min-width: 992px) {
-  .card-image-wrapper,
-  .card-image-wrapper > span {
+  .card-image-wrapper {
     min-height: 600px !important;
   }
 }
 @media (min-width: 1200px) {
-  .card-image-wrapper,
-  .card-image-wrapper > span {
+  .card-image-wrapper {
     min-height: 700px !important;
   }
 }

@@ -433,7 +433,7 @@ export default function Card({
               </div>
             ) : currentImage ? (
               <div className="card-image-wrapper">
-                <Image
+                <img
                   src={currentImage}
                   alt={selectedCard ? `${selectedCard} of ${selectedSuit}` : 'Card'}
                   className={`card-image ${reversed ? 'reversed' : ''}`}
@@ -441,11 +441,7 @@ export default function Card({
                     console.error('Image failed to load:', currentImage)
                     setCurrentImage(null)
                   }}
-                  onLoadingComplete={() => { /* no-op, kept for parity with previous loader */ }}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  style={{ objectFit: 'contain' }}
-                  unoptimized
+                  onLoad={() => { /* no-op, kept for parity with previous loader */ }}
                 />
                 <div className="mt-2 d-flex justify-content-center">
                   <button
