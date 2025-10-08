@@ -20,7 +20,8 @@ export default function ResetPage() {
   return (
     <AuthWrapper>
       <form action={resetFormAction} className="p-3">
-        <h3>Reset password</h3>
+  <h3>Reset password</h3>
+  <p className="text-muted small">Enter your account email and we'll send a password reset link. Check your inbox and spam folder.</p>
         <div className="mb-2">
           <label className="form-label">Email</label>
           <input 
