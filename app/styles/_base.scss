@@ -58,46 +58,6 @@ main.container {
   }
 }
 
-/* Scoped utility: card variant that ensures image area has vertical space */
-.card-with-image {
-  /* base min-height for the card so image wrapper can stretch */
-  min-height: 320px;
-}
-
-@media (min-width: 768px) {
-  .card-with-image {
-    min-height: 300px; /* slightly smaller on tablet/desktop where layout is wider */
-  }
-}
-
-@media (min-width: 1200px) {
-  .card-with-image {
-    min-height: 420px; /* larger on very wide screens for pleasing proportions */
-  }
-}
-
-/* Left column and interpretation helpers to allow textarea to match image height */
-.card-left {
-  display: flex;
-  flex-direction: column;
-}
-
-.interpretation-fill {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-}
-
-.interpretation-fill .form-control {
-  flex: 1 1 auto;
-  height: auto; /* allow flex to control height */
-}
-
-/* Small helper: spacing for reversed checkbox input */
-.reversed-checkbox-input {
-  margin-right: 0.35rem;
-}
-
 /* Tarot-themed modal styles (scoped) */
 .tarot-modal .modal-dialog { max-width: 540px; }
 .tarot-modal .modal-content {
@@ -133,46 +93,6 @@ main.container {
   border: none;
   border-radius: 1rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-/* Card image area used by client/components/Card.jsx */
-.card-image-wrapper {
-  height: 100%;
-  min-height: 320px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-
-.card-image {
-  height: 100%;
-  width: auto;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-  display: block;
-  max-width: 100%;
-}
-
-.card-image.reversed {
-  transform: rotate(180deg);
-}
-
-.card-image-fallback {
-  background-color: var(--tarot-primary);
-  color: white;
-  min-height: 150px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  width: 100%;
-}
-
-.card-image-spinner {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
 }
 
 /* Avatar transition: subtle fade + scale on source change */
