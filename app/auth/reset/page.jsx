@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useActionState, useEffect } from 'react'
-import AuthWrapper from '../../../components/AuthWrapper'
+// Reset page should be publicly accessible (do not use AuthWrapper which
+// enforces authentication). Render in the public auth container instead.
 import { notify } from '../../../lib/toast'
 import { resetPasswordAction, submitNewPasswordAction } from '../../../lib/actions'
 import { useSearchParams } from 'next/navigation'
@@ -37,37 +38,45 @@ export default function ResetPage() {
   }, { success: false, error: null })
 
   return (
-    <AuthWrapper>
-      {tokenFromUrl ? (
-        <form action={setFormAction} className="p-3">
-          <h3>Set new password</h3>
-          <p className="text-muted small">Enter a new password for your account.</p>
-          <input type="hidden" name="token" value={tokenFromUrl} />
-          <div className="mb-2">
-            <label className="form-label">New password</label>
-            <input className="form-control" name="newPassword" type="password" minLength={6} required />
+    <div className="auth-container">
+      <div className="row justify-content-center w-100">
+        <div className="col-md-6 col-lg-5">
+          <div className="card shadow auth-card">
+            <div className="card-body p-5">
+              {tokenFromUrl ? (
+                <form action={setFormAction} className="p-3">
+                  <h3>Set new password</h3>
+                  <p className="text-muted small">Enter a new password for your account.</p>
+                  <input type="hidden" name="token" value={tokenFromUrl} />
+                  <div className="mb-2">
+                    <label className="form-label">New password</label>
+                    <input className="form-control" name="newPassword" type="password" minLength={6} required />
+                  </div>
+                  <div className="mb-2">
+                    <label className="form-label">Verify password</label>
+                    <input className="form-control" name="verifyPassword" type="password" minLength={6} required />
+                  </div>
+                  <div>
+                    <button className="btn btn-tarot-primary" type="submit" disabled={setPending}>{setPending ? 'Saving...' : 'Set password'}</button>
+                  </div>
+                </form>
+              ) : (
+                <form action={resetFormAction} className="p-3">
+                  <h3>Reset password</h3>
+                  <p className="text-muted small">Enter your account email and we'll send a password reset link. Check your inbox and spam folder.</p>
+                  <div className="mb-2">
+                    <label className="form-label">Email</label>
+                    <input className="form-control" name="email" type="email" required />
+                  </div>
+                  <div>
+                    <button className="btn btn-tarot-primary" type="submit" disabled={resetPending}>{resetPending ? 'Sending...' : 'Send reset'}</button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
-          <div className="mb-2">
-            <label className="form-label">Verify password</label>
-            <input className="form-control" name="verifyPassword" type="password" minLength={6} required />
-          </div>
-          <div>
-            <button className="btn btn-tarot-primary" type="submit" disabled={setPending}>{setPending ? 'Saving...' : 'Set password'}</button>
-          </div>
-        </form>
-      ) : (
-        <form action={resetFormAction} className="p-3">
-          <h3>Reset password</h3>
-          <p className="text-muted small">Enter your account email and we'll send a password reset link. Check your inbox and spam folder.</p>
-          <div className="mb-2">
-            <label className="form-label">Email</label>
-            <input className="form-control" name="email" type="email" required />
-          </div>
-          <div>
-            <button className="btn btn-tarot-primary" type="submit" disabled={resetPending}>{resetPending ? 'Sending...' : 'Send reset'}</button>
-          </div>
-        </form>
-      )}
-    </AuthWrapper>
+        </div>
+      </div>
+    </div>
   )
 }
