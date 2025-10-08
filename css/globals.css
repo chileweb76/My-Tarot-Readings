@@ -1056,18 +1056,35 @@ main.container {
   align-items: center;
   justify-content: center;
   width: 100%;
+  position: relative;
 }
 
 .card-image {
-  height: 100%;
-  width: auto;
-  -o-object-fit: cover;
-     object-fit: cover;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100%;
+  -o-object-fit: contain;
+     object-fit: contain;
   transition: transform 0.3s ease;
   display: block;
-  max-width: 100%;
 }
 
+/* Responsive image sizing */
+@media (min-width: 768px) {
+  .card-image-wrapper {
+    min-height: 400px;
+  }
+}
+@media (min-width: 992px) {
+  .card-image-wrapper {
+    min-height: 500px;
+  }
+}
+@media (min-width: 1200px) {
+  .card-image-wrapper {
+    min-height: 600px;
+  }
+}
 .card-image.reversed {
   transform: rotate(180deg);
 }
@@ -1352,23 +1369,30 @@ main.container {
 .card-image,
 .card-image img {
   max-width: 100%;
-  max-height: 400px; /* Prevent oversized images in Safari */
+  width: 100%;
   height: auto;
   -o-object-fit: contain;
      object-fit: contain;
   border-radius: 8px;
 }
 
-@media (max-width: 768px) {
+/* Allow images to grow larger on bigger screens */
+@media (min-width: 768px) {
   .card-image,
   .card-image img {
-    max-height: 300px;
+    max-height: none;
+  }
+}
+@media (max-width: 767px) {
+  .card-image,
+  .card-image img {
+    max-height: 400px;
   }
 }
 @media (max-width: 576px) {
   .card-image,
   .card-image img {
-    max-height: 250px;
+    max-height: 350px;
   }
 }
 /* My Data block bottom border to match Profile separation */
