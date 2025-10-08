@@ -432,7 +432,7 @@ export default function Card({
                 </div>
               </div>
             ) : currentImage ? (
-              <div className="card-image-wrapper">
+              <div className="card-image-wrapper" style={{ minHeight: '400px' }}>
                 <img
                   src={currentImage}
                   alt={selectedCard ? `${selectedCard} of ${selectedSuit}` : 'Card'}
@@ -441,8 +441,10 @@ export default function Card({
                     width: '100%',
                     height: 'auto',
                     minHeight: '400px',
+                    maxHeight: 'none',
                     objectFit: 'contain',
-                    maxWidth: '100%'
+                    maxWidth: '100%',
+                    display: 'block'
                   }}
                   onError={() => {
                     console.error('Image failed to load:', currentImage)

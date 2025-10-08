@@ -981,27 +981,31 @@ main.container {
 
 /* Card image area used by client/components/Card.jsx */
 .card-image-wrapper {
-  flex: 1;
-  width: 100%;
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: visible;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 400px !important;
+  max-height: none !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  overflow: visible !important;
 }
 
 /* Card image styling - now using regular img tag */
-.card-image {
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-  min-height: 400px;
-  -o-object-fit: contain;
-     object-fit: contain;
+.card-image,
+.card-image-wrapper img {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  min-height: 400px !important;
+  -o-object-fit: contain !important;
+     object-fit: contain !important;
   transition: transform 0.3s ease;
-  display: block;
+  display: block !important;
 }
 
 .card-image.reversed {
@@ -1030,24 +1034,27 @@ main.container {
   .card-image-wrapper {
     min-height: 500px !important;
   }
-  .card-image {
-    min-height: 500px;
+  .card-image,
+  .card-image-wrapper img {
+    min-height: 500px !important;
   }
 }
 @media (min-width: 992px) {
   .card-image-wrapper {
     min-height: 600px !important;
   }
-  .card-image {
-    min-height: 600px;
+  .card-image,
+  .card-image-wrapper img {
+    min-height: 600px !important;
   }
 }
 @media (min-width: 1200px) {
   .card-image-wrapper {
     min-height: 700px !important;
   }
-  .card-image {
-    min-height: 700px;
+  .card-image,
+  .card-image-wrapper img {
+    min-height: 700px !important;
   }
 }
 .card-image.reversed {
