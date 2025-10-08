@@ -70,11 +70,12 @@ export default function AuthSuccessPage() {
     const verified = sp.get('verified')
     const token = sp.get('token') // OAuth token from cross-domain callback
     
-    // Determine flow from query params
+    // IMPORTANT: Check verification flow FIRST before attempting authentication
+    // Email verification does NOT log the user in, just confirms their email
 
     // If verification flow (no provider) — show verified message and redirect to sign-in
-    if (!provider && verified === 'true') {
-  // Email verification flow
+    if (verified === 'true' && !provider) {
+      // Email verification flow - user is NOT logged in yet
       setStatus('verified')
       setTimeout(() => {
         // send user back to sign-in so they can log in
@@ -91,8 +92,8 @@ export default function AuthSuccessPage() {
     }
 
     // For authentication success (Google OAuth or other providers)
-    if (provider || window.location.pathname.includes('success')) {
-  // Standard OAuth flow detected — check cookies via server action
+    if (provider) {
+      // Standard OAuth flow detected — check cookies via server action
       // Fetch user data using Server Action (cookies are handled automatically)
       fetchUserData()
     } else {
