@@ -437,6 +437,13 @@ export default function Card({
                   src={currentImage}
                   alt={selectedCard ? `${selectedCard} of ${selectedSuit}` : 'Card'}
                   className={`card-image ${reversed ? 'reversed' : ''}`}
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    minHeight: '400px',
+                    objectFit: 'contain',
+                    maxWidth: '100%'
+                  }}
                   onError={() => {
                     console.error('Image failed to load:', currentImage)
                     setCurrentImage(null)
