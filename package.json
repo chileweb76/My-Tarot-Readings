@@ -11,14 +11,17 @@
     "install:all": "npm install",
     "generate-vapid": "node scripts/generate-vapid-keys.js",
     "setup-production": "./scripts/setup-production.sh",
-    "create-indexes": "node scripts/create-indexes.js"
+    "create-indexes": "node scripts/create-indexes.js",
+    "knip": "knip"
   },
   "devDependencies": {
-    "@types/node": "24.3.1",
+    "@types/node": "^24.3.1",
     "@types/react": "19.1.12",
     "concurrently": "^9.2.1",
     "eslint": "^9.36.0",
-    "eslint-config-next": "^15.5.3"
+    "eslint-config-next": "^15.5.3",
+    "knip": "^5.64.2",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^7.0.1",
