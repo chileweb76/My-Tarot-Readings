@@ -989,6 +989,28 @@ main.container {
   align-items: stretch;
   justify-content: flex-start;
   position: relative;
+  overflow: visible;
+}
+
+/* Ensure the Image component's internal wrapper also fills */
+.card-image-wrapper > span {
+  flex: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 400px !important;
+  position: relative !important;
+}
+
+/* Override Next.js Image inline styles */
+.card-image-wrapper img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  -o-object-fit: contain !important;
+     object-fit: contain !important;
+  position: relative !important;
+  inset: auto !important;
 }
 
 .card-image {
@@ -999,13 +1021,6 @@ main.container {
   transition: transform 0.3s ease;
   display: block;
   position: relative !important;
-}
-
-/* Ensure the Image component's internal wrapper also fills */
-.card-image-wrapper > span {
-  flex: 1 !important;
-  width: 100% !important;
-  height: 100% !important;
 }
 
 .card-image.reversed {
@@ -1031,18 +1046,21 @@ main.container {
 
 /* Responsive image sizing */
 @media (min-width: 768px) {
-  .card-image-wrapper {
-    min-height: 400px;
+  .card-image-wrapper,
+  .card-image-wrapper > span {
+    min-height: 500px !important;
   }
 }
 @media (min-width: 992px) {
-  .card-image-wrapper {
-    min-height: 500px;
+  .card-image-wrapper,
+  .card-image-wrapper > span {
+    min-height: 600px !important;
   }
 }
 @media (min-width: 1200px) {
-  .card-image-wrapper {
-    min-height: 600px;
+  .card-image-wrapper,
+  .card-image-wrapper > span {
+    min-height: 700px !important;
   }
 }
 .card-image.reversed {
@@ -1325,9 +1343,9 @@ main.container {
   display: block;
 }
 
-/* Card image responsive constraints for Safari and mobile */
-.card-image,
-.card-image img {
+/* Card image responsive constraints for Safari and mobile - only for reading view, not card edit */
+.reading-view .card-image,
+.reading-view .card-image img {
   max-width: 100%;
   width: 100%;
   height: auto;
@@ -1338,20 +1356,20 @@ main.container {
 
 /* Allow images to grow larger on bigger screens */
 @media (min-width: 768px) {
-  .card-image,
-  .card-image img {
+  .reading-view .card-image,
+  .reading-view .card-image img {
     max-height: none;
   }
 }
 @media (max-width: 767px) {
-  .card-image,
-  .card-image img {
+  .reading-view .card-image,
+  .reading-view .card-image img {
     max-height: 400px;
   }
 }
 @media (max-width: 576px) {
-  .card-image,
-  .card-image img {
+  .reading-view .card-image,
+  .reading-view .card-image img {
     max-height: 350px;
   }
 }

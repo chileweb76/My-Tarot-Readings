@@ -113,9 +113,9 @@
   display: block;
 }
 
-/* Card image responsive constraints for Safari and mobile */
-.card-image,
-.card-image img {
+/* Card image responsive constraints for Safari and mobile - only for reading view, not card edit */
+.reading-view .card-image,
+.reading-view .card-image img {
   max-width: 100%;
   width: 100%;
   height: auto;
@@ -125,22 +125,22 @@
 
 /* Allow images to grow larger on bigger screens */
 @media (min-width: 768px) {
-  .card-image,
-  .card-image img {
+  .reading-view .card-image,
+  .reading-view .card-image img {
     max-height: none;
   }
 }
 
 @media (max-width: 767px) {
-  .card-image,
-  .card-image img {
+  .reading-view .card-image,
+  .reading-view .card-image img {
     max-height: 400px;
   }
 }
 
 @media (max-width: 576px) {
-  .card-image,
-  .card-image img {
+  .reading-view .card-image,
+  .reading-view .card-image img {
     max-height: 350px;
   }
 }
