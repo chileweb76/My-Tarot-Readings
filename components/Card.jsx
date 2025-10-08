@@ -424,7 +424,7 @@ export default function Card({
             </div>
           </div>
 
-          <div className="col-lg-4 d-flex h-100">
+          <div className="col-lg-4 d-flex flex-column h-100">
             {loading ? (
               <div className="card-image-spinner">
                 <div className="spinner-border spinner-border-sm" role="status">
@@ -432,7 +432,7 @@ export default function Card({
                 </div>
               </div>
             ) : currentImage ? (
-              <div className="card-image-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div className="card-image-wrapper">
                 <Image
                   src={currentImage}
                   alt={selectedCard ? `${selectedCard} of ${selectedSuit}` : 'Card'}
@@ -442,10 +442,9 @@ export default function Card({
                     setCurrentImage(null)
                   }}
                   onLoadingComplete={() => { /* no-op, kept for parity with previous loader */ }}
-                  width={0}
-                  height={0}
-                  sizes="100vw"
-                  style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  style={{ objectFit: 'contain' }}
                   unoptimized
                 />
                 <div className="mt-2 d-flex justify-content-center">
