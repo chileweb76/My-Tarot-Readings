@@ -969,6 +969,22 @@ main.container {
   color: var(--tarot-primary) !important;
 }
 
+/* Ensure alert-info inside auth-card is readable (override global white text) */
+.auth-card .alert.alert-info,
+.auth-card .alert-info {
+  color: #004085 !important; /* dark blue text for contrast */
+  background-color: #d1ecf1 !important;
+  border-color: #bee5eb !important;
+}
+
+/* Make nested elements inside the alert use the same readable color */
+.auth-card .alert-info strong,
+.auth-card .alert-info .small,
+.auth-card .alert-info p,
+.auth-card .alert-info div {
+  color: #004085 !important;
+}
+
 /* Tarot Card and Reading Card Styles */
 .card-reading {
   background: rgba(255, 255, 255, 0.95);
