@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from 'react'
+import logger from '../lib/logger'
 
 export default function UniversalInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false)
@@ -73,7 +74,7 @@ export default function UniversalInstallPrompt() {
                         // Check if launched from home screen on iOS
                         (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches)
     
-    console.log('PWA Installation Status:', {
+    logger.info('PWA Installation Status:', {
       displayMode: window.matchMedia('(display-mode: standalone)').matches,
       navigatorStandalone: window.navigator.standalone,
       detected: pwaInstalled,

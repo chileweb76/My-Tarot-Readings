@@ -1,3 +1,6 @@
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import logger from '../lib/logger'
 "use client"
 
 import { useEffect, useState } from 'react'
@@ -27,16 +30,16 @@ export default function Header() {
         const { getCurrentUserAction } = await import('../lib/actions')
         const result = await getCurrentUserAction()
         
-        console.log('Header: auth check result', result)
+          logger.info('Header: auth check result', result)
         
         if (result.success && result.user) {
           setIsAuthenticated(true)
           setUser(result.user)
-          console.log('Header: authenticated as', result.user.username)
+            logger.info('Header: authenticated as', result.user.username)
           // Keep user data in localStorage for backwards compatibility
           localStorage.setItem('user', JSON.stringify(result.user))
         } else {
-          console.log('Header: not authenticated via cookie')
+            logger.info('Header: not authenticated via cookie')
           setIsAuthenticated(false)
           setUser(null)
           // Clear any stale data
@@ -44,7 +47,7 @@ export default function Header() {
           localStorage.removeItem('token')
         }
       } catch (error) {
-        console.error('Header: auth check failed', error)
+          logger.error('Header: auth check failed', error)
         setIsAuthenticated(false)
         setUser(null)
         localStorage.removeItem('user')
@@ -62,16 +65,16 @@ export default function Header() {
             const userData = JSON.parse(ud)
             setUser(userData)
             setIsAuthenticated(true)
-            console.log('Header: updated from storage', userData.username)
+              logger.info('Header: updated from storage', userData.username)
           } catch (err) {
-            console.error('Header: failed to parse user data from storage', err)
+              logger.error('Header: failed to parse user data from storage', err)
             setUser(null)
             setIsAuthenticated(false)
           }
         } else {
           setUser(null)
           setIsAuthenticated(false)
-          console.log('Header: user data cleared from storage')
+            logger.info('Header: user data cleared from storage')
         }
       }
     }
@@ -81,7 +84,7 @@ export default function Header() {
       if (detail) {
         setUser(detail)
         setIsAuthenticated(true)
-        console.log('Header: user updated via event', detail.username)
+          logger.info('Header: user updated via event', detail.username)
       }
     }
 

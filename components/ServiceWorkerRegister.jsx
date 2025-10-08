@@ -1,5 +1,6 @@
 "use client"
 import { useEffect } from 'react'
+import logger from '../lib/logger'
 
 export default function ServiceWorkerRegister() {
   useEffect(() => {
@@ -8,8 +9,7 @@ export default function ServiceWorkerRegister() {
       const register = async () => {
         try {
           const reg = await navigator.serviceWorker.register(swUrl)
-          // eslint-disable-next-line no-console
-          console.log('Service worker registered:', reg.scope)
+          logger.info('Service worker registered:', reg.scope)
 
           // Listen for updates and prompt when a new SW takes over
           reg.addEventListener && reg.addEventListener('updatefound', () => {
@@ -18,15 +18,13 @@ export default function ServiceWorkerRegister() {
               installing.addEventListener('statechange', () => {
                 if (installing.state === 'installed' && navigator.serviceWorker.controller) {
                   // New content is available; you might want to notify the user
-                  // eslint-disable-next-line no-console
-                  console.log('New content available; please refresh.')
+                  logger.info('New content available; please refresh.')
                 }
               })
             }
           })
         } catch (err) {
-          // eslint-disable-next-line no-console
-          console.error('Service worker registration failed:', err)
+          logger.error('Service worker registration failed:', err)
         }
       }
 
