@@ -13,8 +13,8 @@ import {
   getSingleDeckAction,
   createDeckAction,
   updateDeckAction,
-  uploadDeckBlobAction,
-  uploadCardBlobAction
+  updateDeckImageUrlAction,
+  updateCardImageUrlAction
 } from '../../lib/actions'
 import { uploadImageToBlob } from '../../lib/blobUpload'
 import logger from '../../lib/logger'
@@ -210,28 +210,18 @@ export default function DecksPage() {
   const uploadCardImage = async (cardName, file) => {
     if (!selectedDeck || !file) return null
     try {
-      const apiBase = getApiBase()
-      const fd = new FormData()
-      fd.append('image', file)
-      
-      // Add Vercel Blob metadata for card image
-      prepareBlobUpload(fd, {
-        filename: `deck-${selectedDeck}-card-${cardName}-${Date.now()}.${file.type.split('/')[1] || 'jpg'}`,
-        contentType: file.type
-      })
-      
-      // Add Vercel Blob metadata
-      prepareBlobUpload(fd, {
-        filename: `deck-${selectedDeck}-${Date.now()}.${file.type.split('/')[1] || 'jpg'}`,
-        contentType: file.type,
-        cacheControl: 'public, max-age=31536000'
-      })
-  // show uploading indicator by finding index
-  const idx = deckDetails && Array.isArray(deckDetails.cards) ? deckDetails.cards.findIndex(c => (c.name||'').toLowerCase() === (cardName||'').toLowerCase()) : -1
-  if (idx !== -1) setUploadingCardIndex(idx)
+      // Show uploading indicator by finding index
+      const idx = deckDetails && Array.isArray(deckDetails.cards) ? deckDetails.cards.findIndex(c => (c.name||'').toLowerCase() === (cardName||'').toLowerCase()) : -1
+      if (idx !== -1) setUploadingCardIndex(idx)
 
-      // Create preview URL immediately for instant display
-      const previewUrl = URL.createObjectURL(file)
+      // Prepare file (HEIC conversion, preview, size checks) using shared helper
+      const { prepareImageForUpload } = await import('../../lib/imageUploader')
+      const prep = await prepareImageForUpload(file)
+      if (!prep.success) {
+        throw new Error(prep.error || 'Image not acceptable')
+      }
+      let processedFile = prep.file
+      let previewUrl = prep.previewUrl || URL.createObjectURL(processedFile)
 
       // Update local state immediately with preview
       setDeckDetails(prev => {
@@ -246,43 +236,45 @@ export default function DecksPage() {
         return { ...prev, cards }
       })
 
-      // Add deckId and cardName to formData for Server Action
-      fd.append('deckId', selectedDeck)
-      fd.append('cardName', cardName)
-      
-      const result = await uploadCardBlobAction(fd)
+      // Upload to blob
+      const result = await uploadImageToBlob(selectedDeck, processedFile)
       if (!result.success) {
-        throw new Error(`Upload failed: ${result.error}`)
+        throw new Error(result.error || 'Upload failed')
       }
-      const updated = result
       
-      // Handle Vercel Blob response format using utility
-      const cardImageUrl = extractBlobUrl(updated)
+      const imageUrl = result.url || result.image || null
       
-      setToast({ message: 'Card image uploaded to Vercel Blob', type: 'success' })
-  setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
-  setUploadingCardIndex(null)
+      // Update MongoDB with the blob URL
+      if (imageUrl) {
+        const dbUpdateResult = await updateCardImageUrlAction(selectedDeck, cardName, imageUrl)
+        if (!dbUpdateResult.success) {
+          logger.warn('Failed to update card image in database:', dbUpdateResult.error)
+        }
+      }
       
-      // Update local deckDetails state with server response
+      setToast({ message: 'Card image uploaded successfully!', type: 'success' })
+      setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
+      setUploadingCardIndex(null)
+      
+      // Update local deckDetails state with blob URL
       setDeckDetails(prev => {
         if (!prev) return prev
         const cards = Array.isArray(prev.cards) ? [...prev.cards] : []
-        // match by name (case-insensitive)
         const idx = cards.findIndex(c => (c.name || '').toLowerCase() === (cardName || '').toLowerCase())
         if (idx !== -1) {
-          // Clean up the preview URL and use server URL
+          // Clean up the preview URL and use blob URL
           if (cards[idx].image && cards[idx].image.startsWith('blob:')) {
             URL.revokeObjectURL(cards[idx].image)
           }
-          cards[idx] = { ...cards[idx], image: cardImageUrl || updated.image, uploading: false }
+          cards[idx] = { ...cards[idx], image: imageUrl, uploading: false }
         } else {
-          cards.push({...updated, uploading: false})
+          cards.push({ name: cardName, image: imageUrl, uploading: false })
         }
         return { ...prev, cards }
       })
-      return updated
+      return { url: imageUrl }
     } catch (err) {
-  logger.error('Upload error', err)
+      logger.error('Upload error', err)
       setUploadingCardIndex(null)
       
       // Remove preview on error
@@ -400,7 +392,15 @@ export default function DecksPage() {
       const updated = result
       const imageUrl = updated.url || updated.image || null
       
-      setToast({ message: 'Deck image uploaded to Vercel Blob', type: 'success' })
+      // Update MongoDB with the blob URL
+      if (imageUrl) {
+        const dbUpdateResult = await updateDeckImageUrlAction(selectedDeck, imageUrl)
+        if (!dbUpdateResult.success) {
+          logger.warn('Failed to update deck image in database:', dbUpdateResult.error)
+        }
+      }
+      
+      setToast({ message: 'Deck image uploaded successfully!', type: 'success' })
       setTimeout(() => setToast({ message: '', type: 'info' }), 2500)
 
       // Update with server response
@@ -486,35 +486,46 @@ export default function DecksPage() {
     try {
       setUploadingCardIndex(cardIndex)
       
+      // Prepare file (HEIC conversion, preview, size checks) using shared helper
+      const { prepareImageForUpload } = await import('../../lib/imageUploader')
+      const prep = await prepareImageForUpload(file)
+      if (!prep.success) {
+        throw new Error(prep.error || 'Image not acceptable')
+      }
+      let processedFile = prep.file
+      let previewUrl = prep.previewUrl || URL.createObjectURL(processedFile)
+
       // Show preview immediately
-      const previewUrl = URL.createObjectURL(file)
       setDeckDetails(prev => {
         const cards = [...prev.cards]
         cards[cardIndex] = { ...cards[cardIndex], image: previewUrl, uploading: true }
         return { ...prev, cards }
       })
 
-      const formData = new FormData()
-      formData.append('image', file)
-      formData.append('cardName', cardName)
-      formData.append('deckId', selectedDeck)
-
-      const result = await uploadCardBlobAction(formData)
-
+      // Upload to blob
+      const result = await uploadImageToBlob(selectedDeck, processedFile)
       if (!result.success) {
         throw new Error(result.error || 'Upload failed')
       }
+      
+      const imageUrl = result.url || result.image || null
 
-      const updated = result.data
+      // Update MongoDB with the blob URL
+      if (imageUrl) {
+        const dbUpdateResult = await updateCardImageUrlAction(selectedDeck, cardName, imageUrl)
+        if (!dbUpdateResult.success) {
+          logger.warn('Failed to update card image in database:', dbUpdateResult.error)
+        }
+      }
 
-      // Update with server response
+      // Update with blob URL
       setDeckDetails(prev => {
         const cards = [...prev.cards]
         // Clean up preview URL
         if (cards[cardIndex].image && cards[cardIndex].image.startsWith('blob:')) {
           URL.revokeObjectURL(cards[cardIndex].image)
         }
-        cards[cardIndex] = { ...cards[cardIndex], ...updated, uploading: false }
+        cards[cardIndex] = { ...cards[cardIndex], image: imageUrl, uploading: false }
         return { ...prev, cards }
       })
 
