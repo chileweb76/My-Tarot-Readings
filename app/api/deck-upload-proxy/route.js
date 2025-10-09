@@ -17,8 +17,6 @@ export async function POST(request) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 200, headers })
     }
-
-    console.log('🔵 [Deck Upload Proxy] Processing deck upload request')
     
     // Get deck info from query params or headers
     const url = new URL(request.url)
@@ -51,25 +49,8 @@ export async function POST(request) {
       })
     }
 
-    console.log('🔵 [Deck Upload Proxy] File received:', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      deckId,
-      cardName: cardName || 'cover',
-      ownerUsername
-    })
-
-    // Check environment variables
-    console.log('🔵 [Deck Upload Proxy] Environment check:', {
-      hasVercelBlobToken: !!process.env.VERCEL_BLOB_TOKEN,
-      hasBlobReadWriteToken: !!process.env.BLOB_READ_WRITE_TOKEN,
-      nodeEnv: process.env.NODE_ENV
-    })
-
     // Check if we have the required token
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      console.error('🔴 [Deck Upload Proxy] Missing BLOB_READ_WRITE_TOKEN environment variable')
       return new Response(JSON.stringify({ 
         error: 'Server configuration error: Missing blob storage token' 
       }), {
@@ -93,16 +74,12 @@ export async function POST(request) {
       filename = `decks/${deckId}/${sanitizedOwner}/cover/cover-${Date.now()}.${fileExtension}`
     }
     
-    console.log('🔵 [Deck Upload Proxy] Uploading to hierarchical path:', filename)
-    
     // Upload to Vercel Blob with hierarchical folder structure
     const blob = await put(filename, file, {
       access: 'public',
       contentType: file.type,
       addRandomSuffix: false // We're adding timestamp manually
     })
-
-    console.log('🟢 [Deck Upload Proxy] Blob uploaded successfully:', blob.url)
 
     // Return the blob URL
     return new Response(JSON.stringify({
@@ -120,17 +97,12 @@ export async function POST(request) {
     })
 
   } catch (error) {
-    console.error('❌ [Deck Upload Proxy] Detailed error:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      cause: error.cause
-    })
+    console.error('[Deck Upload Proxy] Error:', error.message)
 
     return new Response(JSON.stringify({
       success: false,
       error: error.message || 'Upload failed',
-      details: error.stack
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }), {
       status: 500,
       headers: { 
