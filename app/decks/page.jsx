@@ -1183,15 +1183,16 @@ export default function DecksPage() {
                   return (
                     <div className="col-6 col-sm-4 col-md-3" key={(card && card.name) || i}>
                       <div className="card p-2 h-100">
-                        <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#f8f9fa', position: 'relative' }}>
+                        <div style={{ height: 'auto', minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'visible', background: '#f8f9fa', position: 'relative' }}>
                           {hasImage ? (
                             <>
                               <SmartImageV2
                                 src={imgSrc}
                                 alt={card.name || 'card'}
-                                width={220}
-                                height={160}
-                                style={{ objectFit: 'cover', opacity: isUploading ? 0.7 : 1 }}
+                                width={0}
+                                height={0}
+                                sizes="(max-width: 768px) 50vw, 25vw"
+                                style={{ width: '100%', height: 'auto', objectFit: 'contain', opacity: isUploading ? 0.7 : 1 }}
                                 imageType={IMAGE_TYPES.CARD}
                                 imageContext={{ 
                                   cardName: card.name,
