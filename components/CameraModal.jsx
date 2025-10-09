@@ -155,9 +155,36 @@ export default function CameraModal({ show, onClose, onCaptured }) {
   } catch (e) { /* ignore */ }
 
   return (
-    <div className="modal show d-block" tabIndex={-1} role="dialog">
-      <div className="modal-dialog modal-md" role="document">
-        <div className="modal-content">
+    <>
+      {/* Modal backdrop */}
+      <div 
+        className="modal-backdrop show" 
+        style={{ zIndex: 1050 }}
+        onClick={() => { 
+          try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {} 
+          if (onClose) onClose() 
+        }}
+      />
+      {/* Modal dialog */}
+      <div 
+        className="modal show d-block" 
+        tabIndex={-1} 
+        role="dialog"
+        style={{
+          zIndex: 1055,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflow: 'auto'
+        }}
+      >
+        <div className="modal-dialog modal-md" role="document" style={{ margin: 'auto' }}>
+          <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">Capture Image</h5>
             <button type="button" className="btn-close" aria-label="Close" onClick={() => { try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {} ; if (onClose) onClose() }}></button>
@@ -257,5 +284,6 @@ export default function CameraModal({ show, onClose, onCaptured }) {
         </div>
       </div>
     </div>
+    </>
   )
 }
