@@ -521,6 +521,9 @@ main.container {
   color: #fff;
   padding: 1rem 0; /* increase vertical padding to allow larger logo */
   min-height: 100px; /* ensure navbar can accommodate larger logos */
+  position: sticky;
+  top: 0;
+  z-index: 1040; /* Below modals (100001) but above most content */
 }
 
 /* Navbar layout: fixed max-width compact container with logo left and nav right */
@@ -1140,16 +1143,23 @@ main.container {
 .modal.show {
   z-index: 100001 !important; /* Very high to ensure it's above everything */
   position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 1rem !important;
+  overflow-y: auto !important;
 }
 
 /* Center modal dialog properly on all devices */
 .modal-dialog {
   margin: 0 auto !important;
   max-width: 90vw;
+  position: relative !important;
+  z-index: 100002 !important;
 }
 
 /* Specific responsive sizing for different modal sizes */

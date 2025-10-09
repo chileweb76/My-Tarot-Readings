@@ -13,6 +13,9 @@
   color: #fff;
   padding: 1rem 0; /* increase vertical padding to allow larger logo */
   min-height: 100px; /* ensure navbar can accommodate larger logos */
+  position: sticky;
+  top: 0;
+  z-index: 1040; /* Below modals (100001) but above most content */
 }
 
 /* Navbar layout: fixed max-width compact container with logo left and nav right */

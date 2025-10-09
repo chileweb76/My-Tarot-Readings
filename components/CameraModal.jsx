@@ -159,7 +159,7 @@ export default function CameraModal({ show, onClose, onCaptured }) {
       {/* Modal backdrop */}
       <div 
         className="modal-backdrop show" 
-        style={{ zIndex: 1050 }}
+        style={{ zIndex: 100000 }}
         onClick={() => { 
           try { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()) } catch(e) {} 
           if (onClose) onClose() 

@@ -78,16 +78,23 @@
 .modal.show {
   z-index: 100001 !important; /* Very high to ensure it's above everything */
   position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 1rem !important;
+  overflow-y: auto !important;
 }
 
 /* Center modal dialog properly on all devices */
 .modal-dialog {
   margin: 0 auto !important;
   max-width: 90vw;
+  position: relative !important;
+  z-index: 100002 !important;
 }
 
 /* Specific responsive sizing for different modal sizes */
