@@ -170,20 +170,8 @@ export default function CameraModal({ show, onClose, onCaptured }) {
         className="modal show d-block" 
         tabIndex={-1} 
         role="dialog"
-        style={{
-          zIndex: 1055,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          overflow: 'auto'
-        }}
       >
-        <div className="modal-dialog modal-md" role="document" style={{ margin: 'auto' }}>
+        <div className="modal-dialog modal-md" role="document">
           <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">Capture Image</h5>

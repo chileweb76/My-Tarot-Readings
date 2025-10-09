@@ -78,7 +78,38 @@
 .modal.show {
   z-index: 100001 !important; /* Very high to ensure it's above everything */
   position: fixed !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
 }
+
+/* Center modal dialog properly on all devices */
+.modal-dialog {
+  margin: 0 auto !important;
+  max-width: 90vw;
+}
+
+/* Specific responsive sizing for different modal sizes */
+.modal-md {
+  max-width: 500px;
+}
+
+.modal-lg {
+  max-width: 800px;
+}
+
+@media (max-width: 576px) {
+  .modal.show {
+    padding: 0.5rem !important;
+  }
+  
+  .modal-dialog {
+    max-width: 95vw;
+    margin: 0 auto !important;
+  }
+}
+
 .modal-backdrop.show {
   z-index: 100000 !important; /* Backdrop just below modal */
 }
