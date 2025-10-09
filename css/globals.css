@@ -918,8 +918,6 @@ main.container {
 
 /* Scoped utility: card variant that ensures image area has vertical space */
 .card-with-image {
-  /* base min-height for the card so image wrapper can stretch */
-  min-height: 500px;
   display: flex;
   flex-direction: column;
 }
@@ -932,16 +930,6 @@ main.container {
   flex: 1;
 }
 
-@media (min-width: 768px) {
-  .card-with-image {
-    min-height: 600px; /* slightly larger on tablet/desktop */
-  }
-}
-@media (min-width: 1200px) {
-  .card-with-image {
-    min-height: 700px; /* larger on very wide screens for pleasing proportions */
-  }
-}
 /* Left column and interpretation helpers to allow textarea to match image height */
 .card-left {
   display: flex;
@@ -983,9 +971,6 @@ main.container {
 .card-image-wrapper {
   flex: 1 1 auto !important;
   width: 100% !important;
-  min-height: 400px !important;
-  max-height: none !important;
-  height: auto !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -1000,8 +985,6 @@ main.container {
   width: 100% !important;
   height: auto !important;
   max-width: 100% !important;
-  max-height: none !important;
-  min-height: 400px !important;
   -o-object-fit: contain !important;
      object-fit: contain !important;
   transition: transform 0.3s ease;
@@ -1029,34 +1012,7 @@ main.container {
   min-height: 200px;
 }
 
-/* Responsive image sizing */
-@media (min-width: 768px) {
-  .card-image-wrapper {
-    min-height: 500px !important;
-  }
-  .card-image,
-  .card-image-wrapper img {
-    min-height: 500px !important;
-  }
-}
-@media (min-width: 992px) {
-  .card-image-wrapper {
-    min-height: 600px !important;
-  }
-  .card-image,
-  .card-image-wrapper img {
-    min-height: 600px !important;
-  }
-}
-@media (min-width: 1200px) {
-  .card-image-wrapper {
-    min-height: 700px !important;
-  }
-  .card-image,
-  .card-image-wrapper img {
-    min-height: 700px !important;
-  }
-}
+/* Responsive image sizing - removed min-heights to allow natural sizing */
 .card-image.reversed {
   transform: rotate(180deg);
 }
