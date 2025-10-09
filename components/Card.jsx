@@ -30,16 +30,40 @@ export default function Card({
   const [interpretation, setInterpretation] = useState(initialInterpretation || '')
   const [showSaveConfirm, setShowSaveConfirm] = useState(false)
   const imageRef = useRef(null)
+  const wrapperRef = useRef(null)
   
-  // Force image to maintain proper sizing
+  // Force image and wrapper to maintain proper sizing
   useEffect(() => {
-    if (imageRef.current) {
-      imageRef.current.style.width = '100%'
-      imageRef.current.style.height = 'auto'
-      imageRef.current.style.maxWidth = '100%'
-      imageRef.current.style.maxHeight = 'none'
-      imageRef.current.style.minHeight = 'auto'
+    const forceStyles = () => {
+      if (imageRef.current) {
+        imageRef.current.style.width = '100%'
+        imageRef.current.style.height = 'auto'
+        imageRef.current.style.maxWidth = '100%'
+        imageRef.current.style.maxHeight = 'none'
+        imageRef.current.style.minHeight = 'auto'
+      }
+      if (wrapperRef.current) {
+        wrapperRef.current.style.height = 'auto'
+        wrapperRef.current.style.minHeight = 'auto'
+        wrapperRef.current.style.maxHeight = 'none'
+      }
     }
+    
+    forceStyles()
+    
+    // Set up a MutationObserver to watch for style changes
+    const observer = new MutationObserver(() => {
+      forceStyles()
+    })
+    
+    if (wrapperRef.current) {
+      observer.observe(wrapperRef.current, { attributes: true, attributeFilter: ['style'] })
+    }
+    if (imageRef.current) {
+      observer.observe(imageRef.current, { attributes: true, attributeFilter: ['style'] })
+    }
+    
+    return () => observer.disconnect()
   }, [currentImage])
   // Get suits from deckData if available, otherwise use default
   // Known Major Arcana names (normalized to lowercase) — some have the substring ' of ' (e.g. "Wheel of Fortune")
@@ -444,7 +468,7 @@ export default function Card({
                 </div>
               </div>
             ) : currentImage ? (
-              <div className="card-image-wrapper" style={{ height: 'auto', minHeight: 'auto', maxHeight: 'none' }}>
+              <div ref={wrapperRef} className="card-image-wrapper" style={{ height: 'auto', minHeight: 'auto', maxHeight: 'none' }}>
                 <img
                   ref={imageRef}
                   src={currentImage}
