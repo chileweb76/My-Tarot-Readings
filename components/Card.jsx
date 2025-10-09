@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { getCardImageUrl as getCardImageUrlService, IMAGE_TYPES } from '../lib/imageServiceV3'
 import ConfirmModal from './ConfirmModal'
@@ -29,6 +29,18 @@ export default function Card({
   const [reversed, setReversed] = useState(!!initialReversed)
   const [interpretation, setInterpretation] = useState(initialInterpretation || '')
   const [showSaveConfirm, setShowSaveConfirm] = useState(false)
+  const imageRef = useRef(null)
+  
+  // Force image to maintain proper sizing
+  useEffect(() => {
+    if (imageRef.current) {
+      imageRef.current.style.width = '100%'
+      imageRef.current.style.height = 'auto'
+      imageRef.current.style.maxWidth = '100%'
+      imageRef.current.style.maxHeight = 'none'
+      imageRef.current.style.minHeight = 'auto'
+    }
+  }, [currentImage])
   // Get suits from deckData if available, otherwise use default
   // Known Major Arcana names (normalized to lowercase) — some have the substring ' of ' (e.g. "Wheel of Fortune")
   const MAJOR_ARCANA = new Set([
@@ -432,14 +444,18 @@ export default function Card({
                 </div>
               </div>
             ) : currentImage ? (
-              <div className="card-image-wrapper" style={{ height: 'auto', minHeight: 'auto' }}>
+              <div className="card-image-wrapper" style={{ height: 'auto', minHeight: 'auto', maxHeight: 'none' }}>
                 <img
+                  ref={imageRef}
                   src={currentImage}
                   alt={selectedCard ? `${selectedCard} of ${selectedSuit}` : 'Card'}
                   className={`card-image ${reversed ? 'reversed' : ''}`}
                   style={{
                     width: '100%',
                     height: 'auto',
+                    maxWidth: '100%',
+                    maxHeight: 'none',
+                    minHeight: 'auto',
                     objectFit: 'contain',
                     display: 'block'
                   }}
@@ -447,7 +463,16 @@ export default function Card({
                     console.error('Image failed to load:', currentImage)
                     setCurrentImage(null)
                   }}
-                  onLoad={() => { /* no-op, kept for parity with previous loader */ }}
+                  onLoad={(e) => { 
+                    // Force proper sizing after load
+                    if (e.target) {
+                      e.target.style.width = '100%'
+                      e.target.style.height = 'auto'
+                      e.target.style.maxWidth = '100%'
+                      e.target.style.maxHeight = 'none'
+                      e.target.style.minHeight = 'auto'
+                    }
+                  }}
                 />
                 <div className="mt-2 d-flex justify-content-center">
                   <button
