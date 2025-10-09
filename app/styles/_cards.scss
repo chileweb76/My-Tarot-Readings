@@ -78,6 +78,9 @@
 .card-image-wrapper {
   flex: 1 1 auto !important;
   width: 100% !important;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;

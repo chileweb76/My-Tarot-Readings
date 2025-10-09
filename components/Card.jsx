@@ -432,7 +432,7 @@ export default function Card({
                 </div>
               </div>
             ) : currentImage ? (
-              <div className="card-image-wrapper">
+              <div className="card-image-wrapper" style={{ height: 'auto', minHeight: 'auto' }}>
                 <img
                   src={currentImage}
                   alt={selectedCard ? `${selectedCard} of ${selectedSuit}` : 'Card'}
