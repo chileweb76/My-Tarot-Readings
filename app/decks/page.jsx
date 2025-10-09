@@ -62,6 +62,7 @@ function Toast({ message, type = 'info', onClose }) {
 export default function DecksPage() {
   const [decks, setDecks] = useState([])
   const [selectedDeck, setSelectedDeckState] = useState('')
+  const [currentUser, setCurrentUser] = useState(null) // Store current user info
   
   // Wrap setSelectedDeck with state setter
   const setSelectedDeck = (value) => {
@@ -85,6 +86,24 @@ export default function DecksPage() {
   const [editDeckName, setEditDeckName] = useState('')
   const [editDeckDescription, setEditDeckDescription] = useState('')
   const [updatingDeckInfo, setUpdatingDeckInfo] = useState(false)
+
+  // Fetch current user on mount
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      try {
+        const { getCurrentUserAction } = await import('../../lib/actions')
+        const result = await getCurrentUserAction()
+        if (result.success && result.user) {
+          setCurrentUser(result.user)
+          // Cache in localStorage for blob upload utility
+          localStorage.setItem('currentUser', JSON.stringify(result.user))
+        }
+      } catch (error) {
+        console.error('Failed to fetch current user:', error)
+      }
+    }
+    fetchCurrentUser()
+  }, [])
 
   useEffect(() => {
     const rawBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
