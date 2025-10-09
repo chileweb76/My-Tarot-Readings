@@ -24,18 +24,6 @@
   }
 }
 
-@media (min-width: 768px) {
-  .card-with-image {
-    // Allow natural sizing
-  }
-}
-
-@media (min-width: 1200px) {
-  .card-with-image {
-    // Allow natural sizing
-  }
-}
-
 /* Left column and interpretation helpers to allow textarea to match image height */
 .card-left {
   display: flex;
@@ -119,25 +107,6 @@
   align-items: center;
   justify-content: center;
   min-height: 200px;
-}
-
-/* Responsive image sizing - removed min-heights to allow natural sizing */
-@media (min-width: 768px) {
-  .card-image-wrapper {
-    // Images will scale naturally
-  }
-}
-
-@media (min-width: 992px) {
-  .card-image-wrapper {
-    // Images will scale naturally
-  }
-}
-
-@media (min-width: 1200px) {
-  .card-image-wrapper {
-    // Images will scale naturally
-  }
 }
 
 .card-image.reversed {

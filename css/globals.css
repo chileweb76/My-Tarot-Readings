@@ -1015,7 +1015,6 @@ main.container {
   min-height: 200px;
 }
 
-/* Responsive image sizing - removed min-heights to allow natural sizing */
 .card-image.reversed {
   transform: rotate(180deg);
 }
