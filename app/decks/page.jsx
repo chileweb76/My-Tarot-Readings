@@ -16,7 +16,7 @@ import {
   updateDeckImageUrlAction,
   updateCardImageUrlAction
 } from '../../lib/actions'
-import { uploadImageToBlob } from '../../lib/blobUpload'
+import { uploadDeckImageToBlob, getCurrentUsername } from '../../lib/deckBlobUpload'
 import logger from '../../lib/logger'
 
 // Vercel Blob utility functions
@@ -214,6 +214,12 @@ export default function DecksPage() {
       const idx = deckDetails && Array.isArray(deckDetails.cards) ? deckDetails.cards.findIndex(c => (c.name||'').toLowerCase() === (cardName||'').toLowerCase()) : -1
       if (idx !== -1) setUploadingCardIndex(idx)
 
+      // Get owner username for hierarchical blob storage
+      const ownerUsername = await getCurrentUsername()
+      if (!ownerUsername) {
+        throw new Error('Could not determine owner username')
+      }
+
       // Prepare file (HEIC conversion, preview, size checks) using shared helper
       const { prepareImageForUpload } = await import('../../lib/imageUploader')
       const prep = await prepareImageForUpload(file)
@@ -236,13 +242,13 @@ export default function DecksPage() {
         return { ...prev, cards }
       })
 
-      // Upload to blob
-      const result = await uploadImageToBlob(selectedDeck, processedFile)
+      // Upload to blob with hierarchical structure: decks/{deckId}/{owner}/cards/
+      const result = await uploadDeckImageToBlob(selectedDeck, processedFile, ownerUsername, cardName)
       if (!result.success) {
         throw new Error(result.error || 'Upload failed')
       }
       
-      const imageUrl = result.url || result.image || null
+      const imageUrl = result.url
       
       // Update MongoDB with the blob URL
       if (imageUrl) {
@@ -354,6 +360,12 @@ export default function DecksPage() {
     try {
       setUploadingDeckImage(true)
       
+      // Get owner username for hierarchical blob storage
+      const ownerUsername = await getCurrentUsername()
+      if (!ownerUsername) {
+        throw new Error('Could not determine owner username')
+      }
+      
       // Prepare file (HEIC conversion, preview, size checks) using shared helper
       const { prepareImageForUpload } = await import('../../lib/imageUploader')
       const prep = await prepareImageForUpload(file)
@@ -362,15 +374,6 @@ export default function DecksPage() {
       }
       let processedFile = prep.file
       let previewUrl = prep.previewUrl || URL.createObjectURL(processedFile)
-      
-      const apiBase = getApiBase()
-      const fd = new FormData()
-  fd.append('deckImage', processedFile)
-
-      // Use the preview URL from HEIC conversion or create new one
-      if (!previewUrl) {
-        previewUrl = URL.createObjectURL(processedFile)
-      }
 
       // Update deck image in decks list immediately
       setDecks(prev => prev.map(deck => 
@@ -384,13 +387,13 @@ export default function DecksPage() {
         setDeckDetails(prev => ({ ...prev, image: previewUrl, uploading: true }))
       }
 
-      // Upload via the client-side proxy helper (same used by readings)
-      const result = await uploadImageToBlob(selectedDeck, processedFile)
+      // Upload to blob with hierarchical structure: decks/{deckId}/{owner}/cover/
+      const result = await uploadDeckImageToBlob(selectedDeck, processedFile, ownerUsername)
       if (!result.success) {
         throw new Error(result.error || 'Upload failed')
       }
-      const updated = result
-      const imageUrl = updated.url || updated.image || null
+      
+      const imageUrl = result.url
       
       // Update MongoDB with the blob URL
       if (imageUrl) {
@@ -410,13 +413,13 @@ export default function DecksPage() {
           if (deck.image && deck.image.startsWith('blob:')) {
             URL.revokeObjectURL(deck.image)
           }
-          return { ...deck, image: imageUrl || updated.deck?.image, uploading: false }
+          return { ...deck, image: imageUrl, uploading: false }
         }
         return deck
       }))
 
       if (deckDetails && deckDetails._id === selectedDeck) {
-        setDeckDetails(prev => ({ ...prev, image: imageUrl || updated.deck?.image, uploading: false }))
+        setDeckDetails(prev => ({ ...prev, image: imageUrl, uploading: false }))
       }
 
       return updated
@@ -486,6 +489,12 @@ export default function DecksPage() {
     try {
       setUploadingCardIndex(cardIndex)
       
+      // Get owner username for hierarchical blob storage
+      const ownerUsername = await getCurrentUsername()
+      if (!ownerUsername) {
+        throw new Error('Could not determine owner username')
+      }
+      
       // Prepare file (HEIC conversion, preview, size checks) using shared helper
       const { prepareImageForUpload } = await import('../../lib/imageUploader')
       const prep = await prepareImageForUpload(file)
@@ -502,13 +511,13 @@ export default function DecksPage() {
         return { ...prev, cards }
       })
 
-      // Upload to blob
-      const result = await uploadImageToBlob(selectedDeck, processedFile)
+      // Upload to blob with hierarchical structure: decks/{deckId}/{owner}/cards/
+      const result = await uploadDeckImageToBlob(selectedDeck, processedFile, ownerUsername, cardName)
       if (!result.success) {
         throw new Error(result.error || 'Upload failed')
       }
       
-      const imageUrl = result.url || result.image || null
+      const imageUrl = result.url
 
       // Update MongoDB with the blob URL
       if (imageUrl) {
