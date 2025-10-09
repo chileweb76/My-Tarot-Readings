@@ -441,7 +441,7 @@ export default function DecksPage() {
         setDeckDetails(prev => ({ ...prev, image: imageUrl, uploading: false }))
       }
 
-      return updated
+      return { url: imageUrl }
     } catch (err) {
   logger.error('Deck image upload error', err)
       
