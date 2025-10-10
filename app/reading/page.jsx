@@ -222,38 +222,61 @@ export default function ReadingPage() {
       }
 
       const exportHtml = `
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-            </div>
-          )}
+      <html>
+        <head>
+          <title>Tarot Reading - ${payload.date}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <style>
+            body { font-family: Arial, Helvetica, sans-serif; color: #111; padding: 20px; }
+            h1 { text-align: center; color: #4a154b; }
+            .meta { margin-bottom: 12px; }
+            .section { margin-bottom: 18px; }
+            .card-item { margin-bottom: 8px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+            .card-title { font-weight: 600; }
+            .footer-note { margin-top: 28px; color: #555; font-size: 0.9rem; }
+            @media print { body { margin: 0; } }
+          </style>
+        </head>
+        <body>
+          <h1>Tarot Reading</h1>
+          ${exportImage ? `<div style="text-align:center;margin:12px 0"><img src="${exportImage}" style="max-width:260px;max-height:260px;border:1px solid #ddd;padding:6px;background:#fff"/></div>` : ''}
+          <div class="meta">
+            <div><strong>Reading by:</strong> ${payload.by || 'Guest'}</div>
+            <div><strong>Date:</strong> ${payload.date || ''}</div>
+            <div><strong>Querent:</strong> ${payload.querent || ''}</div>
+            <div><strong>Spread:</strong> ${payload.spread || ''}</div>
+            <div><strong>Deck:</strong> ${payload.deck || ''}</div>
+          </div>
 
-        </div>
-      </div>
-      {/* Shared modals rendered at page root so they overlay correctly */}
-      <ExportSignInModal show={showExportSignInModal} onClose={() => setShowExportSignInModal(false)} />
-      <LargeImageWarningModal info={largeImagePending} getImageSizeLimitBytes={getImageSizeLimitBytes} onClose={() => setLargeImagePending(null)} />
-    </AuthWrapper>
-  )
+          <div class="section">
+            <h3>Question</h3>
+            <div>${payload.question || 'No question recorded'}</div>
           </div>
-          ${exportImage ? `<div class="section"><div style="text-align:center;margin:12px 0"><img src="${exportImage}" style="max-width:260px;max-height:260px;border:1px solid #ddd;padding:6px;background:#fff"/></div></div>` : ''}
-          <div class="section"><h3>Question</h3><div>${payload.question || 'No question recorded'}</div></div>
-          <div class="section"><h3>Outcome</h3><div>${payload.outcome || 'No outcome recorded'}</div></div>
-          <div class="section"><h3>Cards Drawn</h3>
-            ${payload.cards.map(cs => `<div class="card-item"><div class="card-title">${cs.title || ''}${cs.card ? ` - ${cs.card}` : ''}${cs.reversed ? ' (reversed)' : ''}</div>${cs.interpretation ? `<div class="card-interpretation">${cs.interpretation}</div>` : ''}${cs.image ? `<div style="margin-top:8px"><img src="${cs.image}" style="max-width:120px;max-height:160px"/></div>` : ''}</div>`).join('')}
+
+          <div class="section">
+            <h3>Cards Drawn</h3>
+            ${payload.cards.map(cs => `
+              <div class="card-item">
+                <div class="card-title">${cs.title || ''}${cs.card ? (cs.suit && cs.suit.toLowerCase() !== 'major arcana' ? ` - ${cs.card} of ${cs.suit}` : ` - ${cs.card}`) : ''}${cs.reversed ? ' (reversed)' : ''}</div>
+                ${cs.interpretation ? `<div class="card-interpretation">${cs.interpretation}</div>` : ''}
+                ${cs.image ? `<div style="margin-top:8px"><img src="${cs.image}" style="max-width:120px;max-height:160px"/></div>` : ''}
+              </div>
+            `).join('')}
           </div>
-          <div class="section"><h3>Interpretation</h3><div>${payload.interpretation || 'No overall interpretation provided'}</div></div>
-          <div class="footer-note">Exported: ${new Date().toLocaleString()}</div>
+
+          <div class="section">
+            <h3>Interpretation</h3>
+            <div>${payload.interpretation || 'No overall interpretation provided'}</div>
+          </div>
+
+          <div class="footer-note">Exported: ${payload.exportedAt || new Date().toLocaleString()}</div>
         </body>
       </html>
       `
 
       const printWindow = window.open('', '_blank')
       if (!printWindow) { notify({ type: 'error', text: 'Unable to open print window. Please allow popups.' }); setExportingFor(rid, false); return }
-      printWindow.document.write(exportHtml)
+  printWindow.document.write((() => { try { const m = exportHtml.search(/<!doctype html>|<html/i); return m >= 0 ? exportHtml.slice(m) : exportHtml } catch (e) { return exportHtml } })())
       printWindow.document.close()
       printWindow.focus()
       setTimeout(() => { try { printWindow.print(); printWindow.onafterprint = () => { try { printWindow.close() } catch (e) {} } } catch (err) { console.error('Print failed', err); notify({ type: 'error', text: 'Print failed' }) } }, 300)

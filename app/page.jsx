@@ -48,6 +48,13 @@ import ExportToolbar from '../components/ExportToolbar'
 import { LargeImageWarningModal, ExportSignInModal } from '../components/modals'
 
 export default function HomePage() {
+  // Helper: ensure we only write a clean HTML document to a print window.
+  const sanitizeExportHtml = (html) => {
+    if (!html || typeof html !== 'string') return html
+    const m = html.search(/<!doctype html>|<html/i)
+    return m >= 0 ? html.slice(m) : html
+  }
+
   // Image size threshold (MB) can be configured via NEXT_PUBLIC_IMAGE_SIZE_LIMIT_MB (build-time)
   // or overridden at runtime via localStorage key 'IMAGE_SIZE_LIMIT_MB'. Default 5.0 MB.
   const DEFAULT_IMAGE_SIZE_LIMIT_MB = 5.0
@@ -411,7 +418,7 @@ export default function HomePage() {
       pushToast({ type: 'error', text: 'Unable to open print window. Please allow popups for this site.' })
       return
     }
-    printWindow.document.write(exportHtml)
+    printWindow.document.write(sanitizeExportHtml(exportHtml))
     printWindow.document.close()
     printWindow.focus()
     setTimeout(() => { try { printWindow.print(); printWindow.onafterprint = () => { try { printWindow.close() } catch (e) {} } } catch (err) { pushToast({ type: 'error', text: 'Print failed.' }) } }, 300)
@@ -615,7 +622,7 @@ export default function HomePage() {
       pushToast({ type: 'error', text: 'Unable to open print window. Please allow popups for this site.' })
       return
     }
-    printWindow.document.write(exportHtml)
+    printWindow.document.write(sanitizeExportHtml(exportHtml))
     printWindow.document.close()
     printWindow.focus()
     setTimeout(() => { 
