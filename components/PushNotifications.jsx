@@ -9,21 +9,6 @@ export default function PushNotifications() {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      setIsSupported(true)
-      checkSubscription()
-    }
-
-    // Listen for programmatic prompt requests (e.g., after PWA install)
-    const handler = () => subscribeToPush()
-    window.addEventListener('promptEnableNotifications', handler)
-
-    return () => {
-      window.removeEventListener('promptEnableNotifications', handler)
-    }
-  }, [subscribeToPush])
-
   const checkSubscription = async () => {
     try {
       const registration = await navigator.serviceWorker.ready
@@ -91,6 +76,21 @@ export default function PushNotifications() {
       setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      setIsSupported(true)
+      checkSubscription()
+    }
+
+    // Listen for programmatic prompt requests (e.g., after PWA install)
+    const handler = () => subscribeToPush()
+    window.addEventListener('promptEnableNotifications', handler)
+
+    return () => {
+      window.removeEventListener('promptEnableNotifications', handler)
+    }
+  }, [subscribeToPush])
 
   const unsubscribeFromPush = async () => {
     setLoading(true)
