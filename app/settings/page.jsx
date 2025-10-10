@@ -73,6 +73,10 @@ class SettingsErrorBoundary extends Component {
 
 export default function SettingsPage() {
 
+  // Local user and settings state (may be hydrated from localStorage or server)
+  const [user, setUser] = useState(null)
+  const [settings, setSettings] = useState({})
+
   const [profilePictureState, profilePictureFormAction, profilePicturePending] = useActionState(async (prevState, formData) => {
     const result = await uploadProfilePictureAction(formData)
     if (result.success) {
@@ -85,6 +89,44 @@ export default function SettingsPage() {
     } else {
       notify({ type: 'error', text: result.error })
       return { error: result.error }
+    }
+  }, { success: false, error: null })
+
+  // Form actions for username and password changes — useActionState wires these up for <form action={...}>
+  const [usernameState, usernameFormAction, usernamePending] = useActionState(async (prevState, formData) => {
+    try {
+      const result = await changeUsernameAction(formData)
+      if (result.success) {
+        // update local user state and storage
+        const newUsername = formData.get('username') || ''
+        const updatedUser = { ...user, username: newUsername }
+        setUser(updatedUser)
+        try { localStorage.setItem('user', JSON.stringify(updatedUser)) } catch (e) {}
+        notify({ type: 'success', text: result.message || 'Username updated' })
+        return { success: true }
+      }
+      notify({ type: 'error', text: result.error || 'Failed to update username' })
+      return { error: result.error }
+    } catch (err) {
+      notify({ type: 'error', text: err.message })
+      return { error: err.message }
+    }
+  }, { success: false, error: null })
+
+  const [passwordState, passwordFormAction, passwordPending] = useActionState(async (prevState, formData) => {
+    try {
+      const result = await changePasswordAction(formData)
+      if (result.success) {
+        // clear local password form state
+        setPasswordForm({ currentPassword: '', newPassword: '', verifyPassword: '' })
+        notify({ type: 'success', text: result.message || 'Password updated' })
+        return { success: true }
+      }
+      notify({ type: 'error', text: result.error || 'Failed to update password' })
+      return { error: result.error }
+    } catch (err) {
+      notify({ type: 'error', text: err.message })
+      return { error: err.message }
     }
   }, { success: false, error: null })
 
