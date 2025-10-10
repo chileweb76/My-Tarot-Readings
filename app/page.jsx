@@ -494,11 +494,8 @@ export default function HomePage() {
     try {
       const fileName = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf`
       
-      const formData = new FormData()
-      formData.append('reading', JSON.stringify(readingPayload))
-      formData.append('fileName', fileName)
-      
-      const result = await exportPdfAction(formData)
+  // Call export action with a plain object for consistent payload format
+  const result = await exportPdfAction({ reading: readingPayload, fileName })
       
       if (!result.success) {
     logger.error('Server export failed:', result.error)
@@ -709,11 +706,8 @@ export default function HomePage() {
     try {
       const fileName = `tarot-reading-${new Date(readingDateTime).toISOString().split('T')[0]}.pdf`
       
-      const formData = new FormData()
-      formData.append('reading', JSON.stringify(readingPayload))
-      formData.append('fileName', fileName)
-      
-      const result = await exportPdfAction(formData)
+  // Call export action with a plain object for consistent payload format
+  const result = await exportPdfAction({ reading: readingPayload, fileName })
 
       if (!result.success) {
         // Server share PDF failed
