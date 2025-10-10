@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
@@ -33,9 +33,9 @@ export default function PushNotificationsIOS() {
     setIsPWAInstalled(detectPWAInstalled())
 
     // Re-check install state when page becomes visible or gains focus (user may have installed and returned)
-    const onVisibility = () => setIsPWAInstalled(detectPWAInstalled())
-    window.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('focus', onVisibility)
+  const onVisibility = () => setIsPWAInstalled(detectPWAInstalled())
+  window.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('focus', onVisibility)
 
     // Check push notification support
     if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -52,46 +52,10 @@ export default function PushNotificationsIOS() {
       window.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('focus', onVisibility)
     }
-  }, [])
+  }, [isPWAInstalled])
 
-  useEffect(() => {
-    const handler = () => {
-      subscribeToPush()
-    }
-    window.addEventListener('promptEnableNotifications', handler)
-    return () => window.removeEventListener('promptEnableNotifications', handler)
-  }, [isPWAInstalled, isIOS])
-
-  const checkSubscription = async () => {
-    try {
-      const registration = await navigator.serviceWorker.ready
-      const subscription = await registration.pushManager.getSubscription()
-      
-      if (subscription) {
-        setSubscription(subscription)
-        setIsSubscribed(true)
-      }
-    } catch (error) {
-      console.error('Error checking subscription:', error)
-    }
-  }
-
-  const urlBase64ToUint8Array = (base64String) => {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4)
-    const base64 = (base64String + padding)
-      .replace(/-/g, '+')
-      .replace(/_/g, '/')
-
-    const rawData = window.atob(base64)
-    const outputArray = new Uint8Array(rawData.length)
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i)
-    }
-    return outputArray
-  }
-
-  const subscribeToPush = async () => {
+  // Handler for programmatic prompts; subscribeToPush is memoized below and used here
+  const subscribeToPush = useCallback(async () => {
     // iOS-specific check
     // If iOS and not installed, show instructions (early exit)
     if (isIOS && !isPWAInstalled) {
@@ -181,6 +145,41 @@ export default function PushNotificationsIOS() {
     } finally {
       setLoading(false)
     }
+  }, [isIOS, isPWAInstalled])
+
+  useEffect(() => {
+    const handler = () => subscribeToPush()
+    window.addEventListener('promptEnableNotifications', handler)
+    return () => window.removeEventListener('promptEnableNotifications', handler)
+  }, [subscribeToPush])
+
+  const checkSubscription = async () => {
+    try {
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+      
+      if (subscription) {
+        setSubscription(subscription)
+        setIsSubscribed(true)
+      }
+    } catch (error) {
+      console.error('Error checking subscription:', error)
+    }
+  }
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+
+    const rawData = window.atob(base64)
+    const outputArray = new Uint8Array(rawData.length)
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i)
+    }
+    return outputArray
   }
 
   const unsubscribeFromPush = async () => {

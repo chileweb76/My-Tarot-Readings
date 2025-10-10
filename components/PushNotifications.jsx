@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
@@ -16,16 +16,13 @@ export default function PushNotifications() {
     }
 
     // Listen for programmatic prompt requests (e.g., after PWA install)
-    const handler = () => {
-      // Try to subscribe when asked
-      subscribeToPush()
-    }
+    const handler = () => subscribeToPush()
     window.addEventListener('promptEnableNotifications', handler)
 
     return () => {
       window.removeEventListener('promptEnableNotifications', handler)
     }
-  }, [])
+  }, [subscribeToPush])
 
   const checkSubscription = async () => {
     try {
@@ -56,7 +53,7 @@ export default function PushNotifications() {
     return outputArray
   }
 
-  const subscribeToPush = async () => {
+  const subscribeToPush = useCallback(async () => {
     if (!VAPID_PUBLIC_KEY) {
       alert('VAPID public key not configured. Please set NEXT_PUBLIC_VAPID_PUBLIC_KEY environment variable.')
       return
@@ -93,7 +90,7 @@ export default function PushNotifications() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const unsubscribeFromPush = async () => {
     setLoading(true)
@@ -159,7 +156,7 @@ export default function PushNotifications() {
       </div>
       <div className="card-body">
         <p className="card-text">
-          Get notified about new insights, reading reminders, and tarot tips.
+          Get reading reminders.
         </p>
         
         <div className="d-flex gap-2 flex-wrap">

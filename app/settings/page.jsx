@@ -797,6 +797,11 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* Push Notifications moved below logout per request */}
+            <div className="mb-4">
+              <PushNotificationsUniversal />
+            </div>
+
             <hr />
 
             {/* My Data */}
