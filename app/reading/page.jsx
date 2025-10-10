@@ -33,10 +33,8 @@ export default function ReadingPage() {
         setLoading(true)
         setError(null)
 
-        // Small delay to ensure authentication state is established
-        await new Promise(resolve => setTimeout(resolve, 100))
-
-        console.log('Making API calls using Server Actions')
+  // Small delay to ensure authentication state is established
+  await new Promise(resolve => setTimeout(resolve, 100))
 
         const querentsResult = await getQuerentsAction()
         if (querentsResult.success) {
@@ -50,8 +48,7 @@ export default function ReadingPage() {
           console.error('Readings API error:', readingsResult.error)
           throw new Error(readingsResult.error || 'Failed to fetch readings')
         }
-        const data = readingsResult.data || []
-        console.log('Readings data received:', data)
+  const data = readingsResult.data || []
 
         let readingsList = []
         if (Array.isArray(data)) readingsList = data
