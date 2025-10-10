@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import PushNotifications from './PushNotifications'
 import PushNotificationsIOS from './PushNotificationsIOS'
 
-export default function PushNotificationsUniversal() {
+export default function PushNotificationsUniversal({ notificationTime, setNotificationTime, notificationEnabled, setNotificationEnabled, savedNotificationConfirm, setSavedNotificationConfirm, onSaveNotification }) {
   const [isIOS, setIsIOS] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -47,9 +47,25 @@ export default function PushNotificationsUniversal() {
 
   // Use iOS-specific component for iOS devices
   if (isIOS) {
-    return <PushNotificationsIOS />
+    return <PushNotificationsIOS
+      notificationTime={notificationTime}
+      setNotificationTime={setNotificationTime}
+      notificationEnabled={notificationEnabled}
+      setNotificationEnabled={setNotificationEnabled}
+      savedNotificationConfirm={savedNotificationConfirm}
+      setSavedNotificationConfirm={setSavedNotificationConfirm}
+      onSaveNotification={onSaveNotification}
+    />
   }
 
   // Use standard component for other devices
-  return <PushNotifications />
+  return <PushNotifications
+    notificationTime={notificationTime}
+    setNotificationTime={setNotificationTime}
+    notificationEnabled={notificationEnabled}
+    setNotificationEnabled={setNotificationEnabled}
+    savedNotificationConfirm={savedNotificationConfirm}
+    setSavedNotificationConfirm={setSavedNotificationConfirm}
+    onSaveNotification={onSaveNotification}
+  />
 }

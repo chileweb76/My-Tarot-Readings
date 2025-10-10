@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
-export default function PushNotifications() {
+export default function PushNotifications({ notificationTime, setNotificationTime, notificationEnabled, setNotificationEnabled, savedNotificationConfirm, setSavedNotificationConfirm, onSaveNotification }) {
   const [isSupported, setIsSupported] = useState(false)
   const [subscription, setSubscription] = useState(null)
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -151,8 +151,17 @@ export default function PushNotifications() {
 
   return (
     <div className="card">
-      <div className="card-header">
+      <div className="card-header d-flex align-items-center justify-content-between">
         <h5 className="card-title mb-0">🔔 Push Notifications</h5>
+        <div className="d-flex gap-2 align-items-center">
+          <input type="time" className="form-control form-control-sm" value={notificationTime} onChange={(e) => setNotificationTime(e.target.value)} style={{ maxWidth: 140 }} />
+          <div className="d-flex align-items-center">
+            <button className="btn btn-primary btn-sm" onClick={onSaveNotification}>Save</button>
+            {savedNotificationConfirm && (
+              <small className="text-success ms-2">{savedNotificationConfirm}</small>
+            )}
+          </div>
+        </div>
       </div>
       <div className="card-body">
         <p className="card-text">
