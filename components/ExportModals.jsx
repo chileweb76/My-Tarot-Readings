@@ -16,6 +16,7 @@ export function LargeImageWarningModal({ info, getImageSizeLimitBytes, onClose }
           </div>
           <div className="modal-body">
             <p>The image you are about to include is large ({humanSize}). Embedding it as a data URL may produce a very large export and could be slow or fail.</p>
+            <div className="export-notice export-notice--muted" style={{ marginTop: 8 }}>Print/Export before pushing save button or retrieve from Readings page</div>
             {typeof getImageSizeLimitBytes === 'function' && (<p>Current configured limit: {(getImageSizeLimitBytes() / 1024 / 1024).toFixed(2)} MB</p>)}
             <p>Do you want to continue converting this image?</p>
           </div>
@@ -41,6 +42,7 @@ export function ExportSignInModal({ show, onClose }) {
           </div>
           <div className="modal-body">
             <p>To export this reading with the attached image, please sign in so the image can be uploaded. You may sign in and then retry the export.</p>
+            <div className="export-notice export-notice--muted" style={{ marginTop: 8 }}>Print/Export before pushing save button or retrieve from Readings page</div>
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>

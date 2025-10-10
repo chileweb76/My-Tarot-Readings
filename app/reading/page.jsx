@@ -551,6 +551,7 @@ export default function ReadingPage() {
                   <div key={rid} className={`card mb-4 position-relative reading-card ${hasOutcome ? 'reading-has-outcome' : ''}`} style={{ cursor: 'default', transition: 'transform 0.2s ease-in-out' }}>
                     {/* Export toolbar positioned in top-left of card */}
                     <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 10 }}>
+                      <div className="export-notice" style={{ fontSize: '0.95rem', marginBottom: 8 }}>Print/Export before pushing save button or retrieve from Readings page</div>
                       <ExportToolbar
                         onPrint={() => handlePrintReadingFor(reading)}
                         onSharePdf={() => handleShareAsPdfFor(reading)}

@@ -1799,6 +1799,21 @@ export default function HomePage() {
         {/* Styles moved to `app/styles/_components.scss` */}
       </div>
 
+      {/* Notice and Export/Share Actions placed above Save Reading as requested */}
+      <div className="mt-4 d-flex justify-content-center">
+        <div className="export-notice">Print/Export before pushing save button or retrieve from Readings page</div>
+      </div>
+
+      <div className="mt-2 d-flex justify-content-center">
+        <ExportToolbar
+          onPrint={handlePrintReading}
+          onSharePdf={handleShareAsPdf}
+          onExport={handleExportReading}
+          onShareText={handleShareReading}
+          busy={exporting}
+        />
+      </div>
+
       {/* Save Reading Button */}
       <div className="mt-4 d-flex justify-content-center">
         <div className="d-flex align-items-center" style={{ gap: 12 }}>
@@ -1819,17 +1834,6 @@ export default function HomePage() {
 
           {/* Autosave removed - explicit Save only */}
         </div>
-      </div>
-
-      {/* Export/Share Actions (reusable) - add spacing from Save button */}
-      <div className="mt-3 d-flex justify-content-center">
-        <ExportToolbar
-          onPrint={handlePrintReading}
-          onSharePdf={handleShareAsPdf}
-          onExport={handleExportReading}
-          onShareText={handleShareReading}
-          busy={exporting}
-        />
       </div>
         {/* Hidden inputs for form data */}
         <input type="hidden" name="spread" value={selectedSpread} />

@@ -50,3 +50,17 @@
     padding: 4px 6px; /* slightly smaller padding on mobile */
   }
 }
+
+/* Notice used above export/print toolbars to guide users about saving order
+   Uses existing design tokens for color and font sizing. Keep lightweight. */
+.export-notice {
+  text-align: center;
+  color: #fff; /* fallback white for maximum contrast */
+  margin-bottom: 12px;
+  font-weight: 500;
+  font-size: var(--fs-sm); /* uses token from variables */
+}
+
+.export-notice--muted {
+  color: rgba(255,255,255,0.9);
+}
