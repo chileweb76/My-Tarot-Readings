@@ -14,8 +14,16 @@ export async function POST(request) {
       )
     }
 
-    // Store the subscription in MongoDB
-    const success = await subscriptionStore.add(subscription)
+    // Store the subscription in MongoDB; if user is authenticated, attach userId
+    let userId = null
+    try {
+      const user = await getUserFromToken()
+      if (user) userId = user._id
+    } catch (e) {
+      // ignore unauthenticated
+    }
+
+    const success = await subscriptionStore.add(subscription, userId)
     
     if (!success) {
       throw new Error('Failed to save subscription')
@@ -29,7 +37,8 @@ export async function POST(request) {
         const subscriptionId = subscriptionStore._generateSubscriptionId(subscription)
         const { connectToDatabase } = await import('../../../../lib/mongo')
         const { db } = await connectToDatabase()
-        await db.collection('users').updateOne({ _id: user._id }, { $set: { pushSubscriptionId: subscriptionId } })
+        // Save this subscription id into an array of subscription ids for the user
+        await db.collection('users').updateOne({ _id: user._id }, { $addToSet: { pushSubscriptionIds: subscriptionId } })
       }
     } catch (e) {
       // not authenticated or failed to save - ignore

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import subscriptionStore from '../../../../lib/subscriptionStore.js'
+import { getUserFromToken } from '../../../../lib/actions/utils'
 
 export async function POST(request) {
   try {
@@ -19,6 +20,18 @@ export async function POST(request) {
       console.warn('Subscription not found or already removed:', subscription.endpoint)
     } else {
       console.log('Removed push subscription:', subscription.endpoint)
+      // If user is authenticated, remove the subscription id from their array
+      try {
+        const user = await getUserFromToken()
+        if (user) {
+          const subscriptionId = subscriptionStore._generateSubscriptionId(subscription)
+          const { connectToDatabase } = await import('../../../../lib/mongo')
+          const { db } = await connectToDatabase()
+          await db.collection('users').updateOne({ _id: user._id }, { $pull: { pushSubscriptionIds: subscriptionId } })
+        }
+      } catch (e) {
+        // ignore unauthenticated or DB errors
+      }
     }
     
     return NextResponse.json({ 
