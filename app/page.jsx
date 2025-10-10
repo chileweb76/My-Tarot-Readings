@@ -333,6 +333,20 @@ export default function HomePage() {
     }
 
     // Ensure top-level reading image (if present) is embedded or absolute so PDF/print can render it
+    // Construct readingPayload for the current in-progress reading (used by print/export)
+    const readingPayload = {
+      by: user?.username || 'Guest',
+      date: new Date(readingDateTime).toLocaleString(),
+      querent: selectedQuerent === 'self' ? 'Self' : (querents.find(q => q._id === selectedQuerent)?.name || 'Unknown'),
+      spread: spreadName || selectedSpread || 'No spread selected',
+      deck: decks.find(d => d._id === selectedDeck)?.deckName || 'Unknown deck',
+      question: question || '',
+      cards: preparedCards,
+      interpretation: interpretation || '',
+      image: uploadedImage || null,
+      exportedAt: new Date().toLocaleString()
+    }
+
     let exportImage = readingPayload.image || null
     try {
       if (exportImage && typeof exportImage === 'string') {
