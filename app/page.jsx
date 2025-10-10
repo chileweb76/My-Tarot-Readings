@@ -1476,10 +1476,6 @@ export default function HomePage() {
                   )}
 
                   <div className="mb-2 small text-muted">💡 Maximum file size: {(getImageSizeLimitBytes() / 1024 / 1024).toFixed(1)}MB</div>
-                  <div className="d-flex align-items-center mb-3" style={{ gap: 8 }}>
-                    <a href="/settings" className="btn btn-outline-secondary btn-sm">Settings</a>
-                    <div className="form-text">Open Settings to change export image size threshold</div>
-                  </div>
 
                   <div className="d-flex gap-2">
                     <label className="btn btn-outline-primary mb-0">

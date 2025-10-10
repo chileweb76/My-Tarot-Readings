@@ -42,7 +42,7 @@ class SettingsErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-  logger.error('Settings page error:', error, errorInfo)
+    logger.error('Settings page error:', error, errorInfo)
   }
 
   render() {
@@ -72,42 +72,6 @@ class SettingsErrorBoundary extends Component {
 }
 
 export default function SettingsPage() {
-  const [user, setUser] = useState(null)
-  const [settings, setSettings] = useState({
-    emailNotifications: true,
-    dailyReading: false,
-    privateReadings: true,
-    theme: 'dark',
-    language: 'en'
-  })
-
-  // Server Action states
-  const [usernameState, usernameFormAction, usernamePending] = useActionState(async (prevState, formData) => {
-    const result = await changeUsernameAction(formData)
-    if (result.success) {
-      // Update user state
-      const updatedUser = { ...user, username: formData.get('username') }
-      setUser(updatedUser)
-      localStorage.setItem('user', JSON.stringify(updatedUser))
-      notify({ type: 'success', text: result.message })
-      return { success: true }
-    } else {
-      notify({ type: 'error', text: result.error })
-      return { error: result.error }
-    }
-  }, { success: false, error: null })
-
-  const [passwordState, passwordFormAction, passwordPending] = useActionState(async (prevState, formData) => {
-    const result = await changePasswordAction(formData)
-    if (result.success) {
-      notify({ type: 'success', text: result.message })
-      // Reset form by returning success state
-      return { success: true, reset: true }
-    } else {
-      notify({ type: 'error', text: result.error })
-      return { error: result.error }
-    }
-  }, { success: false, error: null })
 
   const [profilePictureState, profilePictureFormAction, profilePicturePending] = useActionState(async (prevState, formData) => {
     const result = await uploadProfilePictureAction(formData)
@@ -141,92 +105,7 @@ export default function SettingsPage() {
     }
   }, [])
 
-  // Simple UI for image export limit with presets, stepper and validation
-  const MIN_IMAGE_LIMIT_MB = 0.1
-  const MAX_IMAGE_LIMIT_MB = 50
-  const PRESETS = [
-    { label: 'Small', value: 0.5 },
-    { label: 'Medium', value: 5.0 },
-    { label: 'Large', value: 8.0 }
-  ]
-
-  const ImageLimitSection = () => (
-    <div className="card mb-3">
-      <div className="card-body">
-        <h5 className="card-title">Export image settings</h5>
-        <p className="card-text">
-          Control how the app treats large images when creating exports (PDFs or shared images).
-          Images larger than this threshold (in megabytes) will prompt you to confirm before they
-          are embedded in the output. This helps keep exported files smaller, reduces upload and
-          processing time, and avoids unexpectedly large emails or shares. The setting is stored
-          locally in your browser and affects only export/share workflows — it does not change
-          images in existing readings.
-        </p>
-        <div className="d-flex align-items-center" style={{ gap: 12 }}>
-          <div className="input-group" style={{ width: 220 }}>
-            <button
-              className="btn btn-outline-secondary"
-              type="button"
-              aria-label="Decrease image size limit"
-              onClick={() => setImageLimitMb(prev => {
-                const next = Number((Number(prev || 0) - 0.1).toFixed(1))
-                return isFinite(next) ? Math.max(next, MIN_IMAGE_LIMIT_MB) : MIN_IMAGE_LIMIT_MB
-              })}
-            >-
-            </button>
-            <input
-              type="number"
-              step="0.1"
-              min={MIN_IMAGE_LIMIT_MB}
-              max={MAX_IMAGE_LIMIT_MB}
-              className="form-control"
-              style={{ textAlign: 'center' }}
-              aria-label="Image size limit in megabytes"
-              value={Number.isFinite(imageLimitMb) ? imageLimitMb : ''}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value)
-                if (Number.isFinite(v)) setImageLimitMb(v)
-                else setImageLimitMb('')
-              }}
-            />
-            <button
-              className="btn btn-outline-secondary"
-              type="button"
-              aria-label="Increase image size limit"
-              onClick={() => setImageLimitMb(prev => {
-                const next = Number((Number(prev || 0) + 0.1).toFixed(1))
-                return isFinite(next) ? Math.min(next, MAX_IMAGE_LIMIT_MB) : MIN_IMAGE_LIMIT_MB
-              })}
-            >+
-            </button>
-          </div>
-
-          <div>
-            <button type="button" className="btn btn-primary" onClick={saveImageLimit}>Save</button>
-          </div>
-        </div>
-
-        <div className="d-flex gap-2 mt-3" role="group" aria-label="Quick presets for image size limit">
-          {PRESETS.map(p => (
-            <button
-              key={p.label}
-              type="button"
-              className={`btn btn-solid ${Number(imageLimitMb) === p.value ? 'btn-solid-primary' : ''}`}
-              onClick={() => setImageLimitMb(p.value)}
-              aria-pressed={Number(imageLimitMb) === p.value}
-            >{p.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="form-text mt-2">
-          Recommended: <strong>5.0 MB</strong>. Images above this size will ask for confirmation before
-          embedding. Increase the value to embed more images automatically, or lower it to avoid
-          large exports. Allowed range: {MIN_IMAGE_LIMIT_MB} MB — {MAX_IMAGE_LIMIT_MB} MB.
-        </div>
-      </div>
-    </div>
-  )
+  // Export image settings removed per request
 
   const handleSettingChange = (setting, value) => {
     setSettings(prev => ({
@@ -241,32 +120,7 @@ export default function SettingsPage() {
     alert('Settings saved successfully!')
   }
 
-  // IMAGE size limit control (client-side only)
-  const [imageLimitMb, setImageLimitMb] = useState(() => {
-    try { return parseFloat(localStorage.getItem('IMAGE_SIZE_LIMIT_MB')) || 5.0 } catch (e) { return 5.0 }
-  })
-
-  const saveImageLimit = () => {
-    try {
-      // coerce to number and validate
-      const raw = Number(imageLimitMb)
-      if (!Number.isFinite(raw)) {
-        notify({ type: 'error', text: 'Please enter a valid number for the image size limit.' })
-        return
-      }
-      const MIN_IMAGE_LIMIT_MB = 0.1
-      const MAX_IMAGE_LIMIT_MB = 50
-      const clamped = Math.min(Math.max(Number(raw.toFixed(1)), MIN_IMAGE_LIMIT_MB), MAX_IMAGE_LIMIT_MB)
-      localStorage.setItem('IMAGE_SIZE_LIMIT_MB', String(clamped))
-      // update state to the clamped value so UI reflects stored value
-      setImageLimitMb(clamped)
-      // notify other windows/components
-      try { window.dispatchEvent(new Event('imageSizeLimitChanged')) } catch (e) {}
-      notify({ type: 'success', text: `Image size limit set to ${clamped} MB` })
-    } catch (e) {
-      notify({ type: 'error', text: 'Failed to save image limit' })
-    }
-  }
+  // IMAGE size limit control removed
 
   const [usernameForm, setUsernameForm] = useState({ username: '' })
   const [pictureFile, setPictureFile] = useState(null)
@@ -1028,8 +882,7 @@ export default function SettingsPage() {
               )}
             </div>
 
-            {/* Export image settings (moved below Data & Security) */}
-            <ImageLimitSection />
+            {/* Export image settings removed */}
 
             {/* Push Notifications Section */}
             <PushNotificationsUniversal />
