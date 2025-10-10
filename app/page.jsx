@@ -325,6 +325,34 @@ export default function HomePage() {
       preparedCards.push(copy)
     }
 
+    // Ensure top-level reading image (if present) is embedded or absolute so PDF/print can render it
+    let exportImage = readingPayload.image || null
+    try {
+      if (exportImage && typeof exportImage === 'string') {
+        if (exportImage.startsWith('data:')) {
+          // already embedded
+        } else if (exportImage.startsWith('blob:') || exportImage.startsWith('object:')) {
+          const { proceed, blob } = await fetchBlobWithSizeCheck(exportImage)
+          if (!proceed) {
+            // user cancelled conversion/embedding
+            exportImage = null
+          } else if (blob) {
+            exportImage = await new Promise((resolve, reject) => {
+              const fr = new FileReader()
+              fr.onload = () => resolve(fr.result)
+              fr.onerror = reject
+              fr.readAsDataURL(blob)
+            })
+          }
+        } else if (!/^https?:\/\//i.test(exportImage) && exportImage.startsWith('/')) {
+          exportImage = `${window.location.protocol}//${window.location.host}${exportImage}`
+        }
+      }
+    } catch (e) {
+      // ignore image embedding errors
+      exportImage = exportImage && typeof exportImage === 'string' && exportImage.startsWith('data:') ? exportImage : exportImage
+    }
+
     const exportHtml = `
       <html>
         <head>
@@ -343,6 +371,7 @@ export default function HomePage() {
         </head>
         <body>
           <h1>Tarot Reading</h1>
+          ${exportImage ? `<div style="text-align:center;margin:12px 0"><img src="${exportImage}" style="max-width:260px;max-height:260px;border:1px solid #ddd;padding:6px;background:#fff"/></div>` : ''}
           <div class="meta">
             <div><strong>Reading by:</strong> ${user?.username || 'Guest'}</div>
             <div><strong>Date:</strong> ${new Date(readingDateTime).toLocaleString()}</div>

@@ -201,6 +201,26 @@ export default function ReadingPage() {
     setExportingFor(rid, true)
     try {
       const payload = preparePayloadFromReading(reading)
+      // Ensure reading image is embedded/absolute for printing
+      let exportImage = payload.image || null
+      try {
+        if (exportImage && typeof exportImage === 'string') {
+          if (exportImage.startsWith('data:')) {
+            // already embedded
+          } else if (exportImage.startsWith('blob:') || exportImage.startsWith('object:')) {
+            const { proceed, blob } = await fetchBlobWithSizeCheck(exportImage)
+            if (!proceed) exportImage = null
+            else if (blob) {
+              exportImage = await new Promise((resolve, reject) => { const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.onerror = reject; fr.readAsDataURL(blob) })
+            }
+          } else if (!/^https?:\/\//i.test(exportImage) && exportImage.startsWith('/')) {
+            exportImage = `${window.location.protocol}//${window.location.host}${exportImage}`
+          }
+        }
+      } catch (e) {
+        exportImage = exportImage && typeof exportImage === 'string' && exportImage.startsWith('data:') ? exportImage : exportImage
+      }
+
       const exportHtml = `
                     </div>
                   </div>
@@ -219,6 +239,7 @@ export default function ReadingPage() {
     </AuthWrapper>
   )
           </div>
+          ${exportImage ? `<div class="section"><div style="text-align:center;margin:12px 0"><img src="${exportImage}" style="max-width:260px;max-height:260px;border:1px solid #ddd;padding:6px;background:#fff"/></div></div>` : ''}
           <div class="section"><h3>Question</h3><div>${payload.question || 'No question recorded'}</div></div>
           <div class="section"><h3>Outcome</h3><div>${payload.outcome || 'No outcome recorded'}</div></div>
           <div class="section"><h3>Cards Drawn</h3>
