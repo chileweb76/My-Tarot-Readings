@@ -53,16 +53,28 @@ export async function POST(request) {
       })
     }
 
-    // For PDF responses, we need to handle the binary data properly
-    const pdfBuffer = await response.arrayBuffer()
-    
-    return new Response(pdfBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="reading.pdf"',
-      },
-    })
+    const contentType = response.headers.get('content-type') || ''
+    const contentDisp = response.headers.get('content-disposition') || `attachment; filename="reading.pdf"`
+
+    // If backend returned a PDF-like content type, forward binary; otherwise forward text for easier diagnostics
+    if (contentType.toLowerCase().includes('pdf')) {
+      const pdfBuffer = await response.arrayBuffer()
+      return new Response(pdfBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': contentDisp,
+        },
+      })
+    } else {
+      // Not a PDF: return the body as text so caller can see the error
+      const text = await response.text()
+      console.error('Export proxy: backend returned non-PDF content-type:', contentType, 'preview:', text && text.slice && text.slice(0, 200))
+      return new Response(text, {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
     
   } catch (error) {
     console.error('Export PDF API Error:', error)
