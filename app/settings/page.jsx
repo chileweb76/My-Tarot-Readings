@@ -76,6 +76,40 @@ export default function SettingsPage() {
   // Local user and settings state (may be hydrated from localStorage or server)
   const [user, setUser] = useState(null)
   const [settings, setSettings] = useState({})
+  
+  // All useState hooks must come first before any useEffect/useActionState
+  const [usernameForm, setUsernameForm] = useState({ username: '' })
+  const [pictureFile, setPictureFile] = useState(null)
+  const [picturePreview, setPicturePreview] = useState(null)
+  const [previewLoaded, setPreviewLoaded] = useState(true)
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', verifyPassword: '' })
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState(null)
+  const [linking, setLinking] = useState(false)
+  const [querents, setQuerents] = useState([])
+  const [selectedQuerentId, setSelectedQuerentId] = useState('')
+  const [showDeleteQuerentModal, setShowDeleteQuerentModal] = useState(false)
+  const [deleteQuerentVerifyName, setDeleteQuerentVerifyName] = useState('')
+  const [loadingDeleteQuerent, setLoadingDeleteQuerent] = useState(false)
+  const [decks, setDecks] = useState([])
+  const [selectedDeckId, setSelectedDeckId] = useState('')
+  const [showDeleteDeckModal, setShowDeleteDeckModal] = useState(false)
+  const [deleteDeckVerifyName, setDeleteDeckVerifyName] = useState('')
+  const [loadingDeleteDeck, setLoadingDeleteDeck] = useState(false)
+  const [spreads, setSpreads] = useState([])
+  const [selectedSpreadId, setSelectedSpreadId] = useState('')
+  const [showDeleteSpreadModal, setShowDeleteSpreadModal] = useState(false)
+  const [deleteSpreadVerifyName, setDeleteSpreadVerifyName] = useState('')
+  const [loadingDeleteSpread, setLoadingDeleteSpread] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmUsername, setDeleteConfirmUsername] = useState('')
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('')
+  const [tags, setTags] = useState([])
+  const [selectedTagId, setSelectedTagId] = useState('')
+  const [showDeleteTagModal, setShowDeleteTagModal] = useState(false)
+  const [deleteTagVerifyName, setDeleteTagVerifyName] = useState('')
+  const [loadingDeleteTag, setLoadingDeleteTag] = useState(false)
+  const [countdown, setCountdown] = useState(null)
 
   const [profilePictureState, profilePictureFormAction, profilePicturePending] = useActionState(async (prevState, formData) => {
     const result = await uploadProfilePictureAction(formData)
@@ -164,42 +198,6 @@ export default function SettingsPage() {
 
   // IMAGE size limit control removed
 
-  const [usernameForm, setUsernameForm] = useState({ username: '' })
-  const [pictureFile, setPictureFile] = useState(null)
-  const [picturePreview, setPicturePreview] = useState(null)
-  const [previewLoaded, setPreviewLoaded] = useState(true)
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', verifyPassword: '' })
-  // legacy per-page message state removed; use notify() for toasts
-  const [loading, setLoading] = useState(false)
-  // Add a local `message` state for inline alerts (keeps backwards compatibility)
-  const [message, setMessage] = useState(null)
-  const [linking, setLinking] = useState(false)
-  const [querents, setQuerents] = useState([])
-  const [selectedQuerentId, setSelectedQuerentId] = useState('')
-  const [showDeleteQuerentModal, setShowDeleteQuerentModal] = useState(false)
-  const [deleteQuerentVerifyName, setDeleteQuerentVerifyName] = useState('')
-  const [loadingDeleteQuerent, setLoadingDeleteQuerent] = useState(false)
-  const [decks, setDecks] = useState([])
-  const [selectedDeckId, setSelectedDeckId] = useState('')
-  const [showDeleteDeckModal, setShowDeleteDeckModal] = useState(false)
-  const [deleteDeckVerifyName, setDeleteDeckVerifyName] = useState('')
-  const [loadingDeleteDeck, setLoadingDeleteDeck] = useState(false)
-  const [spreads, setSpreads] = useState([])
-  const [selectedSpreadId, setSelectedSpreadId] = useState('')
-  const [showDeleteSpreadModal, setShowDeleteSpreadModal] = useState(false)
-  const [deleteSpreadVerifyName, setDeleteSpreadVerifyName] = useState('')
-  const [loadingDeleteSpread, setLoadingDeleteSpread] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deleteConfirmUsername, setDeleteConfirmUsername] = useState('')
-  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState('')
-  
-  // Tags state
-  const [tags, setTags] = useState([])
-  const [selectedTagId, setSelectedTagId] = useState('')
-  const [showDeleteTagModal, setShowDeleteTagModal] = useState(false)
-  const [deleteTagVerifyName, setDeleteTagVerifyName] = useState('')
-  const [loadingDeleteTag, setLoadingDeleteTag] = useState(false)
-  
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
   // Normalize API base (remove trailing slashes and trailing /api if present)
@@ -435,8 +433,6 @@ export default function SettingsPage() {
     return () => { mounted = false }
   }, [])
 
-  // countdown state
-  const [countdown, setCountdown] = useState(null)
   useEffect(() => {
     if (!user?.isDeleted || !user?.deletedAt) return
     const retentionDays = user.softDeleteRetentionDays || 30
