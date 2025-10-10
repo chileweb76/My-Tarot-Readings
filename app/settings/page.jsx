@@ -113,6 +113,7 @@ export default function SettingsPage() {
   // Notification preference UI
   const [notificationTime, setNotificationTime] = useState('10:00')
   const [notificationEnabled, setNotificationEnabled] = useState(true)
+  const [savedNotificationConfirm, setSavedNotificationConfirm] = useState(null)
 
   const [profilePictureState, profilePictureFormAction, profilePicturePending] = useActionState(async (prevState, formData) => {
     const result = await uploadProfilePictureAction(formData)
@@ -811,22 +812,37 @@ export default function SettingsPage() {
                     </div>
                     <div className="d-flex gap-2 align-items-center">
                       <input type="time" className="form-control form-control-sm" value={notificationTime} onChange={(e) => setNotificationTime(e.target.value)} style={{ maxWidth: 140 }} />
-                      <button className="btn btn-primary btn-sm" onClick={async () => {
-                        setLoading(true)
-                        try {
-                          const resp = await fetch('/api/user/notification', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ time: notificationTime, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, enabled: notificationEnabled })
-                          })
-                          const data = await resp.json()
-                          if (!resp.ok || data.error) throw new Error(data.error || 'Failed to save')
-                          if (data.user) setUser(data.user)
-                          notify({ type: 'success', text: 'Notification time saved' })
-                        } catch (err) {
-                          notify({ type: 'error', text: err.message })
-                        } finally { setLoading(false) }
-                      }}>Save</button>
+                      <div className="d-flex align-items-center">
+                        <button className="btn btn-primary btn-sm" onClick={async () => {
+                          setLoading(true)
+                          try {
+                            const resp = await fetch('/api/user/notification', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ time: notificationTime, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, enabled: notificationEnabled })
+                            })
+                            const data = await resp.json()
+                            if (!resp.ok || data.error) throw new Error(data.error || 'Failed to save')
+                            if (data.user) setUser(data.user)
+                            notify({ type: 'success', text: 'Notification time saved' })
+                            // show inline saved confirmation (formatted)
+                            try {
+                              const [hh, mm] = (notificationTime || '00:00').split(':')
+                              const t = new Date()
+                              t.setHours(parseInt(hh, 10))
+                              t.setMinutes(parseInt(mm, 10))
+                              const pretty = t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                              setSavedNotificationConfirm(`Saved: ${pretty}`)
+                              setTimeout(() => setSavedNotificationConfirm(null), 4000)
+                            } catch (e) { }
+                          } catch (err) {
+                            notify({ type: 'error', text: err.message })
+                          } finally { setLoading(false) }
+                        }}>Save</button>
+                        {savedNotificationConfirm && (
+                          <small className="text-success ms-2">{savedNotificationConfirm}</small>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
