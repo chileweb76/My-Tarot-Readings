@@ -931,9 +931,6 @@ export default function SettingsPage() {
 
             {/* Export image settings removed */}
 
-            {/* Push Notifications Section */}
-            <PushNotificationsUniversal />
-
             <ConfirmModal
               show={showDeleteModal}
               title="Delete account"
