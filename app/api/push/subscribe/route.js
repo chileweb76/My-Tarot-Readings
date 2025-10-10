@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import subscriptionStore from '../../../../lib/subscriptionStore.js'
+import { getUserFromToken } from '../../../../lib/actions/utils'
 
 export async function POST(request) {
   try {
@@ -21,7 +22,18 @@ export async function POST(request) {
     }
     
     console.log('New push subscription saved:', subscription.endpoint)
-    
+    // If the user is authenticated, save a reference to this subscription on the user
+    try {
+      const user = await getUserFromToken()
+      if (user) {
+        const subscriptionId = subscriptionStore._generateSubscriptionId(subscription)
+        const { connectToDatabase } = await import('../../../../lib/mongo')
+        const { db } = await connectToDatabase()
+        await db.collection('users').updateOne({ _id: user._id }, { $set: { pushSubscriptionId: subscriptionId } })
+      }
+    } catch (e) {
+      // not authenticated or failed to save - ignore
+    }
     return NextResponse.json({ 
       success: true, 
       message: 'Subscription saved successfully' 

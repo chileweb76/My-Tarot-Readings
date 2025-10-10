@@ -110,6 +110,9 @@ export default function SettingsPage() {
   const [deleteTagVerifyName, setDeleteTagVerifyName] = useState('')
   const [loadingDeleteTag, setLoadingDeleteTag] = useState(false)
   const [countdown, setCountdown] = useState(null)
+  // Notification preference UI
+  const [notificationTime, setNotificationTime] = useState('10:00')
+  const [notificationEnabled, setNotificationEnabled] = useState(true)
 
   const [profilePictureState, profilePictureFormAction, profilePicturePending] = useActionState(async (prevState, formData) => {
     const result = await uploadProfilePictureAction(formData)
@@ -176,6 +179,10 @@ export default function SettingsPage() {
       getCurrentUserAction().then(result => {
         if (result.success && result.user) {
           setUser(result.user)
+          try {
+            if (result.user.notificationTime) setNotificationTime(result.user.notificationTime)
+            if (typeof result.user.notificationEnabled === 'boolean') setNotificationEnabled(result.user.notificationEnabled)
+          } catch (e) {}
         }
   }).catch(e => logger.error('Failed to load user from server:', e))
     }
@@ -795,6 +802,35 @@ export default function SettingsPage() {
 
             {/* Push Notifications moved below logout per request */}
             <div className="mb-4">
+              <div className="card mb-3">
+                <div className="card-body">
+                  <div className="d-flex align-items-center justify-content-between">
+                    <div>
+                      <strong>Push Notifications</strong>
+                      <div className="text-muted">Get reading reminders</div>
+                    </div>
+                    <div className="d-flex gap-2 align-items-center">
+                      <input type="time" className="form-control form-control-sm" value={notificationTime} onChange={(e) => setNotificationTime(e.target.value)} style={{ maxWidth: 140 }} />
+                      <button className="btn btn-primary btn-sm" onClick={async () => {
+                        setLoading(true)
+                        try {
+                          const resp = await fetch('/api/user/notification', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ time: notificationTime, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, enabled: notificationEnabled })
+                          })
+                          const data = await resp.json()
+                          if (!resp.ok || data.error) throw new Error(data.error || 'Failed to save')
+                          if (data.user) setUser(data.user)
+                          notify({ type: 'success', text: 'Notification time saved' })
+                        } catch (err) {
+                          notify({ type: 'error', text: err.message })
+                        } finally { setLoading(false) }
+                      }}>Save</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <PushNotificationsUniversal />
             </div>
 
