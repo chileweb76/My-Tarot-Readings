@@ -5,6 +5,15 @@ import { cookies } from 'next/headers'
 export async function POST(request) {
   try {
     const body = await request.json()
+    // Debug: log incoming body shape to help track missing 'reading' errors in production
+    try {
+      console.log('Export proxy received body keys:', Object.keys(body || {}))
+      // Avoid logging large payloads; log a small preview
+      const preview = JSON.stringify(body && typeof body === 'object' ? Object.keys(body).reduce((acc, k) => { acc[k] = typeof body[k]; return acc }, {}) : body)
+      console.log('Export proxy body preview:', preview)
+    } catch (logErr) {
+      console.warn('Failed to log export proxy body preview', logErr)
+    }
     
     const API_BASE_URL = 
       process.env.VERCEL_ENV === 'production' 
